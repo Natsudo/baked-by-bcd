@@ -54,28 +54,33 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   backface-visibility: hidden;
-  transform: translateZ(0);
+  transform: translateZ(0) scale(1.001);
+  text-rendering: optimizeLegibility;
+  filter: blur(0);
 }
 
 /* Mobile Responsiveness for Stock Banner */
 @media (max-width: 768px) {
   .stock-counter-banner {
-    padding: 10px 15px;
-    gap: 15px;
+    padding: 8px 10px;
+    gap: 10px;
   }
 
   .sparkle-text-sm {
-    font-size: 1.4rem;
-    letter-spacing: -0.5px;
+    font-size: 1.15rem;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    text-align: center;
   }
 
   .stock-dot {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
   }
 
   .home-page {
-    padding-top: 70px;
+    padding-top: 65px;
   }
 }
 
@@ -162,6 +167,7 @@
   height: auto;
   z-index: 3;
   pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 /* Card containing the actual logo image */
@@ -1238,9 +1244,15 @@ input:checked+.slider:before {
     height: 110px;
   }
 
-  .welcome-img-wrap {
-    width: 130px;
-    top: 0;
+  .welcome-img {
+    width: 220px;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .hero-content {
+    padding-top: 70px;
   }
 
   .hero-card {
@@ -1280,8 +1292,15 @@ input:checked+.slider:before {
     height: 80px;
   }
 
-  .welcome-img-wrap {
-    width: 100px;
+  .welcome-img {
+    width: 180px;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .hero-content {
+    padding-top: 60px;
   }
 
   .hero-card {
