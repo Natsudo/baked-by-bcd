@@ -723,7 +723,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 /* ═══════════════════════════════════════
    ADMIN LOGIN
  ═══════════════════════════════════════ */
-function AdminLogin({ onLogin }: { onLogin: () => void }) {
+function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -756,9 +756,12 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
             <input className="form-input" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
           {error && <p className="err-msg" style={{ padding: 0 }}>{error}</p>}
-          <button type="submit" className="place-order-btn place-order-btn-sm" style={{ marginTop: '10px' }} disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button type="button" onClick={onBack} className="place-order-btn place-order-btn-sm btn-secondary" style={{ flex: 1 }}>Back</button>
+            <button type="submit" className="place-order-btn place-order-btn-sm" style={{ flex: 1 }} disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -768,7 +771,7 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
 /* ═══════════════════════════════════════
    ADMIN DASHBOARD
  ═══════════════════════════════════════ */
-function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: () => void }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stock, setStock] = useState<number>(0);
@@ -872,6 +875,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             <h1 className="admin-title">Admin Panel</h1>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={onBack}>Back to Site</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleExportExcel}>Export Excel</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleLogout}>Logout</button>
           </div>
@@ -1109,11 +1113,10 @@ export default function App() {
 
   return (
     <>
-      <div className="admin-hint">Admin: Ctrl+Alt+A / 5x Logo Tap</div>
       {page === 'home' && <HomePage onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
       {page === 'order' && <OrderPage onBack={() => setPage('home')} />}
-      {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} />}
-      {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} />}
+      {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
+      {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
     </>
   );
 }
