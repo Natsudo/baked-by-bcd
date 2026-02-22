@@ -187,77 +187,108 @@
   display: block;
 }
 
+@media (max-width: 768px) {
+  .hero-card {
+    width: 320px;
+  }
+}
+
 /* ── Notepad FAQ Section ── */
+/* ── Modern Clean FAQ Section (Better for Mobile) ── */
 .notepad-faq-container {
-  width: 90%;
+  width: 95%;
   max-width: 600px;
-  margin: 10px auto 50px auto;
-  background-color: #f0f5ff;
-  /* subtle lined paper effect */
-  background-image: linear-gradient(transparent 95%, #cbdcf8 5%);
-  background-size: 100% 32px;
-  position: relative;
-  border-radius: 32px;
-  border: 4px solid #7aa0f0;
-  box-shadow: 0 8px 24px rgba(42, 82, 184, 0.15);
-  overflow: hidden;
-  padding: 40px 30px 40px 60px;
-  color: #333;
+  margin: 40px auto 60px auto;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  border: 2px solid rgba(122, 160, 240, 0.2);
+  padding: 30px 15px;
+  box-shadow: 0 15px 35px rgba(122, 160, 240, 0.1);
   z-index: 2;
   text-align: left;
 }
 
-/* Red margin line */
 .notepad-faq-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 45px;
-  width: 2px;
-  background-color: #7aa0f0;
-  opacity: 0.6;
+  display: none;
 }
 
 .faq-title {
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 800;
   color: #2a52b8;
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-family: inherit;
-  margin-left: -20px;
+  margin-bottom: 25px;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .faq-list {
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
 
 .faq-item {
-  margin-bottom: 30px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px solid #f0f4ff;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.faq-item.expanded {
+  border-color: #7aa0f0;
+  box-shadow: 0 8px 20px rgba(122, 160, 240, 0.12);
 }
 
 .faq-q {
+  padding: 16px 20px;
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: #3a5cc0;
-  margin-bottom: 6px;
-  display: block;
-  line-height: 1.4;
-  position: relative;
-  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.faq-icon {
+  width: 26px;
+  height: 26px;
+  background: #f0f4ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #7aa0f0;
+  transition: all 0.3s ease;
+}
+
+.faq-item.expanded .faq-icon {
+  background: #7aa0f0;
+  color: #ffffff;
+  transform: rotate(45deg);
+  /* Plus becomes an X */
 }
 
 .faq-a {
-  font-size: 0.95rem;
-  color: #222;
+  font-size: 0.92rem;
+  color: #555;
   white-space: pre-wrap;
-  margin: 0;
-  line-height: 1.6;
-  position: relative;
-  z-index: 10;
+  padding: 0 20px;
+  line-height: 1.5;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.faq-item.expanded .faq-a {
+  max-height: 500px;
+  padding: 0 20px 16px 20px;
+  opacity: 1;
 }
 
 /* ── Removed .home-card-col (no longer needed) ── */

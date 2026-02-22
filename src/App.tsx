@@ -76,8 +76,13 @@ function StockCounter() {
    HOME PAGE
 ═══════════════════════════════════════ */
 function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, onAdminClick: () => void }) {
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
+  };
 
   const handleLogoClick = () => {
     tapCount.current += 1;
@@ -91,10 +96,6 @@ function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, on
       tapCount.current = 0;
     }, 3000);
   };
-
-
-  // Optional: You could show a subtle progress toast here if newCount > 0
-
 
   return (
     <div className="home-page">
@@ -135,8 +136,11 @@ function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, on
         <h2 className="faq-title">FAQs</h2>
         <div className="faq-list">
           {FAQS.map((faq, i) => (
-            <div className="faq-item" key={i}>
-              <div className="faq-q">{faq.q}</div>
+            <div className={`faq-item ${expandedFaq === i ? 'expanded' : ''}`} key={i}>
+              <div className="faq-q" onClick={() => toggleFaq(i)}>
+                {faq.q}
+                <span className="faq-icon">{expandedFaq === i ? '−' : '+'}</span>
+              </div>
               <div className="faq-a">{faq.a}</div>
             </div>
           ))}
@@ -777,6 +781,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [stock, setStock] = useState<number>(0);
   const [updatingStock, setUpdatingStock] = useState(false);
   const [showToCollect, setShowToCollect] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -964,6 +969,25 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           </div>
         )}
 
+        {selectedNote && (
+          <div className="admin-modal-overlay" onClick={() => setSelectedNote(null)}>
+            <div className="admin-modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>Special Instructions</h2>
+                <button className="close-btn" onClick={() => setSelectedNote(null)}>&times;</button>
+              </div>
+              <div className="admin-modal-content">
+                <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '1rem', color: '#333' }}>
+                  {selectedNote}
+                </p>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button className="place-order-btn place-order-btn-sm" onClick={() => setSelectedNote(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="admin-table-container">
           <div className="admin-table-header">
             <h2>Recent Orders</h2>
@@ -1009,7 +1033,16 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                           );
                         })()}
                         <br />
-                        {order.special_instructions && <span className="admin-note" title={order.special_instructions}>Note: {order.special_instructions.substring(0, 20)}...</span>}
+                        {order.special_instructions && (
+                          <span
+                            className="admin-note clickable"
+                            title="Click to view full note"
+                            onClick={() => setSelectedNote(order.special_instructions)}
+                            style={{ cursor: 'pointer', color: '#3b82f6', textDecoration: 'underline', fontSize: '0.85rem' }}
+                          >
+                            Note: {order.special_instructions.length > 20 ? order.special_instructions.substring(0, 20) + '...' : order.special_instructions}
+                          </span>
+                        )}
                       </td>
                       <td>
                         {order.delivery_mode === 'meetup' ? 'Meetup' : 'Maxim'}<br />
