@@ -551,13 +551,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             <div className="form-section-title">Mode of Payment:</div>
             {errors.paymentMode && <span className="err-msg">{errors.paymentMode}</span>}
             <div className="payment-option">
-              <span className="payment-label">
-                GCash (Full Weight / Total)
-              </span>
+              <span className="payment-label">GCash</span>
               <input type="radio" id="pay-gcash" name="payment" checked={paymentMode === 'gcash'} onChange={() => setPaymentMode('gcash')} className="radio-inp" />
             </div>
             <div className="payment-option">
-              <span className="payment-label">Cash (Balance upon delivery/meetup)</span>
+              <span className="payment-label">Cash</span>
               <input type="radio" id="pay-cash" name="payment" checked={paymentMode === 'cash'} onChange={() => setPaymentMode('cash')} className="radio-inp" />
             </div>
             <div className="cash-note" style={{ marginTop: '5px', padding: '8px 12px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>
