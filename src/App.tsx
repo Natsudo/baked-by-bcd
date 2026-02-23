@@ -828,6 +828,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeliveryList, setShowDeliveryList] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -989,6 +990,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             <h1 className="admin-title">Admin Panel</h1>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={() => setShowDeliveryList(true)}>Delivery List</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={onBack}>Back to Site</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleExportExcel}>Export Excel</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleLogout}>Logout</button>
@@ -1097,6 +1099,133 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           </div>
         )}
 
+        {showDeliveryList && (
+          <div className="admin-modal-overlay" onClick={() => setShowDeliveryList(false)}>
+            <div className="admin-modal" style={{ maxWidth: '800px', width: '95%' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>Delivery & Meetup Summary</h2>
+                <button className="close-btn" onClick={() => setShowDeliveryList(false)}>&times;</button>
+              </div>
+              <div className="admin-modal-content">
+                <div className="delivery-summary-content">
+
+                  {/* MEETUP SECTION */}
+                  <div className="delivery-section-box">
+                    <h3 className="delivery-section-title">🤝 La Salle Meetup</h3>
+
+                    <div className="delivery-time-block">
+                      <h4>10:00 AM - 12:00 PM</h4>
+                      <div className="delivery-grid">
+                        {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '10am - 12pm').length === 0 ? (
+                          <p className="no-data">No meetups at this time.</p>
+                        ) : (
+                          orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '10am - 12pm').map(o => (
+                            <div key={o.id} className="delivery-card">
+                              <div className="dc-header">
+                                <strong>{o.full_name}</strong>
+                                <span>{o.contact_number}</span>
+                              </div>
+                              <div className="dc-body">
+                                <div>IG: @{o.instagram || 'None'}</div>
+                                <div className="dc-screenshots">
+                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="delivery-time-block">
+                      <h4>3:00 PM - 4:00 PM</h4>
+                      <div className="delivery-grid">
+                        {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '3pm - 4pm').length === 0 ? (
+                          <p className="no-data">No meetups at this time.</p>
+                        ) : (
+                          orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '3pm - 4pm').map(o => (
+                            <div key={o.id} className="delivery-card">
+                              <div className="dc-header">
+                                <strong>{o.full_name}</strong>
+                                <span>{o.contact_number}</span>
+                              </div>
+                              <div className="dc-body">
+                                <div>IG: @{o.instagram || 'None'}</div>
+                                <div className="dc-screenshots">
+                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MAXIM SECTION */}
+                  <div className="delivery-section-box" style={{ marginTop: '30px' }}>
+                    <h3 className="delivery-section-title">🚚 Maxim Delivery</h3>
+
+                    <div className="delivery-time-block">
+                      <h4>10:00 AM - 12:00 PM</h4>
+                      <div className="delivery-grid">
+                        {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '10am - 12pm').length === 0 ? (
+                          <p className="no-data">No deliveries at this time.</p>
+                        ) : (
+                          orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '10am - 12pm').map(o => (
+                            <div key={o.id} className="delivery-card dc-maxim">
+                              <div className="dc-header">
+                                <strong>{o.full_name}</strong>
+                                <span>{o.contact_number}</span>
+                              </div>
+                              <div className="dc-body">
+                                <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
+                                <div className="dc-screenshots">
+                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                  {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="delivery-time-block">
+                      <h4>3:00 PM - 4:00 PM</h4>
+                      <div className="delivery-grid">
+                        {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '3pm - 4pm').length === 0 ? (
+                          <p className="no-data">No deliveries at this time.</p>
+                        ) : (
+                          orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '3pm - 4pm').map(o => (
+                            <div key={o.id} className="delivery-card dc-maxim">
+                              <div className="dc-header">
+                                <strong>{o.full_name}</strong>
+                                <span>{o.contact_number}</span>
+                              </div>
+                              <div className="dc-body">
+                                <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
+                                <div className="dc-screenshots">
+                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                  {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button className="place-order-btn place-order-btn-sm" onClick={() => setShowDeliveryList(false)}>Close Summary</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {orderToDelete && (
           <div className="admin-modal-overlay" onClick={() => !isDeleting && setOrderToDelete(null)}>
             <div className="admin-modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
@@ -1147,6 +1276,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                   <th>Order Details</th>
                   <th>Delivery</th>
                   <th>Payment</th>
+                  <th>GCash Info</th>
                   <th>Screenshots</th>
                   <th>Total</th>
                   <th>Actions</th>
@@ -1154,9 +1284,9 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>No orders found</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>No orders found</td></tr>
                 ) : (
                   orders.map(order => (
                     <tr key={order.id}>
@@ -1247,6 +1377,12 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                             </label>
                             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{order.is_paid ? 'Paid' : 'Mark Paid'}</span>
                           </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem' }}>
+                          <strong>{order.gcash_name || '-'}</strong>
+                          <span style={{ color: '#666' }}>{order.gcash_number || '-'}</span>
                         </div>
                       </td>
                       <td>
