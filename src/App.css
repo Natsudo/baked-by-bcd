@@ -1443,6 +1443,43 @@ input:checked+.slider:before {
   gap: 20px;
 }
 
+.dc-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.dc-balance {
+  font-weight: 700;
+  color: #ef4444;
+  font-size: 0.8rem;
+}
+
+.dc-status-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Mobile Fixes */
+@media (max-width: 600px) {
+  .admin-modal {
+    width: 95vw !important;
+    max-height: 90vh;
+  }
+
+  .admin-modal-content {
+    padding: 15px;
+  }
+
+  .delivery-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 .delivery-section-box {
   background: white;
   border: 1px solid #e2e8f0;
@@ -1665,11 +1702,13 @@ input:checked+.slider:before {
 
 /* ── Status Badge ── */
 .status-badge {
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 50px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
 }
 
 .status-pending {

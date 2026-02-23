@@ -257,7 +257,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         .from('orders')
         .insert([{
           full_name: fullName,
-          contact_number: contactNumber,
+          contact_number: contactNumber.replace(/\s/g, ''),
           instagram: instagram,
           quantity_type: `Box4: ${quantityBox4}, Box6: ${quantityBox6}, Box12: ${quantityBox12}`,
           quantity: 1, // Placeholder
@@ -270,7 +270,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           maxim_address: maximAddress,
           maxim_screenshot_path: uploadedMaximScreenshotPath,
           gcash_name: gcashName,
-          gcash_number: gcashNumber,
+          gcash_number: gcashNumber.replace(/\s/g, ''),
           gcash_screenshot_path: uploadedGcashScreenshotPath,
           special_instructions: specialInstructions
         }]);
@@ -1217,108 +1217,176 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                   <div className="delivery-section-box">
                     <h3 className="delivery-section-title">🤝 La Salle Meetup</h3>
 
-                    <div className="delivery-time-block">
-                      <h4>10:00 AM - 12:00 PM</h4>
-                      <div className="delivery-grid">
-                        {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '10am - 12pm').length === 0 ? (
-                          <p className="no-data">No meetups at this time.</p>
-                        ) : (
-                          orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '10am - 12pm').map(o => (
-                            <div key={o.id} className="delivery-card">
-                              <div className="dc-header">
-                                <strong>{o.full_name}</strong>
-                                <span>{o.contact_number}</span>
-                              </div>
-                              <div className="dc-body">
-                                <div>IG: @{o.instagram || 'None'}</div>
-                                <div className="dc-screenshots">
-                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                    {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
+                      <div className="delivery-time-block" key={timeSlot}>
+                        <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                        <div className="delivery-grid">
+                          {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).length === 0 ? (
+                            <p className="no-data">No meetups at this time.</p>
+                          ) : (
+                            orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).map(o => (
+                              <div key={o.id} className="delivery-card">
+                                <div className="dc-header">
+                                  <strong>{o.full_name}</strong>
+                                  <span>{o.contact_number}</span>
                                 </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                                <div className="dc-body">
+                                  <div style={{ marginTop: '5px' }}>
+                                    {o.instagram && (
+                                      <a
+                                        href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="chat-link"
+                                        style={{ fontSize: '0.8rem' }}
+                                      >
+                                        📸 @{o.instagram.replace('@', '')}
+                                      </a>
+                                    )}
+                                  </div>
 
-                    <div className="delivery-time-block">
-                      <h4>3:00 PM - 4:00 PM</h4>
-                      <div className="delivery-grid">
-                        {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '3pm - 4pm').length === 0 ? (
-                          <p className="no-data">No meetups at this time.</p>
-                        ) : (
-                          orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === '3pm - 4pm').map(o => (
-                            <div key={o.id} className="delivery-card">
-                              <div className="dc-header">
-                                <strong>{o.full_name}</strong>
-                                <span>{o.contact_number}</span>
-                              </div>
-                              <div className="dc-body">
-                                <div>IG: @{o.instagram || 'None'}</div>
-                                <div className="dc-screenshots">
-                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                  <div className="dc-info-row">
+                                    <span className="pi-label">Status</span>
+                                    <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                      <select
+                                        className="status-select"
+                                        value={o.status || 'Pending'}
+                                        onChange={async (e) => {
+                                          const newStatus = e.target.value;
+                                          setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                        }}
+                                      >
+                                        <option value="Pending">Pending</option>
+                                        <option value="Baking">Baking</option>
+                                        <option value="Ready">Ready</option>
+                                        <option value="Delivered">Delivered</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <div className="dc-info-row">
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                      {!o.is_paid && o.payment_mode === 'gcash' && (
+                                        <span className="dc-balance">Bal: ₱{o.total_price - o.downpayment_price}</span>
+                                      )}
+                                    </div>
+                                    <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                      <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={!!o.is_paid}
+                                          onChange={async () => {
+                                            const newPaid = !o.is_paid;
+                                            setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                            await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                          }}
+                                        />
+                                        <span className="slider round"></span>
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  <div className="dc-screenshots">
+                                    {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
-                        )}
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
 
                   {/* MAXIM SECTION */}
                   <div className="delivery-section-box" style={{ marginTop: '30px' }}>
                     <h3 className="delivery-section-title">🚚 Maxim Delivery</h3>
 
-                    <div className="delivery-time-block">
-                      <h4>10:00 AM - 12:00 PM</h4>
-                      <div className="delivery-grid">
-                        {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '10am - 12pm').length === 0 ? (
-                          <p className="no-data">No deliveries at this time.</p>
-                        ) : (
-                          orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '10am - 12pm').map(o => (
-                            <div key={o.id} className="delivery-card dc-maxim">
-                              <div className="dc-header">
-                                <strong>{o.full_name}</strong>
-                                <span>{o.contact_number}</span>
-                              </div>
-                              <div className="dc-body">
-                                <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
-                                <div className="dc-screenshots">
-                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                  {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                    {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
+                      <div className="delivery-time-block" key={timeSlot}>
+                        <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                        <div className="delivery-grid">
+                          {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).length === 0 ? (
+                            <p className="no-data">No deliveries at this time.</p>
+                          ) : (
+                            orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).map(o => (
+                              <div key={o.id} className="delivery-card dc-maxim">
+                                <div className="dc-header">
+                                  <strong>{o.full_name}</strong>
+                                  <span>{o.contact_number}</span>
                                 </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                                <div className="dc-body">
+                                  <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
+                                  <div style={{ marginTop: '5px' }}>
+                                    {o.instagram && (
+                                      <a
+                                        href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="chat-link"
+                                        style={{ fontSize: '0.8rem' }}
+                                      >
+                                        📸 @{o.instagram.replace('@', '')}
+                                      </a>
+                                    )}
+                                  </div>
 
-                    <div className="delivery-time-block">
-                      <h4>3:00 PM - 4:00 PM</h4>
-                      <div className="delivery-grid">
-                        {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '3pm - 4pm').length === 0 ? (
-                          <p className="no-data">No deliveries at this time.</p>
-                        ) : (
-                          orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === '3pm - 4pm').map(o => (
-                            <div key={o.id} className="delivery-card dc-maxim">
-                              <div className="dc-header">
-                                <strong>{o.full_name}</strong>
-                                <span>{o.contact_number}</span>
-                              </div>
-                              <div className="dc-body">
-                                <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
-                                <div className="dc-screenshots">
-                                  {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                  {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                  <div className="dc-info-row">
+                                    <span className="pi-label">Status</span>
+                                    <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                      <select
+                                        className="status-select"
+                                        value={o.status || 'Pending'}
+                                        onChange={async (e) => {
+                                          const newStatus = e.target.value;
+                                          setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                        }}
+                                      >
+                                        <option value="Pending">Pending</option>
+                                        <option value="Baking">Baking</option>
+                                        <option value="Ready">Ready</option>
+                                        <option value="Delivered">Delivered</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <div className="dc-info-row">
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                      {!o.is_paid && o.payment_mode === 'gcash' && (
+                                        <span className="dc-balance">Bal: ₱{o.total_price - o.downpayment_price}</span>
+                                      )}
+                                    </div>
+                                    <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                      <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={!!o.is_paid}
+                                          onChange={async () => {
+                                            const newPaid = !o.is_paid;
+                                            setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                            await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                          }}
+                                        />
+                                        <span className="slider round"></span>
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  <div className="dc-screenshots">
+                                    {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                    {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
-                        )}
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
 
                 </div>
