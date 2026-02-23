@@ -134,7 +134,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
-  const [quantityBox4, setQuantityBox4] = useState(1);
+  const [quantityBox4, setQuantityBox4] = useState(0);
   const [quantityBox6, setQuantityBox6] = useState(0);
   const [quantityBox12, setQuantityBox12] = useState(0);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
@@ -705,20 +705,20 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <div className="gcash-detail-row">
                   <div className="gcash-info">
                     <span className="gcash-label">GCash Name</span>
-                    <span className="gcash-value">Leigh</span>
+                    <span className="gcash-value">Elaisha Faith M.</span>
                   </div>
                 </div>
 
                 <div className="gcash-detail-row">
                   <div className="gcash-info">
                     <span className="gcash-label">GCash Number</span>
-                    <span className="gcash-value">09922 538 266</span>
+                    <span className="gcash-value">0906 065 9030</span>
                   </div>
                   <button
                     type="button"
                     className="copy-btn"
                     onClick={() => {
-                      navigator.clipboard.writeText('09922538266');
+                      navigator.clipboard.writeText('09060659030');
                       alert('GCash number copied! 📋');
                     }}
                   >
@@ -730,7 +730,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   <a
                     href="gcash://"
                     className="launch-gcash-btn"
-                    onClick={(e) => {
+                    onClick={() => {
                       // Fallback if deep link fails
                       setTimeout(() => {
                         window.location.href = "https://www.gcash.com/";
