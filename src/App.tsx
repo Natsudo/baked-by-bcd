@@ -589,8 +589,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               <span className="payment-label">Cash</span>
               <input type="radio" id="pay-cash" name="payment" checked={paymentMode === 'cash'} onChange={() => setPaymentMode('cash')} className="radio-inp" />
             </div>
-            <div className="cash-note" style={{ marginTop: '5px', padding: '8px 12px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>
-              * A 50% downpayment is REQUIRED for all orders to confirm your slot.
+            <div className="cash-note" style={{ marginTop: '8px', padding: '12px', fontSize: '0.85rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 800, textAlign: 'center' }}>
+              🚨 A 50% downpayment in <span style={{ textDecoration: 'underline' }}>GCASH</span> is REQUIRED for all orders to confirm your slot.
             </div>
 
             {/* Acknowledgement checkbox — bundled inside payment secton */}
