@@ -479,38 +479,43 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
         <form className="order-form" onSubmit={handleSubmit} noValidate>
 
-          {/* Full Name */}
-          <div className="form-row">
-            <label className="form-label" htmlFor="fullName">Full Name:</label>
-            <div className="form-field">
-              <input id="fullName" className={`form-input pill${errors.fullName ? ' err' : ''}`} type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="" />
-              {errors.fullName && <span className="err-msg">{errors.fullName}</span>}
-            </div>
-          </div>
+          {/* Customer Details */}
+          <div className="form-section">
+            <div className="form-section-title">Customer Details:</div>
 
-          {/* Contact Number */}
-          <div className="form-row">
-            <label className="form-label" htmlFor="contactNumber">Contact Number:</label>
-            <div className="form-field">
-              <input
-                id="contactNumber"
-                className={`form-input pill${errors.contactNumber ? ' err' : ''}`}
-                type="tel"
-                value={contactNumber}
-                onChange={handlePhoneChange}
-                placeholder="09XX XXX XXXX"
-                maxLength={13}
-              />
-              {errors.contactNumber && <span className="err-msg">{errors.contactNumber}</span>}
+            {/* Full Name */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="fullName">Full Name:</label>
+              <div className="form-field">
+                <input id="fullName" className={`form-input pill${errors.fullName ? ' err' : ''}`} type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="" />
+                {errors.fullName && <span className="err-msg">{errors.fullName}</span>}
+              </div>
             </div>
-          </div>
 
-          {/* Instagram */}
-          <div className="form-row">
-            <label className="form-label" htmlFor="instagram">Instagram:</label>
-            <div className="form-field">
-              <input id="instagram" className={`form-input pill${errors.instagram ? ' err' : ''}`} type="text" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="" />
-              {errors.instagram && <span className="err-msg">{errors.instagram}</span>}
+            {/* Contact Number */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="contactNumber">Contact Number:</label>
+              <div className="form-field">
+                <input
+                  id="contactNumber"
+                  className={`form-input pill${errors.contactNumber ? ' err' : ''}`}
+                  type="tel"
+                  value={contactNumber}
+                  onChange={handlePhoneChange}
+                  placeholder="09XX XXX XXXX"
+                  maxLength={13}
+                />
+                {errors.contactNumber && <span className="err-msg">{errors.contactNumber}</span>}
+              </div>
+            </div>
+
+            {/* Instagram */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="instagram">Instagram:</label>
+              <div className="form-field">
+                <input id="instagram" className={`form-input pill${errors.instagram ? ' err' : ''}`} type="text" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="" />
+                {errors.instagram && <span className="err-msg">{errors.instagram}</span>}
+              </div>
             </div>
           </div>
 
