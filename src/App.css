@@ -1538,7 +1538,8 @@ input:checked+.slider:before {
 
 /* ── Production Summary ── */
 .production-summary-card {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  background: radial-gradient(circle at top right, #2d55ee, #0a1e71, #150578);
+  background-color: #150578;
   color: white;
   border-radius: 16px;
   padding: 24px;
@@ -2200,4 +2201,15 @@ input:checked+.slider:before {
 .bypass-btn:hover {
   background: #bfdbfe;
   transform: scale(1.05);
+}
+
+.btn-purple {
+  background: #a855f7 !important;
+  border-color: #9333ea !important;
+  color: white !important;
+}
+
+.btn-purple:hover {
+  background: #9333ea !important;
+  box-shadow: 0 4px 12px rgba(147, 85, 247, 0.3);
 }

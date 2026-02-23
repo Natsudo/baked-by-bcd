@@ -1058,7 +1058,6 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             <h1 className="admin-title">Admin Panel</h1>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={() => setShowDeliveryList(true)}>Delivery List</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={onBack}>Back to Site</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleExportExcel}>Export Excel</button>
             <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleLogout}>Logout</button>
@@ -1404,7 +1403,10 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
         <div className="admin-table-container">
           <div className="admin-table-header">
             <h2>Recent Orders</h2>
-            <button className="place-order-btn place-order-btn-sm" style={{ fontSize: '0.8rem', padding: '6px 15px' }} onClick={fetchOrders}>Refresh</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="place-order-btn place-order-btn-sm btn-purple" style={{ fontSize: '0.8rem', padding: '6px 15px' }} onClick={() => setShowDeliveryList(true)}>Delivery List</button>
+              <button className="place-order-btn place-order-btn-sm" style={{ fontSize: '0.8rem', padding: '6px 15px' }} onClick={fetchOrders}>Refresh</button>
+            </div>
           </div>
           <div className="admin-table-scroll">
             <table className="admin-table">
@@ -1417,10 +1419,14 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                     Customer {sortKey === 'full_name' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
                   </th>
                   <th className="sortable-th">Order Details</th>
-                  <th className="sortable-th">Delivery</th>
+                  <th className="sortable-th" onClick={() => { setSortKey('delivery_mode'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
+                    Delivery {sortKey === 'delivery_mode' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+                  </th>
                   <th className="sortable-th">Payment</th>
                   <th>GCash Info</th>
-                  <th>Status</th>
+                  <th className="sortable-th" onClick={() => { setSortKey('status'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
+                    Status {sortKey === 'status' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+                  </th>
                   <th>Screenshots</th>
                   <th className="sortable-th" onClick={() => { setSortKey('total_price'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
                     Total {sortKey === 'total_price' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
