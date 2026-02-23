@@ -441,7 +441,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               <p className="success-msg">Thank you for ordering with us!</p>
               <div className="form-submit-row" style={{ width: '100%' }}>
                 <button className="place-order-btn place-order-btn-sm btn-secondary" onClick={() => setSubmitted(false)}>Back</button>
-                <button className="place-order-btn place-order-btn-sm" onClick={onBack}>Finish</button>
+                <button className="place-order-btn place-order-btn-sm" onClick={onBack}>Confirm Order</button>
               </div>
             </div>
           </div>
