@@ -1064,59 +1064,70 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             <img src="/baked-by-logo.png" alt="BB" className="admin-nav-logo" />
             <h1 className="admin-title">Admin Panel</h1>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={onBack}>Back to Site</button>
-            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleExportExcel}>Export Excel</button>
-            <button className="place-order-btn place-order-btn-sm btn-secondary" style={{ fontSize: '0.82rem', padding: '6px 15px' }} onClick={handleLogout}>Logout</button>
+          <div className="admin-nav-actions">
+            <button className="admin-nav-btn admin-nav-btn-secondary" onClick={onBack}>
+              <span>←</span> Back to Site
+            </button>
+            <button className="admin-nav-btn admin-nav-btn-primary" onClick={handleExportExcel}>
+              <span>📊</span> Export Excel
+            </button>
+            <button className="admin-nav-btn admin-nav-btn-danger" onClick={handleLogout}>
+              Logout <span>🚪</span>
+            </button>
           </div>
         </div>
       </nav>
 
       <div className="admin-content">
-        {/* 1. Production Summary Card */}
-        <div className="production-summary-card fade-in">
-          {(() => {
-            let b4 = 0, b6 = 0, b12 = 0;
-            orders.forEach(o => {
-              const typeVal = o.quantity_type || '';
-              if (typeVal.includes('Box4:')) {
-                const parts = typeVal.split(', ');
-                b4 += parseInt(parts[0].split(': ')[1]) || 0;
-                b6 += parseInt(parts[1].split(': ')[1]) || 0;
-                b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
-              }
-            });
-            const totalCookies = (b4 * 4) + (b6 * 6) + (b12 * 12);
-            return (
-              <>
-                <div className="prod-item">
-                  <span className="prod-label">Prep Box of 4</span>
-                  <span className="prod-val">{b4}</span>
-                </div>
-                <div className="prod-item">
-                  <span className="prod-label">Prep Box of 6</span>
-                  <span className="prod-val">{b6}</span>
-                </div>
-                <div className="prod-item">
-                  <span className="prod-label">Prep Box of 12</span>
-                  <span className="prod-val">{b12}</span>
-                </div>
-                <div className="prod-item prod-total-box">
-                  <span className="prod-label">Total Baking Goal</span>
-                  <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookies} 🍪</span>
-                </div>
-              </>
-            );
-          })()}
-        </div>
+        <div className="admin-highlight-section">
+          <div className="production-summary-card fade-in">
+            <div className="prod-card-header">
+              <span className="prod-card-icon">🏗️</span>
+              <h3>Baking Production Goals</h3>
+            </div>
+            <div className="prod-grid">
+              {(() => {
+                let b4 = 0, b6 = 0, b12 = 0;
+                orders.forEach(o => {
+                  const typeVal = o.quantity_type || '';
+                  if (typeVal.includes('Box4:')) {
+                    const parts = typeVal.split(', ');
+                    b4 += parseInt(parts[0].split(': ')[1]) || 0;
+                    b6 += parseInt(parts[1].split(': ')[1]) || 0;
+                    b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+                  }
+                });
+                const totalCookies = (b4 * 4) + (b6 * 6) + (b12 * 12);
+                return (
+                  <>
+                    <div className="prod-item">
+                      <span className="prod-label">Box of 4</span>
+                      <span className="prod-val">{b4}</span>
+                    </div>
+                    <div className="prod-item">
+                      <span className="prod-label">Box of 6</span>
+                      <span className="prod-val">{b6}</span>
+                    </div>
+                    <div className="prod-item">
+                      <span className="prod-label">Box of 12</span>
+                      <span className="prod-val">{b12}</span>
+                    </div>
+                    <div className="prod-item prod-total-box">
+                      <span className="prod-label">Total Cookies</span>
+                      <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookies}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
 
-        <div className="admin-highlight-row">
           <div className="admin-stat-card admin-stat-card-sparkle">
             <h3>Total Gross Revenue</h3>
             <div className="admin-stat-val sparkle-text">
               ₱{orders.reduce((acc, o) => acc + o.total_price, 0).toLocaleString()}
             </div>
-            <p className="admin-stat-sub">Overall value of all pre-orders</p>
+            <p className="admin-stat-sub">Overall value of all orders</p>
           </div>
         </div>
 
@@ -1478,9 +1489,13 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
         <div className="admin-table-container">
           <div className="admin-table-header">
             <h2>Recent Orders</h2>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="place-order-btn place-order-btn-sm btn-purple" style={{ fontSize: '0.8rem', padding: '6px 15px' }} onClick={() => setShowDeliveryList(true)}>Delivery List</button>
-              <button className="place-order-btn place-order-btn-sm" style={{ fontSize: '0.8rem', padding: '6px 15px' }} onClick={fetchOrders}>Refresh</button>
+            <div className="admin-table-actions">
+              <button className="admin-nav-btn admin-nav-btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => setShowDeliveryList(true)}>
+                <span>🚚</span> Delivery List
+              </button>
+              <button className="admin-nav-btn admin-nav-btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={fetchOrders}>
+                <span>🔄</span> Refresh
+              </button>
             </div>
           </div>
           <div className="admin-table-scroll">
