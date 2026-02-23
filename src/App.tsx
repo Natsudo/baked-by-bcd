@@ -697,7 +697,60 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
               </div>
 
-              <div className="gcash-qr-container">
+              <div className="gcash-payment-card">
+                <div className="gcash-card-header">
+                  <span className="gcash-card-title">Send Payment to:</span>
+                </div>
+
+                <div className="gcash-detail-row">
+                  <div className="gcash-info">
+                    <span className="gcash-label">GCash Name</span>
+                    <span className="gcash-value">Leigh</span>
+                  </div>
+                </div>
+
+                <div className="gcash-detail-row">
+                  <div className="gcash-info">
+                    <span className="gcash-label">GCash Number</span>
+                    <span className="gcash-value">09922 538 266</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="copy-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText('09922538266');
+                      alert('GCash number copied! 📋');
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+
+                <div className="gcash-launch-container">
+                  <a
+                    href="gcash://"
+                    className="launch-gcash-btn"
+                    onClick={(e) => {
+                      // Fallback if deep link fails
+                      setTimeout(() => {
+                        window.location.href = "https://www.gcash.com/";
+                      }, 500);
+                    }}
+                  >
+                    <span>Launch GCash App</span>
+                    <span>🚀</span>
+                  </a>
+
+                  <div className="gcash-steps">
+                    1. <strong>Copy</strong> the GCash number.<br />
+                    2. Tap <strong>Launch GCash</strong> to open your app.<br />
+                    3. <strong>Paste</strong> and send the exact downpayment: <strong>₱{downpaymentPrice.toLocaleString()}</strong>.
+                  </div>
+                </div>
+              </div>
+
+              <div className="gcash-qr-container" style={{ marginTop: '15px' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
                 <img src="/gcash-qr.jpg" alt="GCash QR Code" className="gcash-qr-image" />
               </div>
             </div>
