@@ -9,7 +9,7 @@ type PaymentMode = 'gcash' | 'cash' | '';
 type DeliveryMode = 'meetup' | 'maxim' | '';
 type MeetupLocation = 'alijis' | 'lasalle' | '';
 type MeetupTime = '10am - 12pm' | '3pm - 4pm' | '';
-type QuantityType = 'per-piece' | 'box-of-4' | 'box-of-6';
+
 
 
 
@@ -32,41 +32,12 @@ const FAQS = [
 ];
 
 /* ─── STOCK COUNTER COMPONENT ─── */
-function StockCounter() {
-  const [stock, setStock] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchStock = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('stock_count')
-        .eq('item_name', 'Chewy Cookie')
-        .single();
-
-      if (error) {
-        console.error('Error fetching stock:', error);
-        setStock(24); // Fallback mock value if table doesn't exist yet
-      } else if (data) {
-        setStock(data.stock_count);
-      }
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setStock(24);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStock();
-  }, []);
-
+function StockCounter({ stock, loading }: { stock: number | null, loading: boolean }) {
   return (
     <div className="stock-counter-banner sparkle-banner">
-      <span className="stock-dot"></span>
+      <span className="stock-dot" style={{ background: stock === 0 ? '#ef4444' : '#10b981' }}></span>
       <span className="stock-text sparkle-text-sm">
-        {loading ? 'Checking stock...' : stock !== null ? `${stock} Chewy Cookies left in stock!` : 'Chewy Cookies available!'}
+        {loading ? 'Checking stock...' : stock !== null ? (stock === 0 ? 'SOLD OUT! Stay tuned for the next batch.' : `${stock} Chewy Cookies left in stock!`) : 'Chewy Cookies available!'}
       </span>
     </div>
   );
@@ -75,7 +46,7 @@ function StockCounter() {
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, onAdminClick: () => void }) {
+function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -99,7 +70,7 @@ function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, on
 
   return (
     <div className="home-page">
-      <StockCounter />
+      <StockCounter stock={stock} loading={stockLoading} />
 
       {/* Full-width clouds banner — no wrapper, scales naturally */}
       <img src="/clouds.png" alt="" className="clouds-banner" />
@@ -121,8 +92,12 @@ function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, on
             />
           </div>
 
-          <button className="place-order-btn" onClick={onOrderClick}>
-            Place Order!
+          <button
+            className={`place-order-btn${stock === 0 ? ' sold-out' : ''}`}
+            onClick={stock === 0 ? undefined : onOrderClick}
+            disabled={stock === 0}
+          >
+            {stock === 0 ? 'SOLD OUT!' : 'Place Order!'}
           </button>
 
           <p className="location-note">
@@ -155,12 +130,13 @@ function HomePage({ onOrderClick, onAdminClick }: { onOrderClick: () => void, on
 /* ═══════════════════════════════════════
    ORDER PAGE
 ═══════════════════════════════════════ */
-function OrderPage({ onBack }: { onBack: () => void }) {
+function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock: number | null }) {
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
-  const [quantityType, setQuantityType] = useState<QuantityType>('per-piece');
-  const [quantity, setQuantity] = useState(1);
+  const [quantityBox4, setQuantityBox4] = useState(1);
+  const [quantityBox6, setQuantityBox6] = useState(0);
+  const [quantityBox12, setQuantityBox12] = useState(0);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('');
   const [meetupLocation, setMeetupLocation] = useState<MeetupLocation>('');
@@ -180,8 +156,6 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
   const isWeekend = new Date().getDay() === 6 || new Date().getDay() === 0;
 
-  const handleQuantityChange = (delta: number) =>
-    setQuantity(prev => Math.max(1, prev + delta));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) setGcashScreenshot(e.target.files[0]);
@@ -191,16 +165,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     if (e.target.files?.[0]) setMaximScreenshot(e.target.files[0]);
   };
 
-  const getPricePerItem = () => {
-    switch (quantityType) {
-      case 'per-piece': return 70;
-      case 'box-of-4': return 285;
-      case 'box-of-6': return 425;
-      default: return 70;
-    }
-  };
-
-  const totalPrice = getPricePerItem() * quantity;
+  const totalPrice = (quantityBox4 * 285) + (quantityBox6 * 425) + (quantityBox12 * 845);
   const downpaymentPrice = totalPrice * 0.5;
 
   const validate = () => {
@@ -208,6 +173,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     if (!fullName.trim()) errs.fullName = 'Full Name is required.';
     if (!contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
     if (!instagram.trim()) errs.instagram = 'Instagram Handle is required.';
+    if (quantityBox4 === 0 && quantityBox6 === 0 && quantityBox12 === 0) errs.quantity = 'Please select at least one box.';
     if (!paymentMode) errs.paymentMode = 'Please select a payment method.';
     if (!deliveryMode) errs.deliveryMode = 'Please select a delivery method.';
     if (deliveryMode === 'meetup' && !meetupTime) errs.meetupTime = 'Please select a pick-up time.';
@@ -217,7 +183,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       if (!maximAddress.trim()) errs.maximAddress = 'Delivery address is required.';
       if (!maximScreenshot) errs.maximScreenshot = 'Please upload a pin point screenshot.';
     }
-    if (paymentMode === 'gcash') {
+    if (paymentMode) {
       if (!gcashName.trim()) errs.gcashName = 'GCash Name is required.';
       if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
       if (!gcashScreenshot) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
@@ -254,14 +220,29 @@ function OrderPage({ onBack }: { onBack: () => void }) {
         if (!error && data) uploadedGcashScreenshotPath = data.path;
       }
 
+      const totalPiecesOrdered = (quantityBox4 * 4) + (quantityBox6 * 6) + (quantityBox12 * 12);
+
+      // Verify stock before inserting order
+      const { data: stockCheckData } = await supabase
+        .from('inventory')
+        .select('stock_count')
+        .eq('item_name', 'Chewy Cookie')
+        .single();
+
+      if (stockCheckData && stockCheckData.stock_count < totalPiecesOrdered) {
+        alert('So sorry! Someone just grabbed the last pieces. We are now SOLD OUT! 😭');
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error: dbError } = await supabase
         .from('orders')
         .insert([{
           full_name: fullName,
           contact_number: contactNumber,
           instagram: instagram,
-          quantity_type: quantityType,
-          quantity: quantity,
+          quantity_type: `Box4: ${quantityBox4}, Box6: ${quantityBox6}, Box12: ${quantityBox12}`,
+          quantity: 1, // Placeholder
           total_price: totalPrice,
           downpayment_price: downpaymentPrice,
           payment_mode: paymentMode,
@@ -284,17 +265,8 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       }
 
       // ─── REDUCE STOCK ───
-      const piecesPerType = quantityType === 'per-piece' ? 1 : quantityType === 'box-of-4' ? 4 : 6;
-      const totalPiecesOrdered = piecesPerType * quantity;
-
-      const { data: currentStockData } = await supabase
-        .from('inventory')
-        .select('stock_count')
-        .eq('item_name', 'Chewy Cookie')
-        .single();
-
-      if (currentStockData) {
-        const newStockCount = Math.max(0, currentStockData.stock_count - totalPiecesOrdered);
+      if (stockCheckData) {
+        const newStockCount = Math.max(0, stockCheckData.stock_count - totalPiecesOrdered);
         await supabase
           .from('inventory')
           .update({ stock_count: newStockCount })
@@ -353,7 +325,13 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                 <span className="inv-label">Item:</span>
                 <span className="inv-val item-val">
                   Dubai Chewy Chocolate<br />
-                  <small>({quantityType === 'per-piece' ? 'Per piece' : quantityType === 'box-of-4' ? 'Box of 4' : 'Box of 6'} x {quantity})</small>
+                  <small>
+                    {quantityBox4 > 0 && `Box of 4 x ${quantityBox4}`}
+                    {quantityBox4 > 0 && (quantityBox6 > 0 || quantityBox12 > 0) && <br />}
+                    {quantityBox6 > 0 && `Box of 6 x ${quantityBox6}`}
+                    {quantityBox6 > 0 && quantityBox12 > 0 && <br />}
+                    {quantityBox12 > 0 && `Box of 12 x ${quantityBox12}`}
+                  </small>
                 </span>
               </div>
 
@@ -473,7 +451,10 @@ function OrderPage({ onBack }: { onBack: () => void }) {
             <div className="op-product-sub">Delivery Date: February 28, 2026</div>
             <div className="op-product-sub">Batch 4</div>
             <div className="op-product-price-list">
-              ₱70 per piece • ₱285 for Box of 4 • ₱425 for Box of 6
+              ₱285 for Box of 4 • ₱425 for Box of 6 • ₱845 for Box of 12
+            </div>
+            <div className="op-product-limit-note">
+              Limit: 2 boxes per customer (B4) • 2 boxes (B6) • 1 box (B12)
             </div>
           </div>
         </div>
@@ -507,27 +488,45 @@ function OrderPage({ onBack }: { onBack: () => void }) {
             </div>
           </div>
 
-          {/* Quantity type */}
-          <div className="form-row form-row-center">
-            <label className="form-label">Quantity:</label>
-            <div className="qty-type-btns">
-              {(['per-piece', 'box-of-4', 'box-of-6'] as QuantityType[]).map(t => (
-                <button key={t} type="button"
-                  className={`qty-type-btn${quantityType === t ? ' active' : ''}`}
-                  onClick={() => setQuantityType(t)}>
-                  {t === 'per-piece' ? 'Per piece' : t === 'box-of-4' ? 'Box of 4' : 'Box of 6'}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Quantity Selection */}
+          <div className="form-section">
+            <div className="form-section-title">Order Quantity:</div>
+            {errors.quantity && <span className="err-msg">{errors.quantity}</span>}
 
-          {/* Quantity stepper */}
-          <div className="form-row form-row-center">
-            <label className="form-label">Quantity:</label>
-            <div className="qty-stepper">
-              <button type="button" className="qty-btn" onClick={() => handleQuantityChange(-1)}>−</button>
-              <span className="qty-val">{quantity}</span>
-              <button type="button" className="qty-btn" onClick={() => handleQuantityChange(1)}>+</button>
+            <div className="qty-row-item">
+              <div className="qty-info">
+                <span className="qty-label">Box of 4</span>
+                <span className="qty-sub">Max 2 boxes</span>
+              </div>
+              <div className="qty-stepper">
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.max(0, quantityBox4 - 1))}>−</button>
+                <span className="qty-val">{quantityBox4}</span>
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.min(2, quantityBox4 + 1))}>+</button>
+              </div>
+            </div>
+
+            <div className="qty-row-item" style={{ marginTop: '10px' }}>
+              <div className="qty-info">
+                <span className="qty-label">Box of 6</span>
+                <span className="qty-sub">Max 2 boxes</span>
+              </div>
+              <div className="qty-stepper">
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.max(0, quantityBox6 - 1))}>−</button>
+                <span className="qty-val">{quantityBox6}</span>
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.min(2, quantityBox6 + 1))}>+</button>
+              </div>
+            </div>
+
+            <div className="qty-row-item" style={{ marginTop: '10px' }}>
+              <div className="qty-info">
+                <span className="qty-label">Box of 12</span>
+                <span className="qty-sub">Max 1 box</span>
+              </div>
+              <div className="qty-stepper">
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.max(0, quantityBox12 - 1))}>−</button>
+                <span className="qty-val">{quantityBox12}</span>
+                <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.min(1, quantityBox12 + 1))}>+</button>
+              </div>
             </div>
           </div>
 
@@ -553,16 +552,16 @@ function OrderPage({ onBack }: { onBack: () => void }) {
             {errors.paymentMode && <span className="err-msg">{errors.paymentMode}</span>}
             <div className="payment-option">
               <span className="payment-label">
-                GCash (50% downpayment required)<br />
-                <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>
-                  * Payment of the 50% should be rounded off (no decimals).
-                </span>
+                GCash (Full Weight / Total)
               </span>
               <input type="radio" id="pay-gcash" name="payment" checked={paymentMode === 'gcash'} onChange={() => setPaymentMode('gcash')} className="radio-inp" />
             </div>
             <div className="payment-option">
-              <span className="payment-label">Cash</span>
+              <span className="payment-label">Cash (Balance upon delivery/meetup)</span>
               <input type="radio" id="pay-cash" name="payment" checked={paymentMode === 'cash'} onChange={() => setPaymentMode('cash')} className="radio-inp" />
+            </div>
+            <div className="cash-note" style={{ marginTop: '5px', padding: '8px 12px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>
+              * A 50% downpayment is REQUIRED for all orders to confirm your slot.
             </div>
           </div>
 
@@ -663,13 +662,13 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           <div className="checkbox-row">
             <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
             <label htmlFor="understood" className="checkbox-label">
-              I understand that my order is only confirmed once the 50% downpayment is sent (for GCash orders only). <strong>The Downpayment is NON-REFUNDABLE.</strong>
+              I understand that my order is only confirmed once the 50% downpayment is sent. <strong>The Downpayment is NON-REFUNDABLE.</strong>
             </label>
           </div>
           {errors.understood && <span className="err-msg">{errors.understood}</span>}
 
-          {/* GCash extra fields */}
-          {paymentMode === 'gcash' && (
+          {/* GCash extra fields — Always required if payment mode is selected */}
+          {paymentMode !== '' && (
             <div className="gcash-section">
               <div className="form-row">
                 <label className="form-label" htmlFor="gcashName">GCash Name:</label>
@@ -713,8 +712,8 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           {/* Submit */}
           <div className="form-submit-row">
             <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack} disabled={isSubmitting}>Back</button>
-            <button type="submit" className="place-order-btn place-order-btn-sm" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Place Order!'}
+            <button type="submit" className="place-order-btn place-order-btn-sm" disabled={isSubmitting || currentStock === 0}>
+              {isSubmitting ? 'Submitting...' : currentStock === 0 ? 'Sold Out' : 'Place Order!'}
             </button>
           </div>
 
@@ -782,6 +781,8 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [updatingStock, setUpdatingStock] = useState(false);
   const [showToCollect, setShowToCollect] = useState(false);
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -815,6 +816,69 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
       .eq('item_name', 'Chewy Cookie');
     if (!error) setStock(newStock);
     setUpdatingStock(false);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    setIsDeleting(true);
+
+    try {
+      // 1. Calculate cookies to return
+      let cookiesToReturn = 0;
+      const typeVal = orderToDelete.quantity_type || '';
+      if (typeVal.includes('Box4:')) {
+        const parts = typeVal.split(', ');
+        const b4 = parseInt(parts[0].split(': ')[1]) || 0;
+        const b6 = parseInt(parts[1].split(': ')[1]) || 0;
+        const b12 = parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+        cookiesToReturn = (b4 * 4) + (b6 * 6) + (b12 * 12);
+      } else {
+        const multiplier = orderToDelete.quantity_type === 'box-of-4' ? 4 : 6;
+        cookiesToReturn = multiplier * (orderToDelete.quantity || 1);
+      }
+
+      // 2. Return to inventory
+      const { data: stockData } = await supabase
+        .from('inventory')
+        .select('stock_count')
+        .eq('item_name', 'Chewy Cookie')
+        .single();
+
+      if (stockData) {
+        await supabase
+          .from('inventory')
+          .update({ stock_count: stockData.stock_count + cookiesToReturn })
+          .eq('item_name', 'Chewy Cookie');
+      }
+
+      // 3. Delete order
+      const { error: deleteError, count } = await supabase
+        .from('orders')
+        .delete({ count: 'exact' })
+        .eq('id', orderToDelete.id);
+
+      if (deleteError) throw deleteError;
+
+      // If count is 0, it means RLS probably blocked it
+      if (count === 0) {
+        throw new Error('Deletion failed. You might not have permission to delete orders in Supabase RLS.');
+      }
+
+      // 4. Update local state immediately for snappy UI
+      setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
+
+      // 5. Refresh from server to stay in sync
+      fetchOrders();
+      fetchStock();
+
+      setOrderToDelete(null);
+      alert(`Order deleted and ${cookiesToReturn} cookies returned to stock.`);
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert('Error deleting order: ' + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleExportExcel = () => {
@@ -988,6 +1052,42 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           </div>
         )}
 
+        {orderToDelete && (
+          <div className="admin-modal-overlay" onClick={() => !isDeleting && setOrderToDelete(null)}>
+            <div className="admin-modal" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2 style={{ color: '#ef4444' }}>Confirm Deletion</h2>
+                <button className="close-btn" onClick={() => !isDeleting && setOrderToDelete(null)}>&times;</button>
+              </div>
+              <div className="admin-modal-content">
+                <p style={{ lineHeight: '1.6', fontSize: '1rem', color: '#333' }}>
+                  Are you sure you want to delete <strong>{orderToDelete.full_name}'s</strong> order?
+                  <br /><br />
+                  <span style={{ color: '#6366f1', fontWeight: '700' }}>This will return the cookies back to the live stock counter.</span>
+                </p>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                <button
+                  className="place-order-btn place-order-btn-sm btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setOrderToDelete(null)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="place-order-btn place-order-btn-sm"
+                  style={{ flex: 1, backgroundColor: '#ef4444', borderColor: '#dc2626' }}
+                  onClick={confirmDeleteOrder}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="admin-table-container">
           <div className="admin-table-header">
             <h2>Recent Orders</h2>
@@ -1004,13 +1104,14 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                   <th>Payment</th>
                   <th>Screenshots</th>
                   <th>Total</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>No orders found</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>No orders found</td></tr>
                 ) : (
                   orders.map(order => (
                     <tr key={order.id}>
@@ -1021,8 +1122,26 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                       </td>
                       <td>
                         {(() => {
-                          const multiplier = order.quantity_type === 'per-piece' ? 1 : order.quantity_type === 'box-of-4' ? 4 : 6;
-                          const typeLabel = order.quantity_type === 'per-piece' ? 'Piece' : order.quantity_type === 'box-of-4' ? 'Box of 4' : 'Box of 6';
+                          const typeVal = order.quantity_type || '';
+                          if (typeVal.includes('Box4:')) {
+                            const parts = typeVal.split(', ');
+                            const b4 = parseInt(parts[0].split(': ')[1]);
+                            const b6 = parseInt(parts[1].split(': ')[1]);
+                            const b12 = parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+                            const totalCookies = (b4 * 4) + (b6 * 6) + (b12 * 12);
+                            return (
+                              <>
+                                {b4 > 0 && <div><strong>Box of 4 x {b4}</strong></div>}
+                                {b6 > 0 && <div><strong>Box of 6 x {b6}</strong></div>}
+                                {b12 > 0 && <div><strong>Box of 12 x {b12}</strong></div>}
+                                <span style={{ fontSize: '0.85rem', color: '#6366f1', fontWeight: 700 }}>
+                                  ↳ {totalCookies} Total Cookies
+                                </span>
+                              </>
+                            );
+                          }
+                          const multiplier = order.quantity_type === 'box-of-4' ? 4 : 6;
+                          const typeLabel = order.quantity_type === 'box-of-4' ? 'Box of 4' : 'Box of 6';
                           return (
                             <>
                               <strong>{typeLabel} x {order.quantity}</strong><br />
@@ -1105,6 +1224,19 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                         </div>
                       </td>
                       <td><strong>₱{order.total_price}</strong></td>
+                      <td>
+                        <button
+                          className="admin-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('Delete icon clicked for order:', order.id);
+                            setOrderToDelete(order);
+                          }}
+                          title="Delete Order"
+                        >
+                          🗑️
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -1120,13 +1252,145 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
 
 
 
+
+/* ═══════════════════════════════════════
+   MAINTENANCE / COUNTDOWN PAGE
+═══════════════════════════════════════ */
+function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
+  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number }>({ d: 0, h: 0, m: 0, s: 0 });
+  const [showBypass, setShowBypass] = useState(false);
+  const [bypassPass, setBypassPass] = useState('');
+  const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const now = new Date().getTime();
+      const distance = TARGET_DATE.getTime() - now;
+
+      if (distance < 0) {
+        return { d: 0, h: 0, m: 0, s: 0 };
+      }
+
+      return {
+        d: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        h: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        m: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        s: Math.floor((distance % (1000 * 60)) / 1000),
+      };
+    };
+
+    // Initial calculation
+    setTimeLeft(calculateTime());
+
+    const timer = setInterval(() => {
+      const remaining = calculateTime();
+      setTimeLeft(remaining);
+
+      const now = new Date().getTime();
+      if (TARGET_DATE.getTime() - now < 0) {
+        clearInterval(timer);
+        window.location.reload();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="maintenance-page">
+      <div className="maintenance-container">
+        <div className="maintenance-logo-wrapper">
+          <img src="/baked-by-logo.png" alt="Baked By Logo" className="maintenance-logo" />
+        </div>
+        <h1 className="maintenance-title">Something Sweet is Coming!</h1>
+        <p className="maintenance-subtitle">
+          Our preorder forms for Dubai Chewy Cookie will open on February 26 at 7:00 PM
+          <span className="highlight-text">THURSDAY</span>
+        </p>
+
+        <div className="countdown-timer">
+          <div className="countdown-box">
+            <span className="countdown-value">{timeLeft.d}</span>
+            <span className="countdown-label">Days</span>
+          </div>
+          <div className="countdown-box">
+            <span className="countdown-value">{timeLeft.h}</span>
+            <span className="countdown-label">Hours</span>
+          </div>
+          <div className="countdown-box">
+            <span className="countdown-value">{timeLeft.m}</span>
+            <span className="countdown-label">Mins</span>
+          </div>
+          <div className="countdown-box">
+            <span className="countdown-value">{timeLeft.s}</span>
+            <span className="countdown-label">Secs</span>
+          </div>
+        </div>
+
+        <div className="admin-bypass-section">
+          {!showBypass ? (
+            <button className="bypass-btn-toggle" onClick={() => setShowBypass(true)}>Admin Unlock</button>
+          ) : (
+            <div className="bypass-input-group">
+              <input
+                type="password"
+                className="bypass-input"
+                placeholder="Enter pastry..."
+                value={bypassPass}
+                onChange={(e) => setBypassPass(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onUnlock(bypassPass)}
+              />
+              <button className="bypass-btn" onClick={() => onUnlock(bypassPass)}>Unlock</button>
+            </div>
+          )}
+        </div>
+
+        <div className="maintenance-footer">
+          Baked with love in Bacolod City
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 /* ═══════════════════════════════════════
    ROOT
 ═══════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<Page>('home');
+  const [isLocked, setIsLocked] = useState(true);
+  const [bypassLocked, setBypassLocked] = useState(false);
+  const [stock, setStock] = useState<number | null>(null);
+  const [stockLoading, setStockLoading] = useState(true);
+  const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
+
+  const fetchStock = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('stock_count')
+        .eq('item_name', 'Chewy Cookie')
+        .single();
+      if (!error && data) setStock(data.stock_count);
+      else if (error) console.error("Stock error:", error);
+    } finally {
+      setStockLoading(false);
+    }
+  };
 
   useEffect(() => {
+    fetchStock();
+    const stockInterval = setInterval(fetchStock, 30000); // Poll every 30s
+    const checkTime = () => {
+      const now = new Date().getTime();
+      setIsLocked(now < TARGET_DATE.getTime());
+    };
+
+    checkTime();
+    const interval = setInterval(checkTime, 10000); // Check every 10s
+
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && page === 'admin-login') {
@@ -1141,15 +1405,36 @@ export default function App() {
       }
     };
     window.addEventListener('keydown', handleKeydown);
-    return () => window.removeEventListener('keydown', handleKeydown);
-  }, []);
+    return () => {
+      window.removeEventListener('keydown', handleKeydown);
+      clearInterval(interval);
+      clearInterval(stockInterval);
+    };
+  }, [page]);
+
+  const handleUnlock = (pass: string) => {
+    if (pass.toLowerCase() === 'budaichewy') {
+      setBypassLocked(true);
+    } else {
+      alert('Wrong pastry! 🧁');
+    }
+  };
+
+  // If locked, only allow admin pages or if bypassed
+  const showLocked = isLocked && !bypassLocked && page !== 'admin-login' && page !== 'admin-dashboard';
+
+  if (showLocked) {
+    return <MaintenancePage onUnlock={handleUnlock} />;
+  }
 
   return (
     <>
-      {page === 'home' && <HomePage onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
-      {page === 'order' && <OrderPage onBack={() => setPage('home')} />}
+      {page === 'home' && <HomePage stock={stock} stockLoading={stockLoading} onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
+      {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
       {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
       {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
     </>
   );
 }
+
+
