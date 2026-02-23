@@ -1566,7 +1566,7 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at top right, #0a1e71, #150578);
+  background: radial-gradient(circle at top right, #2d55ee, #0a1e71, #150578);
   background-color: #150578;
   /* Fix white spot by matching background */
   color: #ffffff;
