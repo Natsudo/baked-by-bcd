@@ -1561,17 +1561,22 @@ input:checked+.slider:before {
 ═══════════════════════════════════════════ */
 .maintenance-page {
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at top right, #1e3a8a, #172554);
+  background: radial-gradient(circle at top right, #1e1b4b, #020617);
+  background-color: #020617;
+  /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
   text-align: center;
-  padding: 20px;
+  padding: 40px 20px;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  /* Allow scrolling on mobile */
+  overflow-x: hidden;
 }
 
 .maintenance-page::before {
@@ -1599,14 +1604,16 @@ input:checked+.slider:before {
 .maintenance-container {
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(147, 197, 253, 0.1);
   border-radius: 40px;
   padding: 50px 30px;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  margin: 20px 0;
 }
 
 .maintenance-logo {
