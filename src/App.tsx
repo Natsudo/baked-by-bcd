@@ -1338,9 +1338,21 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
                 placeholder="Enter pastry..."
                 value={bypassPass}
                 onChange={(e) => setBypassPass(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && onUnlock(bypassPass)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    // Blur to hide keyboard and prevent zoom-lock on mobile
+                    (e.target as HTMLInputElement).blur();
+                    onUnlock(bypassPass);
+                  }
+                }}
               />
-              <button className="bypass-btn" onClick={() => onUnlock(bypassPass)}>Unlock</button>
+              <button className="bypass-btn" onClick={() => {
+                // Blur anything focused to prevent transition issues
+                if (document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur();
+                }
+                onUnlock(bypassPass);
+              }}>Unlock</button>
             </div>
           )}
         </div>
@@ -1398,6 +1410,8 @@ export default function App() {
       }
     });
 
+    window.scrollTo(0, 0); // Reset scroll on page change
+
     // Handle key listener for hidden admin access (Ctrl + Alt + A)
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
@@ -1414,6 +1428,7 @@ export default function App() {
 
   const handleUnlock = (pass: string) => {
     if (pass.toLowerCase() === 'budaichewy') {
+      window.scrollTo(0, 0); // Scroll to top before unlocking
       setBypassLocked(true);
     } else {
       alert('Wrong pastry! 🧁');
