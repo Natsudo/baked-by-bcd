@@ -728,12 +728,6 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   <a
                     href="gcash://"
                     className="launch-gcash-btn"
-                    onClick={() => {
-                      // Fallback if deep link fails
-                      setTimeout(() => {
-                        window.location.href = "https://www.gcash.com/";
-                      }, 500);
-                    }}
                   >
                     <span>Launch GCash App</span>
                     <span>🚀</span>
