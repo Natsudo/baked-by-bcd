@@ -139,6 +139,24 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [quantityBox12, setQuantityBox12] = useState(0);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('');
+
+  // Phone Masking Logic
+  const formatPhoneNumber = (val: string) => {
+    const numbers = val.replace(/\D/g, '');
+    if (numbers.length <= 4) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 4)} ${numbers.slice(4)}`;
+    return `${numbers.slice(0, 4)} ${numbers.slice(4, 7)} ${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setContactNumber(formatted);
+  };
+
+  const handleGcashPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setGcashNumber(formatted);
+  };
   const [meetupLocation, setMeetupLocation] = useState<MeetupLocation>('');
   const [meetupTime, setMeetupTime] = useState<MeetupTime>('');
   const [maximAddress, setMaximAddress] = useState('');
@@ -474,7 +492,15 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           <div className="form-row">
             <label className="form-label" htmlFor="contactNumber">Contact Number:</label>
             <div className="form-field">
-              <input id="contactNumber" className={`form-input pill${errors.contactNumber ? ' err' : ''}`} type="tel" value={contactNumber} onChange={e => setContactNumber(e.target.value)} placeholder="" />
+              <input
+                id="contactNumber"
+                className={`form-input pill${errors.contactNumber ? ' err' : ''}`}
+                type="tel"
+                value={contactNumber}
+                onChange={handlePhoneChange}
+                placeholder="09XX XXX XXXX"
+                maxLength={13}
+              />
               {errors.contactNumber && <span className="err-msg">{errors.contactNumber}</span>}
             </div>
           </div>
@@ -678,7 +704,15 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               <div className="form-row">
                 <label className="form-label" htmlFor="gcashNumber">GCash Number:</label>
                 <div className="form-field">
-                  <input id="gcashNumber" className={`form-input pill${errors.gcashNumber ? ' err' : ''}`} type="tel" value={gcashNumber} onChange={e => setGcashNumber(e.target.value)} placeholder="09XX XXX XXXX" />
+                  <input
+                    id="gcashNumber"
+                    className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
+                    type="tel"
+                    value={gcashNumber}
+                    onChange={handleGcashPhoneChange}
+                    placeholder="09XX XXX XXXX"
+                    maxLength={13}
+                  />
                   {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
                 </div>
               </div>
@@ -829,6 +863,14 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [orderToDelete, setOrderToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeliveryList, setShowDeliveryList] = useState(false);
+
+  // Search & Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPayment, setFilterPayment] = useState('all');
+  const [filterDelivery, setFilterDelivery] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortKey, setSortKey] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     fetchOrders();
@@ -981,6 +1023,32 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
     onLogout();
   };
 
+  const filteredOrders = orders.filter(o => {
+    const searchQueryLower = searchQuery.toLowerCase();
+    const matchesSearch = o.full_name.toLowerCase().includes(searchQueryLower) ||
+      (o.instagram || '').toLowerCase().includes(searchQueryLower);
+
+    const matchesPayment = filterPayment === 'all' ||
+      (filterPayment === 'paid' && o.is_paid) ||
+      (filterPayment === 'unpaid' && !o.is_paid) ||
+      (o.payment_mode === filterPayment);
+
+    const matchesDelivery = filterDelivery === 'all' || o.delivery_mode === filterDelivery;
+    const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
+
+    return matchesSearch && matchesPayment && matchesDelivery && matchesStatus;
+  }).sort((a, b) => {
+    let valA = a[sortKey];
+    let valB = b[sortKey];
+    if (sortKey === 'created_at') {
+      valA = new Date(a.created_at).getTime();
+      valB = new Date(b.created_at).getTime();
+    }
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div className="admin-dashboard-page fade-in">
       <nav className="admin-nav">
@@ -999,6 +1067,43 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
       </nav>
 
       <div className="admin-content">
+        {/* 1. Production Summary Card */}
+        <div className="production-summary-card fade-in">
+          {(() => {
+            let b4 = 0, b6 = 0, b12 = 0;
+            orders.forEach(o => {
+              const typeVal = o.quantity_type || '';
+              if (typeVal.includes('Box4:')) {
+                const parts = typeVal.split(', ');
+                b4 += parseInt(parts[0].split(': ')[1]) || 0;
+                b6 += parseInt(parts[1].split(': ')[1]) || 0;
+                b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+              }
+            });
+            const totalCookies = (b4 * 4) + (b6 * 6) + (b12 * 12);
+            return (
+              <>
+                <div className="prod-item">
+                  <span className="prod-label">Prep Box of 4</span>
+                  <span className="prod-val">{b4}</span>
+                </div>
+                <div className="prod-item">
+                  <span className="prod-label">Prep Box of 6</span>
+                  <span className="prod-val">{b6}</span>
+                </div>
+                <div className="prod-item">
+                  <span className="prod-label">Prep Box of 12</span>
+                  <span className="prod-val">{b12}</span>
+                </div>
+                <div className="prod-item prod-total-box">
+                  <span className="prod-label">Total Baking Goal</span>
+                  <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookies} 🍪</span>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
         <div className="admin-highlight-row">
           <div className="admin-stat-card admin-stat-card-sparkle">
             <h3>Total Gross Revenue</h3>
@@ -1262,6 +1367,40 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           </div>
         )}
 
+        <div className="admin-controls-row">
+          <div className="admin-search-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="admin-search-input"
+              placeholder="Search Customer or Instagram..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="admin-filter-group">
+            <select className="admin-select" value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)}>
+              <option value="all">All Payments</option>
+              <option value="gcash">GCash</option>
+              <option value="cash">Cash</option>
+              <option value="paid">Paid Only</option>
+              <option value="unpaid">Unpaid Only</option>
+            </select>
+            <select className="admin-select" value={filterDelivery} onChange={(e) => setFilterDelivery(e.target.value)}>
+              <option value="all">All Delivery</option>
+              <option value="meetup">Meetup</option>
+              <option value="maxim">Maxim</option>
+            </select>
+            <select className="admin-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="all">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Baking">Baking</option>
+              <option value="Ready">Ready</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+          </div>
+        </div>
+
         <div className="admin-table-container">
           <div className="admin-table-header">
             <h2>Recent Orders</h2>
@@ -1271,29 +1410,47 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Customer</th>
-                  <th>Order Details</th>
-                  <th>Delivery</th>
-                  <th>Payment</th>
+                  <th className="sortable-th" onClick={() => { setSortKey('created_at'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
+                    Date {sortKey === 'created_at' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+                  </th>
+                  <th className="sortable-th" onClick={() => { setSortKey('full_name'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
+                    Customer {sortKey === 'full_name' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+                  </th>
+                  <th className="sortable-th">Order Details</th>
+                  <th className="sortable-th">Delivery</th>
+                  <th className="sortable-th">Payment</th>
                   <th>GCash Info</th>
+                  <th>Status</th>
                   <th>Screenshots</th>
-                  <th>Total</th>
+                  <th className="sortable-th" onClick={() => { setSortKey('total_price'); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}>
+                    Total {sortKey === 'total_price' && <span className="sort-icon active">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
-                ) : orders.length === 0 ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px' }}>No orders found</td></tr>
+                  <tr><td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>Loading orders...</td></tr>
+                ) : filteredOrders.length === 0 ? (
+                  <tr><td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>No orders matching your criteria</td></tr>
                 ) : (
-                  orders.map(order => (
+                  filteredOrders.map(order => (
                     <tr key={order.id}>
                       <td>{new Date(order.created_at).toLocaleDateString()}</td>
                       <td>
                         <strong>{order.full_name}</strong><br />
                         <span style={{ fontSize: '0.8rem', color: '#666' }}>{order.contact_number}</span>
+                        <br />
+                        {order.instagram && (
+                          <a
+                            href={`https://www.instagram.com/${order.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="chat-link"
+                          >
+                            📸 @{order.instagram.replace('@', '')}
+                          </a>
+                        )}
                       </td>
                       <td>
                         {(() => {
@@ -1383,6 +1540,26 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                         <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem' }}>
                           <strong>{order.gcash_name || '-'}</strong>
                           <span style={{ color: '#666' }}>{order.gcash_number || '-'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={`status-badge status-${(order.status || 'Pending').toLowerCase()}`}>
+                          <select
+                            className="status-select"
+                            value={order.status || 'Pending'}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              // Update locally first
+                              setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                              // Update DB
+                              await supabase.from('orders').update({ status: newStatus }).eq('id', order.id);
+                            }}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Baking">Baking</option>
+                            <option value="Ready">Ready</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
                         </div>
                       </td>
                       <td>

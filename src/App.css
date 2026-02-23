@@ -1536,6 +1536,186 @@ input:checked+.slider:before {
   padding: 10px;
 }
 
+/* ── Production Summary ── */
+.production-summary-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prod-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.prod-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prod-val {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fbbf24;
+}
+
+.prod-total-box {
+  background: rgba(251, 191, 36, 0.1);
+  padding: 10px 15px;
+  border-radius: 10px;
+  border-left: 4px solid #fbbf24;
+}
+
+/* ── Filters & Search ── */
+.admin-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-search-wrapper {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+}
+
+.admin-search-input {
+  width: 100%;
+  padding: 10px 15px 10px 40px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.admin-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.admin-filter-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-select {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Sortable Table ── */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+  position: relative;
+  padding-right: 25px !important;
+}
+
+.sortable-th:hover {
+  background: #f1f5f9;
+}
+
+.sort-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.sort-icon.active {
+  color: #6366f1;
+}
+
+/* ── Status Badge ── */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-baking {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-ready {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-delivered {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-select {
+  border: none;
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+}
+
+/* ── Chat Link ── */
+.chat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #e11d48;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.chat-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .admin-stats-row {
     grid-template-columns: 1fr;
