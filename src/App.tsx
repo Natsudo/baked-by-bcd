@@ -592,6 +592,106 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             <div className="cash-note" style={{ marginTop: '5px', padding: '8px 12px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>
               * A 50% downpayment is REQUIRED for all orders to confirm your slot.
             </div>
+
+            {/* Acknowledgement checkbox — bundled inside payment secton */}
+            <div className="checkbox-row" style={{ marginTop: '10px' }}>
+              <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
+              <label htmlFor="understood" className="checkbox-label">
+                I understand that my order is only confirmed once the 50% downpayment is sent. <strong>The Downpayment is NON-REFUNDABLE.</strong>
+              </label>
+            </div>
+            {errors.understood && <span className="err-msg">{errors.understood}</span>}
+
+            {/* GCash extra fields — Always required if payment mode is selected */}
+            {paymentMode !== '' && (
+              <div className="gcash-section" style={{ marginTop: '5px' }}>
+                <div className="form-row">
+                  <label className="form-label" htmlFor="gcashName">GCash Name:</label>
+                  <div className="form-field">
+                    <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" />
+                    {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label className="form-label" htmlFor="gcashNumber">GCash Number:</label>
+                  <div className="form-field">
+                    <input
+                      id="gcashNumber"
+                      className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
+                      type="tel"
+                      value={gcashNumber}
+                      onChange={handleGcashPhoneChange}
+                      placeholder="09XX XXX XXXX"
+                      maxLength={13}
+                    />
+                    {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
+                  </div>
+                </div>
+                <div className="form-row form-row-top">
+                  <label className="form-label form-label-top">Upload Receipt<br />Screenshot:</label>
+                  <div className="form-field">
+                    <div className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()}>
+                      {gcashScreenshot
+                        ? <span className="upload-done">✅ {gcashScreenshot.name}</span>
+                        : <span className="upload-hint">📎 Click to upload screenshot</span>}
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} id="gcashScreenshot" />
+                    {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
+                  </div>
+                </div>
+
+                <div className="gcash-payment-card">
+                  <div className="gcash-card-header">
+                    <span className="gcash-card-title">Send Payment to:</span>
+                  </div>
+
+                  <div className="gcash-detail-row">
+                    <div className="gcash-info">
+                      <span className="gcash-label">GCash Name</span>
+                      <span className="gcash-value">Elaisha Faith M.</span>
+                    </div>
+                  </div>
+
+                  <div className="gcash-detail-row">
+                    <div className="gcash-info">
+                      <span className="gcash-label">GCash Number</span>
+                      <span className="gcash-value">0906 065 9030</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText('09060659030');
+                        alert('GCash number copied! 📋');
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+
+                  <div className="gcash-launch-container">
+                    <a
+                      href="gcash://"
+                      className="launch-gcash-btn"
+                    >
+                      <span>Launch GCash App</span>
+                      <span>🚀</span>
+                    </a>
+
+                    <div className="gcash-steps">
+                      1. <strong>Copy</strong> the GCash number.<br />
+                      2. Tap <strong>Launch GCash</strong> to open your app.<br />
+                      3. <strong>Paste</strong> and send the exact downpayment: <strong>₱{downpaymentPrice.toLocaleString()}</strong>.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="gcash-qr-container" style={{ marginTop: '15px' }}>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
+                  <img src="/gcash-qr.jpg" alt="GCash QR Code" className="gcash-qr-image" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mode of Delivery */}
@@ -687,105 +787,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             )}
           </div>
 
-          {/* Acknowledgement checkbox — always visible */}
-          <div className="checkbox-row">
-            <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
-            <label htmlFor="understood" className="checkbox-label">
-              I understand that my order is only confirmed once the 50% downpayment is sent. <strong>The Downpayment is NON-REFUNDABLE.</strong>
-            </label>
-          </div>
-          {errors.understood && <span className="err-msg">{errors.understood}</span>}
 
-          {/* GCash extra fields — Always required if payment mode is selected */}
-          {paymentMode !== '' && (
-            <div className="gcash-section">
-              <div className="form-row">
-                <label className="form-label" htmlFor="gcashName">GCash Name:</label>
-                <div className="form-field">
-                  <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" />
-                  {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
-                </div>
-              </div>
-              <div className="form-row">
-                <label className="form-label" htmlFor="gcashNumber">GCash Number:</label>
-                <div className="form-field">
-                  <input
-                    id="gcashNumber"
-                    className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
-                    type="tel"
-                    value={gcashNumber}
-                    onChange={handleGcashPhoneChange}
-                    placeholder="09XX XXX XXXX"
-                    maxLength={13}
-                  />
-                  {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
-                </div>
-              </div>
-              <div className="form-row form-row-top">
-                <label className="form-label form-label-top">Upload Receipt<br />Screenshot:</label>
-                <div className="form-field">
-                  <div className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()}>
-                    {gcashScreenshot
-                      ? <span className="upload-done">✅ {gcashScreenshot.name}</span>
-                      : <span className="upload-hint">📎 Click to upload screenshot</span>}
-                  </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} id="gcashScreenshot" />
-                  {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
-                </div>
-              </div>
-
-              <div className="gcash-payment-card">
-                <div className="gcash-card-header">
-                  <span className="gcash-card-title">Send Payment to:</span>
-                </div>
-
-                <div className="gcash-detail-row">
-                  <div className="gcash-info">
-                    <span className="gcash-label">GCash Name</span>
-                    <span className="gcash-value">Elaisha Faith M.</span>
-                  </div>
-                </div>
-
-                <div className="gcash-detail-row">
-                  <div className="gcash-info">
-                    <span className="gcash-label">GCash Number</span>
-                    <span className="gcash-value">0906 065 9030</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="copy-btn"
-                    onClick={() => {
-                      navigator.clipboard.writeText('09060659030');
-                      alert('GCash number copied! 📋');
-                    }}
-                  >
-                    Copy
-                  </button>
-                </div>
-
-                <div className="gcash-launch-container">
-                  <a
-                    href="gcash://"
-                    className="launch-gcash-btn"
-                  >
-                    <span>Launch GCash App</span>
-                    <span>🚀</span>
-                  </a>
-
-                  <div className="gcash-steps">
-                    1. <strong>Copy</strong> the GCash number.<br />
-                    2. Tap <strong>Launch GCash</strong> to open your app.<br />
-                    3. <strong>Paste</strong> and send the exact downpayment: <strong>₱{downpaymentPrice.toLocaleString()}</strong>.
-                  </div>
-                </div>
-              </div>
-
-              <div className="gcash-qr-container" style={{ marginTop: '15px' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
-                <img src="/gcash-qr.jpg" alt="GCash QR Code" className="gcash-qr-image" />
-              </div>
-            </div>
-          )}
 
           {/* Special Instructions — bordered box */}
           <div className="form-section">
