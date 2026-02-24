@@ -2184,12 +2184,11 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #0a0e2a;
+  background: #142376;
   background:
-    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 1) 0%, transparent 60%),
-    radial-gradient(circle at 80% 20%, rgba(28, 53, 153, 0.8) 0%, transparent 75%),
-    radial-gradient(circle at 100% 0%, #1c3599 0%, #0a0e2a 100%);
-  background-color: #0a0e2a;
+    radial-gradient(circle at 10% 10%, rgba(28, 53, 153, 0.7) 0%, transparent 50%),
+    linear-gradient(135deg, #1c3599 0%, #142376 100%);
+  background-color: #142376;
   /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
@@ -2246,7 +2245,7 @@ input:checked+.slider:before {
   padding: 50px 30px;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(255, 255, 255, 0.03);
   margin: 20px 0;
 }
 
