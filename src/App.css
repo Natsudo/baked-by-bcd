@@ -2185,7 +2185,9 @@ input:checked+.slider:before {
   justify-content: center;
   align-items: center;
   background: #142376;
-  background: radial-gradient(circle at 50% 20%, #2e54e4 0%, #142376 90%);
+  background:
+    radial-gradient(circle at 50% 25%, rgba(28, 53, 153, 0.8) 0%, transparent 60%),
+    radial-gradient(circle at 50% 40%, #1c3599 0%, #142376 100%);
   background-color: #142376;
   /* Fix white spot by matching background */
   color: #ffffff;
@@ -2235,15 +2237,15 @@ input:checked+.slider:before {
 .maintenance-container {
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 40px;
   padding: 50px 30px;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
   margin: 20px 0;
 }
 
