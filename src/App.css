@@ -1596,6 +1596,15 @@ input:checked+.slider:before {
 
   .delivery-grid {
     grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .delivery-card {
+    padding: 10px !important;
+  }
+
+  .delivery-section-box {
+    padding: 15px !important;
   }
 }
 
@@ -1896,9 +1905,9 @@ input:checked+.slider:before {
 }
 
 .status-delivered {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 
 .status-select {
@@ -2424,4 +2433,28 @@ input:checked+.slider:before {
 .btn-purple:hover {
   background: #9333ea !important;
   box-shadow: 0 4px 12px rgba(147, 85, 247, 0.3);
+}
+
+/* Finished Orders Styles */
+.finished-card {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.finished-card .dc-header {
+  background: #dcfce7 !important;
+  border-bottom: 1px solid #bbf7d0 !important;
+}
+
+.finished-card .dc-boxes {
+  background: #ffffff !important;
+  border: 1px solid #dcfce7 !important;
+}
+
+.finished-row {
+  background-color: #f0fdf4 !important;
+}
+
+.finished-row:hover {
+  background-color: #dcfce7 !important;
 }

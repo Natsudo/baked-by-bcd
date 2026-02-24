@@ -7,7 +7,7 @@ import './App.css';
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
 type DeliveryMode = 'meetup' | 'maxim' | '';
-type MeetupLocation = 'alijis' | 'lasalle' | '';
+type MeetupLocation = 'rolling-hills' | 'lasalle' | 'alijis-panaad' | '';
 type MeetupTime = '10am - 12pm' | '3pm - 4pm' | '';
 
 
@@ -20,7 +20,7 @@ const FAQS = [
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "Who is your courier? How much is the delivery fee and who shoulders it?", a: "Delivery fees for non meetup orders vary depending on your location. We use Maxim as our courier, pickup basis is either Lasalle or Alijis (Panaad). Maxim orders will be booked by us, and the delivery fee will be shouldered by the buyer." },
   { q: "What are your payment methods?", a: "We accept cash and GCash. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City.\n• Via Maxim: Alijis (Panaad) or La Salle area\n• Meetups: La Salle area only" },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City.\n• Via Maxim: Rolling Hills (Estefania) or La Salle area\n• Meetups: La Salle area only" },
   { q: "What time are meetup orders?", a: "Available meetup time slots will be indicated in the preorder form. Kindly choose the time most convenient for you. Please be punctual when meeting up, as we are students and are only available at the selected time." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
@@ -172,7 +172,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const fileInputRef = useRef<HTMLInputElement>(null);
   const maximFileInputRef = useRef<HTMLInputElement>(null);
 
-  const isWeekend = new Date().getDay() === 6 || new Date().getDay() === 0;
+
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +184,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   };
 
   const totalPrice = (quantityBox4 * 285) + (quantityBox6 * 425) + (quantityBox12 * 845);
-  const downpaymentPrice = totalPrice * 0.5;
+  const downpaymentPrice = Math.round(totalPrice * 0.5);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -383,7 +383,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <>
                   <div className="invoice-row">
                     <span className="inv-label">Maxim Pick-up:</span>
-                    <span className="inv-val">{meetupLocation === 'alijis' ? 'Alijis – Panaad' : 'La Salle'}</span>
+                    <span className="inv-val">{meetupLocation === 'rolling-hills' ? 'Rolling Hills (Estefania)' : meetupLocation === 'alijis-panaad' ? 'Alijis – Panaad' : 'La Salle'}</span>
                   </div>
                   <div className="invoice-row">
                     <span className="inv-label">Delivery Time:</span>
@@ -405,7 +405,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="inv-val" style={{ textTransform: 'capitalize' }}>{paymentMode}</span>
               </div>
 
-              {paymentMode === 'gcash' && (
+              {paymentMode !== '' && (
                 <>
                   <div className="invoice-row">
                     <span className="inv-label">GCash Name:</span>
@@ -577,23 +577,118 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             </div>
           </div>
 
-          {/* Mode of Payment */}
+
+          {/* 1. Mode of Delivery (Reordered) */}
+          <div className="form-section">
+            <div className="form-section-title">Mode of Delivery:</div>
+            {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
+
+            <div className="payment-option">
+              <span className="payment-label" style={{ lineHeight: '1.4' }}>Meet-up (La Salle Area Only)</span>
+              <input type="radio" id="del-meetup" name="delivery" checked={deliveryMode === 'meetup'} onChange={() => { setDeliveryMode('meetup'); }} className="radio-inp" />
+            </div>
+
+            {deliveryMode === 'meetup' && (
+              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
+                <div className="form-section-title" style={{ marginBottom: '7px' }}>Availability Time:</div>
+                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
+                <div className="payment-option">
+                  <span className="payment-label">10am - 12pm</span>
+                  <input type="radio" id="time-10-12" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
+                </div>
+                <div className="payment-option">
+                  <span className="payment-label">3pm - 4pm</span>
+                  <input type="radio" id="time-3-4" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
+                </div>
+
+                <div className="cash-note" style={{ marginTop: '11px', padding: '11px 15px' }}>
+                  <p style={{ margin: '0', fontSize: '0.8rem', color: '#111' }}>
+                    <strong>Note:</strong> Meet Up Location is in Gate 6 Canteen
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="payment-option" style={{ marginTop: '5px' }}>
+              <span className="payment-label" style={{ lineHeight: '1.4' }}>
+                Delivery via Maxim<br />
+                <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: '700' }}>
+                  For Maxim Delivery: Fee varies by location (buyer shoulders).<br />
+                  Please send: complete address, gate color, nearest landmark, map pin, and contact number. 🚚✨
+                </span>
+              </span>
+              <input type="radio" id="del-maxim" name="delivery" checked={deliveryMode === 'maxim'} onChange={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }} className="radio-inp" />
+            </div>
+
+            {deliveryMode === 'maxim' && (
+              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
+                <div className="form-section-title" style={{ marginBottom: '7px' }}>Preferred Pick-up Location:</div>
+                {errors.meetupLocation && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupLocation}</span>}
+                <div className="payment-option">
+                  <span className="payment-label">Rolling Hills, Brgy. Estefania</span>
+                  <input type="radio" id="loc-rolling" name="meetupLoc" checked={meetupLocation === 'rolling-hills'} onChange={() => setMeetupLocation('rolling-hills')} className="radio-inp" />
+                </div>
+                <div className="payment-option">
+                  <span className="payment-label">La Salle</span>
+                  <input type="radio" id="loc-lasalle" name="meetupLoc" checked={meetupLocation === 'lasalle'} onChange={() => setMeetupLocation('lasalle')} className="radio-inp" />
+                </div>
+
+                {/* Maxim Availability Time */}
+                <div className="form-section-title" style={{ marginTop: '11px', marginBottom: '7px' }}>Delivery Time:</div>
+                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
+                <div className="payment-option">
+                  <span className="payment-label">10am - 12pm</span>
+                  <input type="radio" id="m-time-10-12" name="maximTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
+                </div>
+                <div className="payment-option">
+                  <span className="payment-label">3pm - 4pm</span>
+                  <input type="radio" id="m-time-3-4" name="maximTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
+                </div>
+
+                <div className="form-row" style={{ marginTop: '11px' }}>
+                  <label className="form-label" style={{ minWidth: '88px', textAlign: 'left' }}>Exact Address:</label>
+                  <div className="form-field">
+                    <input className={`form-input pill${errors.maximAddress ? ' err' : ''}`} type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Full delivery address" />
+                    {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
+                  </div>
+                </div>
+
+                <div className="form-row form-row-top" style={{ marginTop: '7px' }}>
+                  <label className="form-label form-label-top" style={{ minWidth: '88px', textAlign: 'left' }}>Pin Point<br />Screenshot<br /><span style={{ fontSize: '0.72rem', fontWeight: '600' }}>(In Maxim App)</span>:</label>
+                  <div className="form-field">
+                    <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
+                      {maximScreenshot
+                        ? <span className="upload-done">✅ {maximScreenshot.name}</span>
+                        : <span className="upload-hint">📎 Click to upload pinpoint</span>}
+                    </div>
+                    <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
+                    {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Mode of Payment (Reordered and Locked per delivery mode) */}
           <div className="form-section">
             <div className="form-section-title">Mode of Payment:</div>
             {errors.paymentMode && <span className="err-msg">{errors.paymentMode}</span>}
+
             <div className="payment-option">
-              <span className="payment-label">GCash</span>
+              <span className="payment-label">GCash {deliveryMode === 'maxim' && <small style={{ color: '#4a78e8' }}>(Enforced for Delivery)</small>}</span>
               <input type="radio" id="pay-gcash" name="payment" checked={paymentMode === 'gcash'} onChange={() => setPaymentMode('gcash')} className="radio-inp" />
             </div>
-            <div className="payment-option">
-              <span className="payment-label">Cash</span>
+
+            <div className="payment-option" style={{ opacity: deliveryMode === 'maxim' ? 0.6 : 1, pointerEvents: deliveryMode === 'maxim' ? 'none' : 'auto' }}>
+              <span className="payment-label">Cash {deliveryMode === 'meetup' && <small style={{ color: '#4a78e8' }}>(Available for Meetup)</small>}</span>
               <input type="radio" id="pay-cash" name="payment" checked={paymentMode === 'cash'} onChange={() => setPaymentMode('cash')} className="radio-inp" />
             </div>
+
             <div className="cash-note" style={{ marginTop: '8px', padding: '12px', fontSize: '0.85rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 800, textAlign: 'center' }}>
               🚨 A 50% downpayment in <span style={{ textDecoration: 'underline' }}>GCASH</span> is REQUIRED for all orders to confirm your slot.
             </div>
 
-            {/* Acknowledgement checkbox — bundled inside payment secton */}
+            {/* Acknowledgement checkbox */}
             <div className="checkbox-row" style={{ marginTop: '10px' }}>
               <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
               <label htmlFor="understood" className="checkbox-label">
@@ -602,7 +697,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             </div>
             {errors.understood && <span className="err-msg">{errors.understood}</span>}
 
-            {/* GCash extra fields — Always required if payment mode is selected */}
+            {/* GCash extra fields (Required for BOTH Cash and GCash due to downpayment) */}
             {paymentMode !== '' && (
               <div className="gcash-section" style={{ marginTop: '5px' }}>
                 <div className="form-row">
@@ -670,10 +765,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   </div>
 
                   <div className="gcash-launch-container">
-                    <a
-                      href="gcash://"
-                      className="launch-gcash-btn"
-                    >
+                    <a href="gcash://" className="launch-gcash-btn">
                       <span>Launch GCash App</span>
                       <span>🚀</span>
                     </a>
@@ -694,102 +786,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             )}
           </div>
 
-          {/* Mode of Delivery */}
-          <div className="form-section" style={{ marginTop: '9px' }}>
-            <div className="form-section-title">Mode of Delivery:</div>
-            {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
-
-            <div className="payment-option">
-              <span className="payment-label" style={{ lineHeight: '1.4' }}>Meet-up (La Salle Area Only)</span>
-              <input type="radio" id="del-meetup" name="delivery" checked={deliveryMode === 'meetup'} onChange={() => setDeliveryMode('meetup')} className="radio-inp" />
-            </div>
-
-            {deliveryMode === 'meetup' && (
-              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
-                <div className="form-section-title" style={{ marginBottom: '7px' }}>Availability Time:</div>
-                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
-                <div className="payment-option">
-                  <span className="payment-label">10am - 12pm</span>
-                  <input type="radio" id="time-10-12" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">3pm - 4pm</span>
-                  <input type="radio" id="time-3-4" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
-                </div>
-
-                <div className="cash-note" style={{ marginTop: '11px', padding: '11px 15px' }}>
-                  <p style={{ margin: '0', fontSize: '0.8rem', color: '#111' }}>
-                    <strong>Note:</strong> Meet Up Location is in Gate 6 Canteen
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="payment-option" style={{ marginTop: '5px' }}>
-              <span className="payment-label" style={{ lineHeight: '1.4' }}>
-                Delivery via Maxim<br />
-                <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: '700' }}>
-                  For Maxim Delivery: Fee varies by location (buyer shoulders).<br />
-                  Please send: complete address, gate color, nearest landmark, map pin, and contact number. 🚚✨
-                </span>
-              </span>
-              <input type="radio" id="del-maxim" name="delivery" checked={deliveryMode === 'maxim'} onChange={() => setDeliveryMode('maxim')} className="radio-inp" />
-            </div>
-
-            {deliveryMode === 'maxim' && (
-              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
-                <div className="form-section-title" style={{ marginBottom: '7px' }}>Preferred Pick-up Location:</div>
-                {errors.meetupLocation && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupLocation}</span>}
-                <div className="payment-option">
-                  <span className="payment-label" style={{ color: !isWeekend ? '#aaa' : 'inherit' }}>
-                    Alijis – Panaad <br /><span style={{ fontSize: '0.72rem', fontWeight: '600', color: !isWeekend ? '#aaa' : '#555' }}>(Every Saturday Orders Only)</span>
-                  </span>
-                  <input type="radio" id="loc-alijis" name="meetupLoc" checked={meetupLocation === 'alijis'} onChange={() => setMeetupLocation('alijis')} className="radio-inp" disabled={!isWeekend} />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">La Salle</span>
-                  <input type="radio" id="loc-lasalle" name="meetupLoc" checked={meetupLocation === 'lasalle'} onChange={() => setMeetupLocation('lasalle')} className="radio-inp" />
-                </div>
-
-                {/* Maxim Availability Time */}
-                <div className="form-section-title" style={{ marginTop: '11px', marginBottom: '7px' }}>Delivery Time:</div>
-                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
-                <div className="payment-option">
-                  <span className="payment-label">10am - 12pm</span>
-                  <input type="radio" id="m-time-10-12" name="maximTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">3pm - 4pm</span>
-                  <input type="radio" id="m-time-3-4" name="maximTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
-                </div>
-
-                <div className="form-row" style={{ marginTop: '11px' }}>
-                  <label className="form-label" style={{ minWidth: '88px', textAlign: 'left' }}>Exact Address:</label>
-                  <div className="form-field">
-                    <input className={`form-input pill${errors.maximAddress ? ' err' : ''}`} type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Full delivery address" />
-                    {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
-                  </div>
-                </div>
-
-                <div className="form-row form-row-top" style={{ marginTop: '7px' }}>
-                  <label className="form-label form-label-top" style={{ minWidth: '88px', textAlign: 'left' }}>Pin Point<br />Screenshot<br /><span style={{ fontSize: '0.72rem', fontWeight: '600' }}>(In Maxim App)</span>:</label>
-                  <div className="form-field">
-                    <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
-                      {maximScreenshot
-                        ? <span className="upload-done">✅ {maximScreenshot.name}</span>
-                        : <span className="upload-hint">📎 Click to upload pinpoint</span>}
-                    </div>
-                    <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
-                    {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-
-
-          {/* Special Instructions — bordered box */}
+          {/* Special Instructions */}
           <div className="form-section">
             <label className="form-section-title" htmlFor="specialInstructions">Special Instructions:</label>
             <textarea id="specialInstructions" className="form-textarea" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} rows={5} placeholder="" />
@@ -870,6 +867,8 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [orderToDelete, setOrderToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeliveryList, setShowDeliveryList] = useState(false);
+  const [showProductionDetails, setShowProductionDetails] = useState(false);
+  const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | null>(null);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -1045,6 +1044,11 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
 
     return matchesSearch && matchesPayment && matchesDelivery && matchesStatus;
   }).sort((a, b) => {
+    // Priority sorting: unfinished on top
+    const aFinished = a.status === 'Delivered' && a.is_paid;
+    const bFinished = b.status === 'Delivered' && b.is_paid;
+    if (aFinished !== bFinished) return aFinished ? 1 : -1;
+
     let valA = a[sortKey];
     let valB = b[sortKey];
     if (sortKey === 'created_at') {
@@ -1112,8 +1116,8 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                       <span className="prod-label">Box of 12</span>
                       <span className="prod-val">{b12}</span>
                     </div>
-                    <div className="prod-item prod-total-box">
-                      <span className="prod-label">Total Cookies</span>
+                    <div className="prod-item prod-total-box clickable" onClick={() => setShowProductionDetails(true)} style={{ cursor: 'pointer' }}>
+                      <span className="prod-label">Total Cookies (View Details)</span>
                       <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookies}</span>
                     </div>
                   </>
@@ -1122,10 +1126,96 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             </div>
           </div>
 
+          {showProductionDetails && (
+            <div className="admin-modal-overlay" onClick={() => setShowProductionDetails(false)}>
+              <div className="admin-modal" style={{ maxWidth: '700px', width: '95%' }} onClick={e => e.stopPropagation()}>
+                <div className="admin-modal-header">
+                  <h2>Production Details</h2>
+                  <button className="close-btn" onClick={() => setShowProductionDetails(false)}>&times;</button>
+                </div>
+                <div className="admin-modal-content" style={{ maxHeight: '75vh' }}>
+                  <div className="production-details-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '10px' }}>
+                      <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: '#0369a1', fontFamily: 'Patrick Hand' }}>Quick Production Summary</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {['10am - 12pm', '3pm - 4pm'].map(time => (
+                          <div key={time}>
+                            <h4 style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px', borderBottom: '1px solid #e0f2fe' }}>🕒 {time === '10am - 12pm' ? 'Morning Batch' : 'Afternoon Batch'}</h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                              {['Box of 4', 'Box of 6', 'Box of 12'].map(type => {
+                                const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
+                                let metCount = 0;
+                                let maxCount = 0;
+                                orders.forEach(o => {
+                                  if (o.meetup_time !== time || !o.quantity_type) return;
+                                  const q = parseInt(o.quantity_type.split(`${typeKey}: `)[1]) || 0;
+                                  if (o.delivery_mode === 'maxim') maxCount += q; else metCount += q;
+                                });
+                                if (metCount === 0 && maxCount === 0) return null;
+                                return (
+                                  <div key={type} style={{ background: 'white', padding: '10px', borderRadius: '8px', border: '1px solid #e0f2fe' }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{type}</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6366f1' }}>{metCount + maxCount} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>total</span></div>
+                                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px', lineHeight: '1.2' }}>
+                                      🤝 Meetup: {metCount}<br />
+                                      🚚 Maxim: {maxCount}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {(() => {
+                      const boxTypes = ['Box of 4', 'Box of 6', 'Box of 12'];
+                      return boxTypes.map(type => {
+                        const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
+                        const typeOrders = orders.filter(o => {
+                          const typeVal = o.quantity_type || '';
+                          return typeVal.includes(`${typeKey}:`) && parseInt(typeVal.split(`${typeKey}: `)[1]) > 0;
+                        }).sort((a, b) => {
+                          if (a.meetup_time !== b.meetup_time) return a.meetup_time.localeCompare(b.meetup_time);
+                          return a.delivery_mode.localeCompare(b.delivery_mode);
+                        });
+
+                        if (typeOrders.length === 0) return null;
+
+                        return (
+                          <div key={type} className="prod-detail-group">
+                            <h3 style={{ borderBottom: '2px solid #6366f1', paddingBottom: '5px', color: '#1e293b' }}>{type}</h3>
+                            <div className="prod-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                              {typeOrders.map(o => {
+                                const qty = parseInt((o.quantity_type || '').split(`${typeKey}: `)[1]);
+                                return (
+                                  <div key={o.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+                                    <div style={{ fontWeight: 800 }}>{o.full_name} <span style={{ color: '#6366f1' }}>({qty})</span></div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                      🕒 {o.meetup_time}<br />
+                                      {o.delivery_mode === 'maxim' ? '🚚 Maxim' : '🤝 Meetup'}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+                <div className="admin-modal-footer" style={{ padding: '15px', textAlign: 'center' }}>
+                  <button className="place-order-btn place-order-btn-sm" onClick={() => setShowProductionDetails(false)}>Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="admin-stat-card admin-stat-card-sparkle">
             <h3>Total Gross Revenue</h3>
             <div className="admin-stat-val sparkle-text">
-              ₱{orders.reduce((acc, o) => acc + o.total_price, 0).toLocaleString()}
+              ₱{Math.round(orders.reduce((acc, o) => acc + o.total_price, 0)).toLocaleString()}
             </div>
             <p className="admin-stat-sub">Overall value of all orders</p>
           </div>
@@ -1149,22 +1239,22 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           <div className="admin-stat-card">
             <h3 style={{ color: '#10b981' }}>Total Received</h3>
             <div className="admin-stat-val" style={{ color: '#10b981' }}>
-              ₱{orders.reduce((acc, o) => {
+              ₱{Math.round(orders.reduce((acc, o) => {
                 if (o.is_paid) return acc + o.total_price;
                 if (o.payment_mode === 'gcash') return acc + o.downpayment_price;
                 return acc;
-              }, 0).toLocaleString()}
+              }, 0)).toLocaleString()}
             </div>
             <p className="admin-stat-sub">Money already in hand</p>
           </div>
           <div className="admin-stat-card clickable" onClick={() => setShowToCollect(true)}>
             <h3 style={{ color: '#6366f1' }}>To be Received</h3>
             <div className="admin-stat-val" style={{ color: '#6366f1' }}>
-              ₱{orders.reduce((acc, o) => {
+              ₱{Math.round(orders.reduce((acc, o) => {
                 if (o.is_paid) return acc;
                 const pending = o.payment_mode === 'gcash' ? (o.total_price - o.downpayment_price) : o.total_price;
                 return acc + pending;
-              }, 0).toLocaleString()}
+              }, 0)).toLocaleString()}
             </div>
             <p className="admin-stat-sub">Remaining balance to collect (Click to view)</p>
           </div>
@@ -1191,7 +1281,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                         </div>
                         <div className="pi-amount">
                           <span className="pi-label">{order.payment_mode === 'gcash' ? 'Remaining GCash' : 'Pending Cash'}</span>
-                          <span className="pi-val">₱{order.payment_mode === 'gcash' ? (order.total_price - order.downpayment_price) : order.total_price}</span>
+                          <span className="pi-val">₱{Math.round(order.payment_mode === 'gcash' ? (order.total_price - order.downpayment_price) : order.total_price).toLocaleString()}</span>
                         </div>
                       </div>
                     ))
@@ -1230,182 +1320,264 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
               </div>
               <div className="admin-modal-content">
                 <div className="delivery-summary-content">
-
-                  {/* MEETUP SECTION */}
-                  <div className="delivery-section-box">
-                    <h3 className="delivery-section-title">🤝 La Salle Meetup</h3>
-
-                    {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
-                      <div className="delivery-time-block" key={timeSlot}>
-                        <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
-                        <div className="delivery-grid">
-                          {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).length === 0 ? (
-                            <p className="no-data">No meetups at this time.</p>
-                          ) : (
-                            orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).map(o => (
-                              <div key={o.id} className="delivery-card">
-                                <div className="dc-header">
-                                  <strong>{o.full_name}</strong>
-                                  <span>{o.contact_number}</span>
-                                </div>
-                                <div className="dc-body">
-                                  <div style={{ marginTop: '5px' }}>
-                                    {o.instagram && (
-                                      <a
-                                        href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="chat-link"
-                                        style={{ fontSize: '0.8rem' }}
-                                      >
-                                        📸 @{o.instagram.replace('@', '')}
-                                      </a>
-                                    )}
-                                  </div>
-
-                                  <div className="dc-info-row">
-                                    <span className="pi-label">Status</span>
-                                    <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
-                                      <select
-                                        className="status-select"
-                                        value={o.status || 'Pending'}
-                                        onChange={async (e) => {
-                                          const newStatus = e.target.value;
-                                          setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
-                                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
-                                        }}
-                                      >
-                                        <option value="Pending">Pending</option>
-                                        <option value="Baking">Baking</option>
-                                        <option value="Ready">Ready</option>
-                                        <option value="Delivered">Delivered</option>
-                                      </select>
-                                    </div>
-                                  </div>
-
-                                  <div className="dc-info-row">
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
-                                      {!o.is_paid && o.payment_mode === 'gcash' && (
-                                        <span className="dc-balance">Bal: ₱{o.total_price - o.downpayment_price}</span>
-                                      )}
-                                    </div>
-                                    <div className="admin-pay-toggle" style={{ margin: 0 }}>
-                                      <label className="switch" style={{ transform: 'scale(0.8)' }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={!!o.is_paid}
-                                          onChange={async () => {
-                                            const newPaid = !o.is_paid;
-                                            setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
-                                            await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
-                                          }}
-                                        />
-                                        <span className="slider round"></span>
-                                      </label>
-                                    </div>
-                                  </div>
-
-                                  <div className="dc-screenshots">
-                                    {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '15px', border: '1px solid #e2e8f0', gap: '15px' }}>
+                    <div
+                      onClick={() => setActiveDeliveryTab('meetup')}
+                      style={{
+                        textAlign: 'center',
+                        flex: 1,
+                        cursor: 'pointer',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        transition: 'all 0.2s',
+                        background: activeDeliveryTab === 'meetup' ? '#eef2ff' : 'transparent',
+                        border: activeDeliveryTab === 'meetup' ? '2px solid #6366f1' : '2px solid transparent'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>La Salle Meetups</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#6366f1' }}>{orders.filter(o => o.delivery_mode === 'meetup').length}</div>
+                    </div>
+                    <div
+                      onClick={() => setActiveDeliveryTab('maxim')}
+                      style={{
+                        textAlign: 'center',
+                        flex: 1,
+                        cursor: 'pointer',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        transition: 'all 0.2s',
+                        background: activeDeliveryTab === 'maxim' ? '#fffbeb' : 'transparent',
+                        border: activeDeliveryTab === 'maxim' ? '2px solid #f59e0b' : '2px solid transparent'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Maxim Deliveries</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f59e0b' }}>{orders.filter(o => o.delivery_mode === 'maxim').length}</div>
+                    </div>
                   </div>
 
-                  {/* MAXIM SECTION */}
-                  <div className="delivery-section-box" style={{ marginTop: '30px' }}>
-                    <h3 className="delivery-section-title">🚚 Maxim Delivery</h3>
+                  {!activeDeliveryTab && (
+                    <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                      <p>Select a category above to view the list 👆</p>
+                    </div>
+                  )}
 
-                    {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
-                      <div className="delivery-time-block" key={timeSlot}>
-                        <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
-                        <div className="delivery-grid">
-                          {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).length === 0 ? (
-                            <p className="no-data">No deliveries at this time.</p>
-                          ) : (
-                            orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).map(o => (
-                              <div key={o.id} className="delivery-card dc-maxim">
-                                <div className="dc-header">
-                                  <strong>{o.full_name}</strong>
-                                  <span>{o.contact_number}</span>
-                                </div>
-                                <div className="dc-body">
-                                  <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
-                                  <div style={{ marginTop: '5px' }}>
-                                    {o.instagram && (
-                                      <a
-                                        href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="chat-link"
-                                        style={{ fontSize: '0.8rem' }}
-                                      >
-                                        📸 @{o.instagram.replace('@', '')}
-                                      </a>
-                                    )}
-                                  </div>
+                  {activeDeliveryTab === 'meetup' && (
+                    <div className="delivery-section-box fade-in">
+                      <h3 className="delivery-section-title">🤝 La Salle Meetup List</h3>
 
-                                  <div className="dc-info-row">
-                                    <span className="pi-label">Status</span>
-                                    <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
-                                      <select
-                                        className="status-select"
-                                        value={o.status || 'Pending'}
-                                        onChange={async (e) => {
-                                          const newStatus = e.target.value;
-                                          setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
-                                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
-                                        }}
-                                      >
-                                        <option value="Pending">Pending</option>
-                                        <option value="Baking">Baking</option>
-                                        <option value="Ready">Ready</option>
-                                        <option value="Delivered">Delivered</option>
-                                      </select>
+                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
+                        <div className="delivery-time-block" key={timeSlot}>
+                          <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                          <div className="delivery-grid">
+                            {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).length === 0 ? (
+                              <p className="no-data">No meetups at this time.</p>
+                            ) : (
+                              orders
+                                .filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot)
+                                .sort((a, b) => {
+                                  const af = a.status === 'Delivered' && a.is_paid;
+                                  const bf = b.status === 'Delivered' && b.is_paid;
+                                  if (af !== bf) return af ? 1 : -1;
+                                  return 0;
+                                })
+                                .map(o => (
+                                  <div key={o.id} className={`delivery-card ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
+                                    <div className="dc-header">
+                                      <strong>{o.full_name}</strong>
+                                      <span>{o.contact_number}</span>
+                                    </div>
+                                    <div className="dc-body">
+                                      <div style={{ marginTop: '5px' }}>
+                                        {o.instagram && (
+                                          <a
+                                            href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="chat-link"
+                                            style={{ fontSize: '0.8rem' }}
+                                          >
+                                            📸 @{o.instagram.replace('@', '')}
+                                          </a>
+                                        )}
+                                      </div>
+
+                                      <div className="dc-info-row">
+                                        <span className="pi-label">Status</span>
+                                        <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                          <select
+                                            className="status-select"
+                                            value={o.status || 'Pending'}
+                                            onChange={async (e) => {
+                                              const newStatus = e.target.value;
+                                              setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                              await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                            }}
+                                          >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Delivered">Delivered</option>
+                                          </select>
+                                        </div>
+                                      </div>
+
+                                      <div className="dc-info-row">
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                          <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: o.is_paid ? '#10b981' : '#f59e0b', marginTop: '2px' }}>
+                                            {o.is_paid ? 'PAID FULL' : o.payment_mode === 'gcash' ? 'DP ONLY' : 'UNPAID'}
+                                          </span>
+                                          {!o.is_paid && (
+                                            <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
+                                          )}
+                                        </div>
+                                        <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                          <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={!!o.is_paid}
+                                              onChange={async () => {
+                                                const newPaid = !o.is_paid;
+                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                                await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                              }}
+                                            />
+                                            <span className="slider round"></span>
+                                          </label>
+                                        </div>
+                                      </div>
+
+                                      <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
+                                        {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
+                                          const bits = bit.split(': ');
+                                          const type = bits[0];
+                                          const count = bits[1];
+                                          if (count === '0') return null;
+                                          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+                                          return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
+                                        }) : 'No data'}
+                                      </div>
+
+                                      <div className="dc-screenshots">
+                                        {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                      </div>
                                     </div>
                                   </div>
-
-                                  <div className="dc-info-row">
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
-                                      {!o.is_paid && o.payment_mode === 'gcash' && (
-                                        <span className="dc-balance">Bal: ₱{o.total_price - o.downpayment_price}</span>
-                                      )}
-                                    </div>
-                                    <div className="admin-pay-toggle" style={{ margin: 0 }}>
-                                      <label className="switch" style={{ transform: 'scale(0.8)' }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={!!o.is_paid}
-                                          onChange={async () => {
-                                            const newPaid = !o.is_paid;
-                                            setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
-                                            await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
-                                          }}
-                                        />
-                                        <span className="slider round"></span>
-                                      </label>
-                                    </div>
-                                  </div>
-
-                                  <div className="dc-screenshots">
-                                    {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                    {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          )}
+                                ))
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {activeDeliveryTab === 'maxim' && (
+                    <div className="delivery-section-box toggle-maxim" style={{ marginTop: '30px' }}>
+                      <h3 className="delivery-section-title">🚚 Maxim Delivery List</h3>
+
+                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
+                        <div className="delivery-time-block" key={timeSlot}>
+                          <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                          <div className="delivery-grid">
+                            {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).length === 0 ? (
+                              <p className="no-data">No deliveries at this time.</p>
+                            ) : (
+                              orders
+                                .filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot)
+                                .sort((a, b) => {
+                                  const af = a.status === 'Delivered' && a.is_paid;
+                                  const bf = b.status === 'Delivered' && b.is_paid;
+                                  if (af !== bf) return af ? 1 : -1;
+                                  return 0;
+                                })
+                                .map(o => (
+                                  <div key={o.id} className={`delivery-card dc-maxim ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
+                                    <div className="dc-header">
+                                      <strong>{o.full_name}</strong>
+                                      <span>{o.contact_number}</span>
+                                    </div>
+                                    <div className="dc-body">
+                                      <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
+                                      <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : o.meetup_location === 'alijis-panaad' ? 'Alijis – Panaad' : 'La Salle'}</div>
+                                      <div style={{ marginTop: '5px' }}>
+                                        {o.instagram && (
+                                          <a
+                                            href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="chat-link"
+                                            style={{ fontSize: '0.8rem' }}
+                                          >
+                                            📸 @{o.instagram.replace('@', '')}
+                                          </a>
+                                        )}
+                                      </div>
+
+                                      <div className="dc-info-row">
+                                        <span className="pi-label">Status</span>
+                                        <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                          <select
+                                            className="status-select"
+                                            value={o.status || 'Pending'}
+                                            onChange={async (e) => {
+                                              const newStatus = e.target.value;
+                                              setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                              await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                            }}
+                                          >
+                                            <option value="Pending">Pending</option>
+                                            <option value="Delivered">Delivered</option>
+                                          </select>
+                                        </div>
+                                      </div>
+
+                                      <div className="dc-info-row">
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                          <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                          {!o.is_paid && (
+                                            <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
+                                          )}
+                                        </div>
+                                        <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                          <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={!!o.is_paid}
+                                              onChange={async () => {
+                                                const newPaid = !o.is_paid;
+                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                                await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                              }}
+                                            />
+                                            <span className="slider round"></span>
+                                          </label>
+                                        </div>
+                                      </div>
+
+                                      <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
+                                        {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
+                                          const bits = bit.split(': ');
+                                          const type = bits[0];
+                                          const count = bits[1];
+                                          if (count === '0') return null;
+                                          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+                                          return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
+                                        }) : 'No data'}
+                                      </div>
+
+                                      <div className="dc-screenshots">
+                                        {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                        {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                 </div>
               </div>
@@ -1531,7 +1703,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                   <tr><td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>No orders matching your criteria</td></tr>
                 ) : (
                   filteredOrders.map(order => (
-                    <tr key={order.id}>
+                    <tr key={order.id} className={order.status === 'Delivered' && order.is_paid ? 'finished-row' : ''}>
                       <td>{new Date(order.created_at).toLocaleDateString()}</td>
                       <td>
                         <strong>{order.full_name}</strong><br />
@@ -1603,7 +1775,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                               <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>50% Paid</span>
                               {!order.is_paid && (
                                 <span style={{ fontSize: '0.8rem', color: '#ef4444' }}>
-                                  Balance: ₱{order.total_price - order.downpayment_price}
+                                  Balance: ₱{Math.round(order.total_price - order.downpayment_price)}
                                 </span>
                               )}
                             </>
@@ -1652,8 +1824,6 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                             }}
                           >
                             <option value="Pending">Pending</option>
-                            <option value="Baking">Baking</option>
-                            <option value="Ready">Ready</option>
                             <option value="Delivered">Delivered</option>
                           </select>
                         </div>
@@ -1714,6 +1884,11 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number }>({ d: 0, h: 0, m: 0, s: 0 });
   const [showBypass, setShowBypass] = useState(false);
   const [bypassPass, setBypassPass] = useState('');
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
+  };
   const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
 
   useEffect(() => {
@@ -1758,9 +1933,17 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         </div>
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
         <p className="maintenance-subtitle">
-          Our preorder forms for Dubai Chewy Cookie will open on February 26 at 7:00 PM
-          <span className="highlight-text">THURSDAY</span>
+          Our preorder forms for Dubai Chewy Cookie will open on February 26
+          <span className="highlight-text">THURSDAY, 7:00 PM</span>
         </p>
+
+        <div className="maintenance-warning gcash-warning" style={{ marginTop: '-25px', marginBottom: '35px', padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '15px', color: '#ff7070', fontSize: '0.9rem', fontWeight: 700, lineHeight: '1.4' }}>
+          🚨 A 50% downpayment in GCASH is REQUIRED for all orders to confirm your slot.
+          <br /><br />
+          🚚 Maxim Orders: Only GCash payments are allowed. Please screenshot in advance your pinpoint location.
+          <br /><br />
+          <span style={{ color: '#ffde59' }}>📍 We only accept Bacolod City orders for now. Thank you for your understanding!</span>
+        </div>
 
         <div className="countdown-timer">
           <div className="countdown-box">
@@ -1811,7 +1994,22 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           )}
         </div>
 
-        <div className="maintenance-footer">
+        <div className="notepad-faq-container" style={{ textAlign: 'left', marginTop: '40px', background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <h2 className="faq-title" style={{ color: '#ffde59' }}>FAQs</h2>
+          <div className="faq-list">
+            {FAQS.map((faq, i) => (
+              <div className={`faq-item ${expandedFaq === i ? 'expanded' : ''}`} key={i} style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div className="faq-q" onClick={() => toggleFaq(i)} style={{ color: '#bfdbfe' }}>
+                  {faq.q}
+                  <span className="faq-icon" style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffde59' }}>{expandedFaq === i ? '−' : '+'}</span>
+                </div>
+                <div className="faq-a" style={{ color: '#ecf4ff', opacity: expandedFaq === i ? 1 : 0, maxHeight: expandedFaq === i ? '500px' : '0', padding: expandedFaq === i ? '0 20px 16px 20px' : '0 20px' }}>{faq.a}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="maintenance-footer" style={{ marginTop: '30px' }}>
           Baked with love in Bacolod City
         </div>
       </div>
