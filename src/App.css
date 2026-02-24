@@ -2184,12 +2184,12 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #142376;
+  background: #0a0e2a;
   background:
-    radial-gradient(circle at 95% 5%, rgba(28, 53, 153, 0.8) 0%, transparent 65%),
-    radial-gradient(circle at 70% 30%, rgba(28, 53, 153, 0.6) 0%, transparent 70%),
-    radial-gradient(circle at 80% 40%, #1c3599 0%, #142376 100%);
-  background-color: #142376;
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 1) 0%, transparent 60%),
+    radial-gradient(circle at 80% 20%, rgba(28, 53, 153, 0.8) 0%, transparent 75%),
+    radial-gradient(circle at 100% 0%, #1c3599 0%, #0a0e2a 100%);
+  background-color: #0a0e2a;
   /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
