@@ -2184,9 +2184,9 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #172554;
-  background: radial-gradient(circle at 50% 30%, #2d55ee 0%, #172554 100%);
-  background-color: #172554;
+  background: #142376;
+  background: radial-gradient(circle at 50% 35%, #1c3599 0%, #142376 100%);
+  background-color: #142376;
   /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
@@ -2235,15 +2235,15 @@ input:checked+.slider:before {
 .maintenance-container {
   position: relative;
   z-index: 2;
-  background: rgba(23, 37, 84, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(20, 35, 118, 0.4);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 40px;
   padding: 50px 30px;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.05);
   margin: 20px 0;
 }
 
@@ -2257,9 +2257,10 @@ input:checked+.slider:before {
 .maintenance-title {
   font-family: 'Patrick Hand', cursive;
   font-size: 2.8rem;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   color: #ffffff;
   letter-spacing: 0.02em;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .maintenance-subtitle {
