@@ -2184,8 +2184,8 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at top right, #1e3a8a, #0a133d, #020617);
-  background-color: #020617;
+  background: radial-gradient(circle at 50% 30%, #2563eb 0%, #0f172a 100%);
+  background-color: #0f172a;
   /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
@@ -2222,9 +2222,9 @@ input:checked+.slider:before {
 .maintenance-container {
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 40px;
   padding: 50px 30px;
@@ -2244,19 +2244,17 @@ input:checked+.slider:before {
 .maintenance-title {
   font-family: 'Patrick Hand', cursive;
   font-size: 2.8rem;
-  margin-bottom: 10px;
-  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin-bottom: 20px;
+  color: #ffffff;
   letter-spacing: 0.02em;
 }
 
 .maintenance-subtitle {
   font-size: 1.1rem;
-  color: #bfdbfe;
+  color: #94a3b8;
   margin-bottom: 40px;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .countdown-timer {
