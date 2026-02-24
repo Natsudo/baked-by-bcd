@@ -511,7 +511,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
             {/* Instagram */}
             <div className="form-row">
-              <label className="form-label" htmlFor="instagram">Instagram:</label>
+              <label className="form-label" htmlFor="instagram">Instagram Handle:</label>
               <div className="form-field">
                 <input id="instagram" className={`form-input pill${errors.instagram ? ' err' : ''}`} type="text" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="" />
                 {errors.instagram && <span className="err-msg">{errors.instagram}</span>}
@@ -585,7 +585,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
             <div className="payment-option">
               <span className="payment-label" style={{ lineHeight: '1.4' }}>Meet-up (La Salle Area Only)</span>
-              <input type="radio" id="del-meetup" name="delivery" checked={deliveryMode === 'meetup'} onChange={() => { setDeliveryMode('meetup'); }} className="radio-inp" />
+              <input type="radio" id="del-meetup" name="delivery" checked={deliveryMode === 'meetup'} onChange={() => { setDeliveryMode('meetup'); }} className="radio-inp" style={{ flexShrink: 0 }} />
             </div>
 
             {deliveryMode === 'meetup' && (
@@ -617,7 +617,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   Please send: complete address, gate color, nearest landmark, map pin, and contact number. 🚚✨
                 </span>
               </span>
-              <input type="radio" id="del-maxim" name="delivery" checked={deliveryMode === 'maxim'} onChange={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }} className="radio-inp" />
+              <input type="radio" id="del-maxim" name="delivery" checked={deliveryMode === 'maxim'} onChange={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }} className="radio-inp" style={{ flexShrink: 0 }} />
             </div>
 
             {deliveryMode === 'maxim' && (
