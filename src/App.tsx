@@ -1995,13 +1995,13 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         </div>
 
         <div className="notepad-faq-container" style={{ textAlign: 'left', marginTop: '40px', background: 'rgba(20, 35, 118, 0.3)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-          <h2 className="faq-title" style={{ color: '#1c3599' }}>FAQs</h2>
+          <h2 className="faq-title" style={{ color: '#facc15', textShadow: '0 0 20px rgba(250, 204, 21, 0.5)' }}>FAQs</h2>
           <div className="faq-list">
             {FAQS.map((faq, i) => (
               <div className={`faq-item ${expandedFaq === i ? 'expanded' : ''}`} key={i} style={{ background: 'rgba(28, 53, 153, 0.1)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <div className="faq-q" onClick={() => toggleFaq(i)} style={{ color: '#ecf4ff' }}>
                   {faq.q}
-                  <span className="faq-icon" style={{ background: '#1c3599', color: '#ffffff' }}>{expandedFaq === i ? '−' : '+'}</span>
+                  <span className="faq-icon" style={{ background: '#facc15', color: '#000', boxShadow: '0 0 15px rgba(250, 204, 21, 0.4)', fontWeight: 800 }}>{expandedFaq === i ? '−' : '+'}</span>
                 </div>
                 <div className="faq-a" style={{ color: '#bfdbfe', opacity: expandedFaq === i ? 1 : 0, maxHeight: expandedFaq === i ? '500px' : '0', padding: expandedFaq === i ? '0 20px 16px 20px' : '0 20px' }}>{faq.a}</div>
               </div>
