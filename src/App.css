@@ -2184,9 +2184,9 @@ input:checked+.slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #020817;
-  background: radial-gradient(circle at 50% 30%, #3e63ff 0%, #020817 100%);
-  background-color: #020817;
+  background: #010614;
+  background: radial-gradient(circle at 50% 30%, #0052ff 0%, #010614 100%);
+  background-color: #010614;
   /* Fix white spot by matching background */
   color: #ffffff;
   font-family: 'Nunito', sans-serif;
