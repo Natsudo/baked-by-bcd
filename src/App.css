@@ -2227,11 +2227,11 @@ input:checked+.slider:before {
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 60px;
-  padding: 60px 30px;
-  max-width: 650px;
-  width: 90%;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+  border-radius: 40px;
+  padding: 50px 30px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   margin: 20px 0;
 }
 
@@ -2244,23 +2244,17 @@ input:checked+.slider:before {
 
 .maintenance-title {
   font-family: 'Patrick Hand', cursive;
-  font-size: 3.2rem;
-  line-height: 1.1;
-  margin-bottom: 25px;
+  font-size: 2.8rem;
+  margin-bottom: 10px;
   color: #ffffff;
-  letter-spacing: 0.01em;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.02em;
 }
 
 .maintenance-subtitle {
-  font-size: 1.15rem;
-  color: #94a3b8;
-  margin-bottom: 35px;
+  font-size: 1.1rem;
+  color: #bfdbfe;
+  margin-bottom: 40px;
   font-weight: 500;
-  line-height: 1.6;
-  max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .countdown-timer {
@@ -2272,9 +2266,9 @@ input:checked+.slider:before {
 .countdown-box {
   background: rgba(30, 58, 138, 0.3);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 25px;
-  padding: 18px 10px;
-  min-width: 95px;
+  border-radius: 20px;
+  padding: 15px;
+  min-width: 85px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2384,11 +2378,9 @@ input:checked+.slider:before {
   font-weight: 900;
   color: #ffde59;
   text-transform: uppercase;
-  font-size: 3rem;
-  margin-top: -10px;
-  margin-bottom: 30px;
-  text-shadow: 0 0 30px rgba(255, 222, 89, 0.5);
-  letter-spacing: 0.05em;
+  font-size: 1.8rem;
+  margin-top: 15px;
+  text-shadow: 0 0 20px rgba(255, 222, 89, 0.4);
 }
 
 .bypass-input-group {

@@ -1931,13 +1931,19 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         <div className="maintenance-logo-wrapper">
           <img src="/baked-by-logo.png" alt="Baked By Logo" className="maintenance-logo" />
         </div>
-        <h1 className="maintenance-title">Something Sweet is<br />Coming!</h1>
+        <h1 className="maintenance-title">Something Sweet is Coming!</h1>
         <p className="maintenance-subtitle">
-          Our preorder forms for Dubai Chewy Cookie<br />
-          will open on February 26 at 7:00 PM
+          Our preorder forms for Dubai Chewy Cookie will open on February 26
+          <span className="highlight-text">THURSDAY, 7:00 PM</span>
         </p>
-        <div className="highlight-text">THURSDAY</div>
 
+        <div className="maintenance-warning gcash-warning" style={{ marginTop: '-25px', marginBottom: '35px', padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '15px', color: '#ff7070', fontSize: '0.9rem', fontWeight: 700, lineHeight: '1.4' }}>
+          🚨 A 50% downpayment in GCASH is REQUIRED for all orders to confirm your slot.
+          <br /><br />
+          🚚 Maxim Orders: Only GCash payments are allowed. Please screenshot in advance your pinpoint location.
+          <br /><br />
+          <span style={{ color: '#ffde59' }}>📍 We only accept Bacolod City orders for now. Thank you for your understanding!</span>
+        </div>
 
         <div className="countdown-timer">
           <div className="countdown-box">
@@ -1956,13 +1962,6 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
             <span className="countdown-value">{timeLeft.s}</span>
             <span className="countdown-label">Secs</span>
           </div>
-        </div>
-
-        <div className="maintenance-warning gcash-warning" style={{ marginTop: '40px', marginBottom: '20px', padding: '20px', background: 'rgba(30, 58, 138, 0.2)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '25px', color: '#bfdbfe', fontSize: '0.85rem', fontWeight: 600, lineHeight: '1.6', textAlign: 'left' }}>
-          <div style={{ color: '#ff7070', fontWeight: 800, marginBottom: '10px', fontSize: '1rem' }}>🚨 Important Notice:</div>
-          • A 50% GCash downpayment is REQUIRED to confirm slots.<br />
-          • Maxim Orders: Only GCash payments allowed. Take a screenshot of your pinpoint location.<br />
-          <span style={{ color: '#ffde59', fontWeight: 800 }}>• 📍 We only accept Bacolod City orders for now.</span>
         </div>
 
         <div className="admin-bypass-section">
