@@ -2186,9 +2186,9 @@ input:checked+.slider:before {
   align-items: center;
   background: #142376;
   background:
-    radial-gradient(circle at 5% 5%, rgba(28, 53, 153, 0.45) 0%, transparent 45%),
-    radial-gradient(circle at 50% 25%, rgba(28, 53, 153, 0.8) 0%, transparent 60%),
-    radial-gradient(circle at 50% 40%, #1c3599 0%, #142376 100%);
+    radial-gradient(circle at 95% 5%, rgba(28, 53, 153, 0.8) 0%, transparent 65%),
+    radial-gradient(circle at 70% 30%, rgba(28, 53, 153, 0.6) 0%, transparent 70%),
+    radial-gradient(circle at 80% 40%, #1c3599 0%, #142376 100%);
   background-color: #142376;
   /* Fix white spot by matching background */
   color: #ffffff;
