@@ -729,13 +729,50 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
 
                 <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
-                  <a
-                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;end;" : "gcash://"}
+                  <button
+                    type="button"
                     className="launch-gcash-btn"
+                    onClick={() => {
+                      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+                      const isAndroid = /android/i.test(ua);
+                      const isInstagram = /Instagram|FBAN|FBAV/i.test(ua); // Check for IG and FB browsers
+
+                      const androidIntent = "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.globe.gcash.android;end";
+                      const iosScheme = "gcash://";
+
+                      const launchUrl = isAndroid ? androidIntent : iosScheme;
+
+                      // For Instagram, we try with a slight delay or direct assignment
+                      // Some IG versions block immediate location changes from buttons
+                      setTimeout(() => {
+                        window.location.href = launchUrl;
+                      }, 100);
+
+                      if (isInstagram) {
+                        console.log("In-app browser detected.");
+                      }
+                    }}
+                    style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <span>Launch GCash App</span>
                     <span>🚀</span>
-                  </a>
+                  </button>
+                  {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
+                    <div className="ig-browser-tip" style={{
+                      marginTop: '10px',
+                      padding: '8px',
+                      background: '#fffbeb',
+                      border: '1px solid #fef3c7',
+                      borderRadius: '10px',
+                      fontSize: '0.7rem',
+                      color: '#92400e',
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      ⚠️ <strong>Instagram Browser Limitation:</strong><br />
+                      If GCash doesn't open, tap the <strong>three dots (⋮/...)</strong> at the top right and select <strong>"Open in Browser"</strong>.
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
