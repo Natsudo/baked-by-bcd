@@ -2058,24 +2058,26 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
 ═══════════════════════════════════════ */
 function BrowserGuard({ onDismiss }: { onDismiss: () => void }) {
   const isAndroid = /Android/i.test(navigator.userAgent);
+  const siteUrl = "https://bakedbybcd.vercel.app";
 
   const handleOpenExternal = () => {
     if (isAndroid) {
-      // Intent trick for Android to try and force open Chrome
-      window.location.href = "intent://bakedbybcd.vercel.app#Intent;scheme=https;package=com.android.chrome;end";
+      // Direct intent to force Chrome on Android
+      window.location.href = `intent://${siteUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
     } else {
-      // iOS cannot be forced easily, so we just show the native instructions
-      alert("Tap the three dots (...) at the top right and select 'Open in Browser' or 'Open in Safari'.");
+      // iOS fallback - copy to clipboard and notify
+      navigator.clipboard.writeText(siteUrl);
+      alert("Link copied! 📋\n\nNow tap the '...' at the top right and select 'Open in Safari' or paste this into your browser.");
     }
   };
 
   return (
     <div className="bg-overlay fade-in">
       <div className="bg-card">
-        <div className="bg-icon">🍪</div>
+        <div className="bg-icon">🚀</div>
         <h2 className="bg-title">Almost There!</h2>
         <p className="bg-text">
-          To pay with <span style={{ color: '#3b82f6', fontWeight: 800 }}>GCash</span>, you need to open this page in your regular browser.
+          Instagram blocks GCash payments. To continue, open this page in your regular browser.
         </p>
 
         <div className="bg-steps">
@@ -2089,12 +2091,14 @@ function BrowserGuard({ onDismiss }: { onDismiss: () => void }) {
           </div>
         </div>
 
-        <button className="bg-btn-primary" onClick={handleOpenExternal}>
-          {isAndroid ? 'Try Opening in Chrome 🚀' : 'Got it! 👍'}
-        </button>
-        <button className="bg-btn-secondary" onClick={onDismiss}>
-          Wait, let me browse here first
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button className="bg-btn-primary" onClick={handleOpenExternal}>
+            {isAndroid ? 'Open in Chrome Directly 🚀' : 'Copy Link & Instructions 📋'}
+          </button>
+          <button className="bg-btn-secondary" onClick={onDismiss}>
+            Wait, let me browse here first
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2181,20 +2185,21 @@ export default function App() {
     sessionStorage.setItem('baked_browser_guard_seen', 'true');
   };
 
-  // If locked, only allow admin pages or if bypassed
   const showLocked = isLocked && !bypassLocked && page !== 'admin-login' && page !== 'admin-dashboard';
-
-  if (showLocked) {
-    return <MaintenancePage onUnlock={handleUnlock} />;
-  }
 
   return (
     <>
       {showBrowserGuard && <BrowserGuard onDismiss={dismissBrowserGuard} />}
-      {page === 'home' && <HomePage stock={stock} stockLoading={stockLoading} onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
-      {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
-      {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
-      {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
+      {showLocked ? (
+        <MaintenancePage onUnlock={handleUnlock} />
+      ) : (
+        <>
+          {page === 'home' && <HomePage stock={stock} stockLoading={stockLoading} onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
+          {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
+          {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
+          {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
+        </>
+      )}
     </>
   );
 }
