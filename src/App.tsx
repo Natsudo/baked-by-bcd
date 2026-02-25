@@ -726,69 +726,56 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                       {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
                     </div>
                   </div>
-                </div>
 
-                <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
-                  <button
-                    type="button"
-                    className="launch-gcash-btn"
-                    onClick={() => {
-                      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
-                      const isAndroid = /android/i.test(ua);
-                      const isInstagram = /Instagram|FBAN|FBAV/i.test(ua); // Check for IG and FB browsers
+                  <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
+                    <a
+                      href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera)
+                        ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fwww.gcash.com;end;"
+                        : "gcash://"}
+                      className="launch-gcash-btn"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}
+                    >
+                      <span>Launch GCash App</span>
+                      <span>🚀</span>
+                    </a>
 
-                      const androidIntent = "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.globe.gcash.android;end";
-                      const iosScheme = "gcash://";
+                    {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
+                      <div className="ig-browser-tip" style={{
+                        marginTop: '12px',
+                        padding: '12px',
+                        background: '#fff7ed',
+                        border: '2px solid #ffedd5',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        color: '#9a3412',
+                        textAlign: 'center',
+                        lineHeight: '1.5'
+                      }}>
+                        <div style={{ fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                          <span>⚠️</span> Instagram Limitation
+                        </div>
+                        If the app doesn't open, tap the <strong>three dots (⋮ / ...)</strong> at the top right and select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong>.
+                      </div>
+                    )}
+                  </div>
 
-                      const launchUrl = isAndroid ? androidIntent : iosScheme;
+                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
+                    1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via GCash to the number above.<br />
+                    2. Screenshot the receipt and upload it below.
+                  </div>
 
-                      // For Instagram, we try with a slight delay or direct assignment
-                      // Some IG versions block immediate location changes from buttons
-                      setTimeout(() => {
-                        window.location.href = launchUrl;
-                      }, 100);
+                  <div id="gcashScreenshot" className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
+                    {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload GCash Receipt</span>}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+                  {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
 
-                      if (isInstagram) {
-                        console.log("In-app browser detected.");
-                      }
-                    }}
-                    style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit' }}
-                  >
-                    <span>Launch GCash App</span>
-                    <span>🚀</span>
-                  </button>
-                  {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
-                    <div className="ig-browser-tip" style={{
-                      marginTop: '10px',
-                      padding: '8px',
-                      background: '#fffbeb',
-                      border: '1px solid #fef3c7',
-                      borderRadius: '10px',
-                      fontSize: '0.7rem',
-                      color: '#92400e',
-                      textAlign: 'center',
-                      lineHeight: '1.4'
-                    }}>
-                      ⚠️ <strong>Instagram Browser Limitation:</strong><br />
-                      If GCash doesn't open, tap the <strong>three dots (⋮/...)</strong> at the top right and select <strong>"Open in Browser"</strong>.
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
-                  1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via GCash to the number above.<br />
-                  2. Screenshot the receipt and upload it below.
-                </div>
-
-                <div id="gcashScreenshot" className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
-                  {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload GCash Receipt</span>}
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-                {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
-
-                <div className="gcash-qr-container" style={{ marginTop: '15px', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
-                  <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '180px', borderRadius: '10px' }} />
+                  <div className="gcash-qr-container" style={{ marginTop: '15px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
+                    <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '180px', borderRadius: '10px' }} />
+                  </div>
                 </div>
               </div>
 
@@ -798,16 +785,23 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   I understand that my slot is only confirmed after payment is sent. <strong>The downpayment is NON-REFUNDABLE.</strong>
                 </label>
               </div>
-              {errors.understood && <span className="err-msg">{errors.understood}</span>}
+              {errors.understood && <span className="err-msg" style={{ marginLeft: '25px' }}>{errors.understood}</span>}
             </div>
           )}
 
           {/* Notes + Submit (revealed after screenshot) */}
           {gcashScreenshot && (
-            <div className="form-section fade-in">
+            <div className="form-section fade-in" style={{ marginTop: '16px' }}>
               <label className="form-section-title" htmlFor="specialInstructions">Special Instructions (Optional):</label>
-              <textarea id="specialInstructions" className="form-textarea" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} rows={4} placeholder="Any special notes for your order?" />
-              <div className="form-submit-row" style={{ marginTop: '16px' }}>
+              <textarea
+                id="specialInstructions"
+                className="form-textarea"
+                value={specialInstructions}
+                onChange={e => setSpecialInstructions(e.target.value)}
+                rows={4}
+                placeholder="Any special notes for your order?"
+              />
+              <div className="form-submit-row" style={{ marginTop: '20px' }}>
                 <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack}>Back</button>
                 <button type="submit" className="place-order-btn place-order-btn-sm" disabled={currentStock === 0}>
                   {currentStock === 0 ? 'Sold Out' : 'Review Order'}
@@ -815,7 +809,6 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               </div>
             </div>
           )}
-
         </form>
       </div>
     </div>
