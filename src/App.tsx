@@ -216,7 +216,17 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      setTimeout(() => {
+        const firstErrorKey = Object.keys(errs)[0];
+        const errorElement = document.getElementById(firstErrorKey);
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
+      return;
+    }
     setErrors({});
     setSubmitted(true);
   };
@@ -540,7 +550,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
           {/* Quantity Selection */}
           <div className="form-section">
-            <div className="form-section-title">Order Quantity:</div>
+            <div className="form-section-title" id="quantity">Order Quantity:</div>
             {errors.quantity && <span className="err-msg">{errors.quantity}</span>}
 
             <div className="qty-row-item">
@@ -585,7 +595,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           {/* Service Mode — Smart Toggle */}
           {totalPrice > 0 && (
             <div className="form-section fade-in">
-              <div className="form-section-title">How should we get it to you?</div>
+              <div className="form-section-title" id="deliveryMode">How should we get it to you?</div>
               {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
 
               <div className="service-mode-grid">
@@ -608,7 +618,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
               {/* Meetup time sub-section */}
               {deliveryMode === 'meetup' && (
-                <div className="sub-section fade-in" style={{ marginTop: '12px' }}>
+                <div className="sub-section fade-in" style={{ marginTop: '12px' }} id="meetupTime">
                   <div className="form-section-title" style={{ marginBottom: '7px' }}>Pick-up Time (USLS Gate 6 Canteen):</div>
                   {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
                   <div className="payment-option">
@@ -627,21 +637,21 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <div className="sub-section fade-in" style={{ marginTop: '12px' }}>
                   <div className="form-section-title" style={{ marginBottom: '7px' }}>Maxim Delivery Details:</div>
                   {errors.meetupLocation && <span className="err-msg">{errors.meetupLocation}</span>}
-                  <select className="form-input pill" value={meetupLocation} onChange={e => setMeetupLocation(e.target.value as MeetupLocation)} style={{ marginBottom: '8px' }}>
+                  <select id="meetupLocation" className="form-input pill" value={meetupLocation} onChange={e => setMeetupLocation(e.target.value as MeetupLocation)} style={{ marginBottom: '8px' }}>
                     <option value="">-- Choose Pickup Location --</option>
                     <option value="rolling-hills">Rolling Hills (Estefania)</option>
                     <option value="lasalle">La Salle Area</option>
                   </select>
                   {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
-                  <select className="form-input pill" value={meetupTime} onChange={e => setMeetupTime(e.target.value as MeetupTime)} style={{ marginBottom: '8px' }}>
+                  <select id="meetupTime" className="form-input pill" value={meetupTime} onChange={e => setMeetupTime(e.target.value as MeetupTime)} style={{ marginBottom: '8px' }}>
                     <option value="">-- Choose Delivery Time --</option>
                     <option value="10am - 12pm">10:00 AM – 12:00 PM</option>
                     <option value="3pm - 4pm">3:00 PM – 4:00 PM</option>
                   </select>
                   {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
-                  <input className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '8px' }} />
+                  <input id="maximAddress" className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '8px' }} />
                   <input className="form-input pill" type="text" value={maximDetails} onChange={e => setMaximDetails(e.target.value)} placeholder="Additional (Gate color, building, etc.) (Optional)" style={{ marginBottom: '8px' }} />
-                  <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
+                  <div id="maximScreenshot" className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
                     {maximScreenshot ? <span className="upload-done">✅ {maximScreenshot.name}</span> : <span className="upload-hint">📎 Upload Pin Point Screenshot (Maxim App)</span>}
                   </div>
                   <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
@@ -720,7 +730,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
                 <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
                   <a
-                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;package=com.globe.gcash.android;scheme=gcash;end;" : "gcash://"}
+                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.globe.gcash.android;end;" : "gcash://"}
                     className="launch-gcash-btn"
                   >
                     <span>Launch GCash App</span>
@@ -733,7 +743,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   2. Screenshot the receipt and upload it below.
                 </div>
 
-                <div className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
+                <div id="gcashScreenshot" className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
                   {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload GCash Receipt</span>}
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
