@@ -717,10 +717,23 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
 
                 <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
-                  <a href="gcash://" className="launch-gcash-btn">
+                  <button
+                    type="button"
+                    className="launch-gcash-btn"
+                    style={{ width: '100%', border: 'none', cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera);
+                      if (isAndroid) {
+                        window.location.href = 'intent://#Intent;package=com.globe.gcash.android;scheme=gcash;end;';
+                      } else {
+                        window.location.href = 'gcash://';
+                      }
+                    }}
+                  >
                     <span>Launch GCash App</span>
                     <span>🚀</span>
-                  </a>
+                  </button>
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
