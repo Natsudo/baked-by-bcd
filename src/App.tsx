@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { supabase } from './supabaseClient';
 import * as XLSX from 'xlsx';
@@ -7,7 +7,7 @@ import './App.css';
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
 type DeliveryMode = 'meetup' | 'maxim' | '';
-type MeetupLocation = 'rolling-hills' | 'lasalle' | 'alijis-panaad' | '';
+type MeetupLocation = 'rolling-hills' | 'lasalle' | '';
 type MeetupTime = '10am - 12pm' | '3pm - 4pm' | '';
 
 
@@ -18,7 +18,7 @@ const FAQS = [
   { q: "Can I order for today or tomorrow?", a: "We only accept PREORDERS. Same day or next day orders are not available. Delivery dates for each batch are announced in our posts along with a notice or teaser before opening." },
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
-  { q: "Who is your courier? How much is the delivery fee and who shoulders it?", a: "Delivery fees for non meetup orders vary depending on your location. We use Maxim as our courier, pickup basis is either Lasalle or Alijis (Panaad). Maxim orders will be booked by us, and the delivery fee will be shouldered by the buyer." },
+  { q: "Who is your courier? How much is the delivery fee and who shoulders it?", a: "Delivery fees for non meetup orders vary depending on your location. We use Maxim as our courier, pickup basis is either Lasalle or Rolling Hills. Maxim orders will be booked by us, and the delivery fee will be shouldered by the buyer." },
   { q: "What are your payment methods?", a: "We accept cash and GCash. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
   { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City.\n• Via Maxim: Rolling Hills (Estefania) or La Salle area\n• Meetups: La Salle area only" },
   { q: "What time are meetup orders?", a: "Available meetup time slots will be indicated in the preorder form. Kindly choose the time most convenient for you. Please be punctual when meeting up, as we are students and are only available at the selected time." },
@@ -139,6 +139,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [quantityBox12, setQuantityBox12] = useState(0);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('');
+  const [paymentOption, setPaymentOption] = useState<'down' | 'full'>('down');
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -153,21 +154,24 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     setContactNumber(formatted);
   };
 
-  const handleGcashPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setGcashNumber(formatted);
-  };
+
   const [meetupLocation, setMeetupLocation] = useState<MeetupLocation>('');
   const [meetupTime, setMeetupTime] = useState<MeetupTime>('');
   const [maximAddress, setMaximAddress] = useState('');
   const [maximScreenshot, setMaximScreenshot] = useState<File | null>(null);
+
   const [gcashName, setGcashName] = useState('');
   const [gcashNumber, setGcashNumber] = useState('');
   const [gcashScreenshot, setGcashScreenshot] = useState<File | null>(null);
+
+  const handleGcashPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGcashNumber(formatPhoneNumber(e.target.value));
+  };
   const [understood, setUnderstood] = useState(false);
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const maximFileInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +188,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   };
 
   const totalPrice = (quantityBox4 * 285) + (quantityBox6 * 425) + (quantityBox12 * 845);
-  const downpaymentPrice = Math.round(totalPrice * 0.5);
+  const downpaymentPrice = paymentOption === 'full' ? totalPrice : Math.round(totalPrice * 0.5);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -201,20 +205,22 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       if (!maximAddress.trim()) errs.maximAddress = 'Delivery address is required.';
       if (!maximScreenshot) errs.maximScreenshot = 'Please upload a pin point screenshot.';
     }
-    if (paymentMode) {
-      if (!gcashName.trim()) errs.gcashName = 'GCash Name is required.';
-      if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
-      if (!gcashScreenshot) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
-      if (!understood) errs.understood = 'Please tick the acknowledgement checkbox.';
-    }
+    if (!gcashName.trim()) errs.gcashName = 'GCash Sender Name is required.';
+    if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
+    if (!gcashScreenshot) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
+    if (!understood) errs.understood = 'Please tick the acknowledgement checkbox.';
     return errs;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
+    setSubmitted(true);
+  };
+
+  const handleConfirmOrder = async () => {
     setIsSubmitting(true);
 
     try {
@@ -272,6 +278,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           gcash_name: gcashName,
           gcash_number: gcashNumber.replace(/\s/g, ''),
           gcash_screenshot_path: uploadedGcashScreenshotPath,
+          is_paid: paymentOption === 'full',
           special_instructions: specialInstructions
         }]);
 
@@ -298,7 +305,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     }
 
     setIsSubmitting(false);
-    setSubmitted(true);
+    setIsConfirmed(true);
 
     // Trigger confetti upon successful valid submission
     confetti({
@@ -309,8 +316,26 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     });
   };
 
+
+
   /* ── SUCCESS STATE (INVOICE) ── */
   if (submitted) {
+    if (isConfirmed) {
+      return (
+        <div className="order-page fade-in">
+          <div className="op-card" style={{ textAlign: 'center', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src="/baked-by-logo.png" alt="BAKED BY" style={{ width: '130px', marginBottom: '20px' }} />
+            <span style={{ fontSize: '3.5rem', marginBottom: '10px' }}>✅</span>
+            <h2 className="success-header" style={{ fontSize: '2.5rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>Order Submitted!</h2>
+            <p className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '30px', fontWeight: 600 }}>
+              Thank you for ordering with us! <br />We have officially received your order and we'll start baking soon!
+            </p>
+            <button className="place-order-btn place-order-btn-sm" onClick={onBack} style={{ minWidth: '200px' }}>Return Home</button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="order-page fade-in">
         <div className="op-card">
@@ -374,7 +399,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   </div>
                   <div className="invoice-col" style={{ marginTop: '4px' }}>
                     <span className="inv-val box-val" style={{ fontSize: '0.8rem', textAlign: 'center' }}>
-                      <strong>Meet Up Location:</strong> Gate 6 Canteen
+                      <strong>Meet Up Location:</strong> USLS Gate 6 Canteen
                     </span>
                   </div>
                 </>
@@ -383,7 +408,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <>
                   <div className="invoice-row">
                     <span className="inv-label">Maxim Pick-up:</span>
-                    <span className="inv-val">{meetupLocation === 'rolling-hills' ? 'Rolling Hills (Estefania)' : meetupLocation === 'alijis-panaad' ? 'Alijis – Panaad' : 'La Salle'}</span>
+                    <span className="inv-val">{meetupLocation === 'rolling-hills' ? 'Rolling Hills (Estefania)' : 'La Salle'}</span>
                   </div>
                   <div className="invoice-row">
                     <span className="inv-label">Delivery Time:</span>
@@ -408,15 +433,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               {paymentMode !== '' && (
                 <>
                   <div className="invoice-row">
-                    <span className="inv-label">GCash Name:</span>
-                    <span className="inv-val">{gcashName}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">GCash No.:</span>
-                    <span className="inv-val">{gcashNumber}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">50% Downpayment:</span>
+                    <span className="inv-label">{paymentOption === 'full' ? 'Amount Settled:' : '50% Downpayment:'}</span>
                     <span className="inv-val price-highlight">₱{downpaymentPrice.toLocaleString()}</span>
                   </div>
                   <div className="invoice-row">
@@ -438,10 +455,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             </div>
 
             <div className="invoice-footer">
-              <p className="success-msg">Thank you for ordering with us!</p>
               <div className="form-submit-row" style={{ width: '100%' }}>
-                <button className="place-order-btn place-order-btn-sm btn-secondary" onClick={() => setSubmitted(false)}>Back</button>
-                <button className="place-order-btn place-order-btn-sm" onClick={onBack}>Confirm Order</button>
+                <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Back to Form</button>
+                <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
+                  {isSubmitting ? 'Confirming...' : 'Confirm Order'}
+                </button>
               </div>
             </div>
           </div>
@@ -561,244 +579,190 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             </div>
           </div>
 
-          {/* Pricing Summary */}
-          <div className="form-row">
-            <div className="form-field">
-              <div className="price-summary-box">
+
+
+          {/* Service Mode — Smart Toggle */}
+          {totalPrice > 0 && (
+            <div className="form-section fade-in">
+              <div className="form-section-title">How should we get it to you?</div>
+              {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
+
+              <div className="service-mode-grid">
+                <div className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'cash' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('cash'); setPaymentOption('down'); }}>
+                  <div className="svc-header">🤝 Meetup + Cash</div>
+                  <div className="svc-desc">Pay 50% DP (GCash) now, cash balance on meetup.</div>
+                </div>
+                <div className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'gcash' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('gcash'); setPaymentOption('full'); }}>
+                  <div className="svc-header">🤝 Meetup + GCash</div>
+                  <div className="svc-desc">Pay 100% via GCash upfront. Used for convenience!</div>
+                </div>
+                <div className={`svc-opt ${deliveryMode === 'maxim' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }}>
+                  <div className="svc-header">🚚 Maxim Delivery</div>
+                  <div className="svc-desc">Buyer shoulders fee. GCash Payment only.</div>
+                </div>
+              </div>
+
+              {/* Meetup time sub-section */}
+              {deliveryMode === 'meetup' && (
+                <div className="sub-section fade-in" style={{ marginTop: '12px' }}>
+                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Pick-up Time (USLS Gate 6 Canteen):</div>
+                  {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
+                  <div className="payment-option">
+                    <span className="payment-label">10am – 12pm</span>
+                    <input type="radio" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
+                  </div>
+                  <div className="payment-option" style={{ marginTop: '5px' }}>
+                    <span className="payment-label">3pm – 4pm</span>
+                    <input type="radio" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
+                  </div>
+                </div>
+              )}
+
+              {/* Maxim delivery sub-section */}
+              {deliveryMode === 'maxim' && (
+                <div className="sub-section fade-in" style={{ marginTop: '12px' }}>
+                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Maxim Delivery Details:</div>
+                  {errors.meetupLocation && <span className="err-msg">{errors.meetupLocation}</span>}
+                  <select className="form-input pill" value={meetupLocation} onChange={e => setMeetupLocation(e.target.value as MeetupLocation)} style={{ marginBottom: '8px' }}>
+                    <option value="">-- Choose Pickup Location --</option>
+                    <option value="rolling-hills">Rolling Hills (Estefania)</option>
+                    <option value="lasalle">La Salle Area</option>
+                  </select>
+                  {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
+                  <select className="form-input pill" value={meetupTime} onChange={e => setMeetupTime(e.target.value as MeetupTime)} style={{ marginBottom: '8px' }}>
+                    <option value="">-- Choose Delivery Time --</option>
+                    <option value="10am - 12pm">10:00 AM – 12:00 PM</option>
+                    <option value="3pm - 4pm">3:00 PM – 4:00 PM</option>
+                  </select>
+                  {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
+                  <input className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '8px' }} />
+                  <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
+                    {maximScreenshot ? <span className="upload-done">✅ {maximScreenshot.name}</span> : <span className="upload-hint">📎 Upload Pin Point Screenshot (Maxim App)</span>}
+                  </div>
+                  <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
+                  {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payment Section */}
+          {deliveryMode !== '' && (
+            <div className="form-section fade-in">
+              <div className="form-section-title">Complete Your Payment:</div>
+
+              <div className="price-summary-box" style={{ marginBottom: '14px' }}>
                 <div className="price-row">
-                  <span className="price-label">Total Price:</span>
+                  <span className="price-label">Order Total:</span>
                   <span className="price-value">₱{totalPrice.toLocaleString()}</span>
                 </div>
-                <div className="price-row">
-                  <span className="price-label">50% Downpayment:</span>
+                {(paymentMode === 'gcash' || deliveryMode === 'maxim') && (
+                  <div className="payment-type-selector" style={{ margin: '8px 0' }}>
+                    <div className={`pay-opt ${paymentOption === 'down' ? 'active' : ''}`} onClick={() => setPaymentOption('down')}>
+                      <div className="pay-opt-circle"></div>
+                      <span className="pay-opt-title">Pay 50% DP</span>
+                    </div>
+                    <div className={`pay-opt ${paymentOption === 'full' ? 'active' : ''}`} onClick={() => setPaymentOption('full')}>
+                      <div className="pay-opt-circle"></div>
+                      <span className="pay-opt-title">Pay in Full</span>
+                    </div>
+                  </div>
+                )}
+                <div className="price-row price-row-main" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '8px', marginTop: '4px' }}>
+                  <span className="price-label">{paymentOption === 'full' ? 'Amount to Pay Now:' : 'Minimum DP to Pay Now:'}</span>
                   <span className="price-value">₱{downpaymentPrice.toLocaleString()}</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-
-          {/* 1. Mode of Delivery (Reordered) */}
-          <div className="form-section">
-            <div className="form-section-title">Mode of Delivery:</div>
-            {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
-
-            <div className="payment-option">
-              <span className="payment-label" style={{ lineHeight: '1.4' }}>Meet-up (La Salle Area Only)</span>
-              <input type="radio" id="del-meetup" name="delivery" checked={deliveryMode === 'meetup'} onChange={() => { setDeliveryMode('meetup'); }} className="radio-inp" style={{ flexShrink: 0 }} />
-            </div>
-
-            {deliveryMode === 'meetup' && (
-              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
-                <div className="form-section-title" style={{ marginBottom: '7px' }}>Availability Time:</div>
-                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
-                <div className="payment-option">
-                  <span className="payment-label">10am - 12pm</span>
-                  <input type="radio" id="time-10-12" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">3pm - 4pm</span>
-                  <input type="radio" id="time-3-4" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
-                </div>
-
-                <div className="cash-note" style={{ marginTop: '11px', padding: '11px 15px' }}>
-                  <p style={{ margin: '0', fontSize: '0.8rem', color: '#111' }}>
-                    <strong>Note:</strong> Meet Up Location is in Gate 6 Canteen
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="payment-option" style={{ marginTop: '5px' }}>
-              <span className="payment-label" style={{ lineHeight: '1.4' }}>
-                Delivery via Maxim<br />
-                <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: '700' }}>
-                  For Maxim Delivery: Fee varies by location (buyer shoulders).<br />
-                  Please send: complete address, gate color, nearest landmark, map pin, and contact number. 🚚✨
-                </span>
-              </span>
-              <input type="radio" id="del-maxim" name="delivery" checked={deliveryMode === 'maxim'} onChange={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }} className="radio-inp" style={{ flexShrink: 0 }} />
-            </div>
-
-            {deliveryMode === 'maxim' && (
-              <div className="gcash-section" style={{ marginTop: '5px', padding: '11px' }}>
-                <div className="form-section-title" style={{ marginBottom: '7px' }}>Preferred Pick-up Location:</div>
-                {errors.meetupLocation && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupLocation}</span>}
-                <div className="payment-option">
-                  <span className="payment-label">Rolling Hills, Brgy. Estefania</span>
-                  <input type="radio" id="loc-rolling" name="meetupLoc" checked={meetupLocation === 'rolling-hills'} onChange={() => setMeetupLocation('rolling-hills')} className="radio-inp" />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">La Salle</span>
-                  <input type="radio" id="loc-lasalle" name="meetupLoc" checked={meetupLocation === 'lasalle'} onChange={() => setMeetupLocation('lasalle')} className="radio-inp" />
-                </div>
-
-                {/* Maxim Availability Time */}
-                <div className="form-section-title" style={{ marginTop: '11px', marginBottom: '7px' }}>Delivery Time:</div>
-                {errors.meetupTime && <span className="err-msg" style={{ paddingLeft: '0' }}>{errors.meetupTime}</span>}
-                <div className="payment-option">
-                  <span className="payment-label">10am - 12pm</span>
-                  <input type="radio" id="m-time-10-12" name="maximTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
-                </div>
-                <div className="payment-option">
-                  <span className="payment-label">3pm - 4pm</span>
-                  <input type="radio" id="m-time-3-4" name="maximTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
-                </div>
-
-                <div className="form-row" style={{ marginTop: '11px' }}>
-                  <label className="form-label" style={{ minWidth: '88px', textAlign: 'left' }}>Exact Address:</label>
-                  <div className="form-field">
-                    <input className={`form-input pill${errors.maximAddress ? ' err' : ''}`} type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Full delivery address" />
-                    {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
+              <div className="gcash-payment-card" style={{ background: '#eff6ff', borderRadius: '15px', padding: '14px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div className="gcash-info">
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: '2px' }}>SEND GCASH TO:</div>
+                    <div style={{ fontSize: '1.05rem', color: '#1e40af', fontWeight: 900 }}>Maicah Faith M.</div>
+                    <div style={{ fontSize: '0.95rem', color: '#1e40af', fontWeight: 700 }}>0994 484 2605</div>
                   </div>
+                  <button type="button" className="copy-btn" onClick={() => { navigator.clipboard.writeText('09944842605'); alert('GCash number copied! 📋'); }}
+                    style={{ padding: '8px 14px', background: '#3b82f6', color: '#fff', borderRadius: '10px', fontWeight: 800, border: 'none', cursor: 'pointer' }}>
+                    Copy
+                  </button>
                 </div>
 
-                <div className="form-row form-row-top" style={{ marginTop: '7px' }}>
-                  <label className="form-label form-label-top" style={{ minWidth: '88px', textAlign: 'left' }}>Pin Point<br />Screenshot<br /><span style={{ fontSize: '0.72rem', fontWeight: '600' }}>(In Maxim App)</span>:</label>
-                  <div className="form-field">
-                    <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
-                      {maximScreenshot
-                        ? <span className="upload-done">✅ {maximScreenshot.name}</span>
-                        : <span className="upload-hint">📎 Click to upload pinpoint</span>}
-                    </div>
-                    <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
-                    {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 2. Mode of Payment (Reordered and Locked per delivery mode) */}
-          <div className="form-section">
-            <div className="form-section-title">Mode of Payment:</div>
-            {errors.paymentMode && <span className="err-msg">{errors.paymentMode}</span>}
-
-            <div className="payment-option">
-              <span className="payment-label">GCash {deliveryMode === 'maxim' && <small style={{ color: '#4a78e8' }}>(Enforced for Delivery)</small>}</span>
-              <input type="radio" id="pay-gcash" name="payment" checked={paymentMode === 'gcash'} onChange={() => setPaymentMode('gcash')} className="radio-inp" />
-            </div>
-
-            <div className="payment-option" style={{ opacity: deliveryMode === 'maxim' ? 0.6 : 1, pointerEvents: deliveryMode === 'maxim' ? 'none' : 'auto' }}>
-              <span className="payment-label">Cash {deliveryMode === 'meetup' && <small style={{ color: '#4a78e8' }}>(Available for Meetup)</small>}</span>
-              <input type="radio" id="pay-cash" name="payment" checked={paymentMode === 'cash'} onChange={() => setPaymentMode('cash')} className="radio-inp" />
-            </div>
-
-            <div className="cash-note" style={{ marginTop: '8px', padding: '12px', fontSize: '0.85rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: 800, textAlign: 'center' }}>
-              🚨 A 50% downpayment in <span style={{ textDecoration: 'underline' }}>GCASH</span> is REQUIRED for all orders to confirm your slot.
-            </div>
-
-            {/* Acknowledgement checkbox */}
-            <div className="checkbox-row" style={{ marginTop: '10px' }}>
-              <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
-              <label htmlFor="understood" className="checkbox-label">
-                I understand that my order is only confirmed once the 50% downpayment is sent. <strong>The Downpayment is NON-REFUNDABLE.</strong>
-              </label>
-            </div>
-            {errors.understood && <span className="err-msg">{errors.understood}</span>}
-
-            {/* GCash extra fields (Required for BOTH Cash and GCash due to downpayment) */}
-            {paymentMode !== '' && (
-              <div className="gcash-section" style={{ marginTop: '5px' }}>
-                <div className="form-row">
-                  <label className="form-label" htmlFor="gcashName">GCash Name:</label>
-                  <div className="form-field">
-                    <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" />
-                    {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <label className="form-label" htmlFor="gcashNumber">GCash Number:</label>
-                  <div className="form-field">
-                    <input
-                      id="gcashNumber"
-                      className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
-                      type="tel"
-                      value={gcashNumber}
-                      onChange={handleGcashPhoneChange}
-                      placeholder="09XX XXX XXXX"
-                      maxLength={13}
-                    />
-                    {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
-                  </div>
-                </div>
-                <div className="form-row form-row-top">
-                  <label className="form-label form-label-top">Upload Receipt<br />Screenshot:</label>
-                  <div className="form-field">
-                    <div className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()}>
-                      {gcashScreenshot
-                        ? <span className="upload-done">✅ {gcashScreenshot.name}</span>
-                        : <span className="upload-hint">📎 Click to upload screenshot</span>}
-                    </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} id="gcashScreenshot" />
-                    {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
-                  </div>
-                </div>
-
-                <div className="gcash-payment-card">
-                  <div className="gcash-card-header">
-                    <span className="gcash-card-title">Send Payment to:</span>
-                  </div>
-
-                  <div className="gcash-detail-row">
-                    <div className="gcash-info">
-                      <span className="gcash-label">GCash Name</span>
-                      <span className="gcash-value">Elaisha Faith M.</span>
+                <div className="gcash-section" style={{ marginTop: '10px', marginBottom: '15px', background: '#fff', padding: '10px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                  <div className="form-row" style={{ marginBottom: '8px' }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashName">GCash Name:</label>
+                    <div className="form-field">
+                      <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" style={{ fontSize: '0.9rem', padding: '8px 12px' }} />
+                      {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
                     </div>
                   </div>
-
-                  <div className="gcash-detail-row">
-                    <div className="gcash-info">
-                      <span className="gcash-label">GCash Number</span>
-                      <span className="gcash-value">0906 065 9030</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="copy-btn"
-                      onClick={() => {
-                        navigator.clipboard.writeText('09060659030');
-                        alert('GCash number copied! 📋');
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </div>
-
-                  <div className="gcash-launch-container">
-                    <a href="gcash://" className="launch-gcash-btn">
-                      <span>Launch GCash App</span>
-                      <span>🚀</span>
-                    </a>
-
-                    <div className="gcash-steps">
-                      1. <strong>Copy</strong> the GCash number.<br />
-                      2. Tap <strong>Launch GCash</strong> to open your app.<br />
-                      3. <strong>Paste</strong> and send the exact downpayment: <strong>₱{downpaymentPrice.toLocaleString()}</strong>.
+                  <div className="form-row">
+                    <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashNumber">GCash Number:</label>
+                    <div className="form-field">
+                      <input
+                        id="gcashNumber"
+                        className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
+                        type="tel"
+                        value={gcashNumber}
+                        onChange={handleGcashPhoneChange}
+                        placeholder="09XX XXX XXXX"
+                        maxLength={13}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                      />
+                      {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
                     </div>
                   </div>
                 </div>
 
-                <div className="gcash-qr-container" style={{ marginTop: '15px' }}>
+                <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
+                  <a href="gcash://" className="launch-gcash-btn">
+                    <span>Launch GCash App</span>
+                    <span>🚀</span>
+                  </a>
+                </div>
+
+                <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
+                  1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via GCash to the number above.<br />
+                  2. Screenshot the receipt and upload it below.
+                </div>
+
+                <div className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
+                  {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload GCash Receipt</span>}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+                {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
+
+                <div className="gcash-qr-container" style={{ marginTop: '15px', textAlign: 'center' }}>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
-                  <img src="/gcash-qr.jpg" alt="GCash QR Code" className="gcash-qr-image" />
+                  <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '180px', borderRadius: '10px' }} />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Special Instructions */}
-          <div className="form-section">
-            <label className="form-section-title" htmlFor="specialInstructions">Special Instructions:</label>
-            <textarea id="specialInstructions" className="form-textarea" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} rows={5} placeholder="" />
-          </div>
+              <div className="checkbox-row" style={{ marginTop: '10px' }}>
+                <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
+                <label htmlFor="understood" className="checkbox-label">
+                  I understand that my slot is only confirmed after payment is sent. <strong>The downpayment is NON-REFUNDABLE.</strong>
+                </label>
+              </div>
+              {errors.understood && <span className="err-msg">{errors.understood}</span>}
+            </div>
+          )}
 
-          {/* Submit */}
-          <div className="form-submit-row">
-            <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack} disabled={isSubmitting}>Back</button>
-            <button type="submit" className="place-order-btn place-order-btn-sm" disabled={isSubmitting || currentStock === 0}>
-              {isSubmitting ? 'Submitting...' : currentStock === 0 ? 'Sold Out' : 'Place Order!'}
-            </button>
-          </div>
+          {/* Notes + Submit (revealed after screenshot) */}
+          {gcashScreenshot && (
+            <div className="form-section fade-in">
+              <label className="form-section-title" htmlFor="specialInstructions">Special Instructions (Optional):</label>
+              <textarea id="specialInstructions" className="form-textarea" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} rows={4} placeholder="Any special notes for your order?" />
+              <div className="form-submit-row" style={{ marginTop: '16px' }}>
+                <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack}>Back</button>
+                <button type="submit" className="place-order-btn place-order-btn-sm" disabled={currentStock === 0}>
+                  {currentStock === 0 ? 'Sold Out' : 'Review Order'}
+                </button>
+              </div>
+            </div>
+          )}
 
         </form>
       </div>
@@ -1093,6 +1057,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
               {(() => {
                 let b4 = 0, b6 = 0, b12 = 0;
                 orders.forEach(o => {
+                  if (o.status === 'Delivered' && o.is_paid) return;
                   const typeVal = o.quantity_type || '';
                   if (typeVal.includes('Box4:')) {
                     const parts = typeVal.split(', ');
@@ -1147,6 +1112,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                                 let metCount = 0;
                                 let maxCount = 0;
                                 orders.forEach(o => {
+                                  if (o.status === 'Delivered' && o.is_paid) return;
                                   if (o.meetup_time !== time || !o.quantity_type) return;
                                   const q = parseInt(o.quantity_type.split(`${typeKey}: `)[1]) || 0;
                                   if (o.delivery_mode === 'maxim') maxCount += q; else metCount += q;
@@ -1173,6 +1139,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                       return boxTypes.map(type => {
                         const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
                         const typeOrders = orders.filter(o => {
+                          if (o.status === 'Delivered' && o.is_paid) return false;
                           const typeVal = o.quantity_type || '';
                           return typeVal.includes(`${typeKey}:`) && parseInt(typeVal.split(`${typeKey}: `)[1]) > 0;
                         }).sort((a, b) => {
@@ -1497,7 +1464,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                                     </div>
                                     <div className="dc-body">
                                       <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
-                                      <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : o.meetup_location === 'alijis-panaad' ? 'Alijis – Panaad' : 'La Salle'}</div>
+                                      <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle'}</div>
                                       <div style={{ marginTop: '5px' }}>
                                         {o.instagram && (
                                           <a

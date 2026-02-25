@@ -1,0 +1,284 @@
+﻿  return (
+    <div className="order-page fade-in">
+
+      {/* Narrow white card centered over the background */}
+      <div className="op-card">
+
+        {/* Mini BAKED BY logo */}
+        <div className="op-logo">
+          <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
+        </div>
+
+        {/* Product info with real cookie icon */}
+        <div className="op-product-info">
+          <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
+          <div>
+            <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
+            <div className="op-product-sub">Delivery Date: February 28, 2026</div>
+            <div className="op-product-sub">Batch 4</div>
+            <div className="op-product-price-list">
+              â‚±285 for Box of 4 â€¢ â‚±425 for Box of 6 â€¢ â‚±845 for Box of 12
+            </div>
+            <div className="op-product-limit-note">
+              Limit: 2 boxes per customer (B4) â€¢ 2 boxes (B6) â€¢ 1 box (B12)
+            </div>
+          </div>
+        </div>
+
+        <form className="order-form" onSubmit={handleSubmit} noValidate>
+
+          {/* Customer Details */}
+          <div className="form-section">
+            <div className="form-section-title">Customer Details:</div>
+
+            {/* Full Name */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="fullName">Full Name:</label>
+              <div className="form-field">
+                <input id="fullName" className={`form-input pill${errors.fullName ? ' err' : ''}`} type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="" />
+                {errors.fullName && <span className="err-msg">{errors.fullName}</span>}
+              </div>
+            </div>
+
+            {/* Contact Number */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="contactNumber">Contact Number:</label>
+              <div className="form-field">
+                <input
+                  id="contactNumber"
+                  className={`form-input pill${errors.contactNumber ? ' err' : ''}`}
+                  type="tel"
+                  value={contactNumber}
+                  onChange={handlePhoneChange}
+                  placeholder="09XX XXX XXXX"
+                  maxLength={13}
+                />
+                {errors.contactNumber && <span className="err-msg">{errors.contactNumber}</span>}
+              </div>
+            </div>
+
+            {/* Instagram */}
+            <div className="form-row">
+              <label className="form-label" htmlFor="instagram">Instagram Handle:</label>
+              <div className="form-field">
+                <input id="instagram" className={`form-input pill${errors.instagram ? ' err' : ''}`} type="text" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="" />
+                {errors.instagram && <span className="err-msg">{errors.instagram}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity Selection */}
+
+          {/* PHASE 2: Quantity (Show after Name) */}
+          {fullName.length > 2 && (
+            <div className="form-section fade-in">
+              <div className="form-section-title">Order Quantity:</div>
+              {errors.quantity && <span className="err-msg">{errors.quantity}</span>}
+
+              <div className="qty-row-item">
+                <div className="qty-info">
+                  <span className="qty-label">Box of 4</span>
+                  <span className="qty-sub">Max 2 boxes</span>
+                </div>
+                <div className="qty-stepper">
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.max(0, quantityBox4 - 1))}>âˆ’</button>
+                  <span className="qty-val">{quantityBox4}</span>
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.min(2, quantityBox4 + 1))}>+</button>
+                </div>
+              </div>
+
+              <div className="qty-row-item" style={{ marginTop: '10px' }}>
+                <div className="qty-info">
+                  <span className="qty-label">Box of 6</span>
+                  <span className="qty-sub">Max 2 boxes</span>
+                </div>
+                <div className="qty-stepper">
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.max(0, quantityBox6 - 1))}>âˆ’</button>
+                  <span className="qty-val">{quantityBox6}</span>
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.min(2, quantityBox6 + 1))}>+</button>
+                </div>
+              </div>
+
+              <div className="qty-row-item" style={{ marginTop: '10px' }}>
+                <div className="qty-info">
+                  <span className="qty-label">Box of 12</span>
+                  <span className="qty-sub">Max 1 box</span>
+                </div>
+                <div className="qty-stepper">
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.max(0, quantityBox12 - 1))}>âˆ’</button>
+                  <span className="qty-val">{quantityBox12}</span>
+                  <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.min(1, quantityBox12 + 1))}>+</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PHASE 3: Service Mode (Smart Toggle) */}
+          {totalPrice > 0 && (
+            <div className="form-section fade-in">
+              <div className="form-section-title">How should we get it to you?</div>
+              {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
+
+              <div className="service-mode-grid">
+                {/* 1. Meetup + Cash */}
+                <div
+                  className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'cash' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('cash'); setPaymentOption('down'); }}
+                >
+                  <div className="svc-header">ðŸ¤ Meetup + Cash</div>
+                  <div className="svc-desc">Pay 50% DP (GCash) now, balance later.</div>
+                </div>
+
+                {/* 2. Meetup + Full GCash */}
+                <div
+                  className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'gcash' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('gcash'); setPaymentOption('full'); }}
+                >
+                  <div className="svc-header">ðŸ¤ Meetup + GCash</div>
+                  <div className="svc-desc">Pay 100% via GCash now. Convenience!</div>
+                </div>
+
+                {/* 3. Maxim Delivery */}
+                <div
+                  className={`svc-opt ${deliveryMode === 'maxim' ? 'active' : ''}`}
+                  onClick={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }}
+                >
+                  <div className="svc-header">ðŸšš Maxim Delivery</div>
+                  <div className="svc-desc">Buyer shoulders fee. GCash Payment only.</div>
+                </div>
+              </div>
+
+              {/* Conditional Location Details for Meetup */}
+              {deliveryMode === 'meetup' && (
+                <div className="sub-section fade-in" style={{ marginTop: '15px' }}>
+                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Selection Pick-up Time:</div>
+                  <div className="payment-option">
+                    <span className="payment-label">10am - 12pm (Gate 6 Canteen)</span>
+                    <input type="radio" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
+                  </div>
+                  <div className="payment-option" style={{ marginTop: '5px' }}>
+                    <span className="payment-label">3pm - 4pm (Gate 6 Canteen)</span>
+                    <input type="radio" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
+                  </div>
+                </div>
+              )}
+
+              {/* Conditional Details for Maxim */}
+              {deliveryMode === 'maxim' && (
+                <div className="sub-section fade-in" style={{ marginTop: '15px' }}>
+                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Maxim Delivery Info:</div>
+                  <select
+                    className="form-input pill"
+                    value={meetupLocation}
+                    onChange={e => setMeetupLocation(e.target.value as MeetupLocation)}
+                    style={{ marginBottom: '10px' }}
+                  >
+                    <option value="">-- Choose Pickup Location --</option>
+                    <option value="rolling-hills">Rolling Hills (Estefania)</option>
+                    <option value="lasalle">La Salle Area</option>
+                    <option value="alijis-panaad">Alijis â€“ Panaad</option>
+                  </select>
+
+                  <select
+                    className="form-input pill"
+                    value={meetupTime}
+                    onChange={e => setMeetupTime(e.target.value as MeetupTime)}
+                    style={{ marginBottom: '10px' }}
+                  >
+                    <option value="">-- Choose Delivery Time --</option>
+                    <option value="10am - 12pm">10:00 AM - 12:00 PM</option>
+                    <option value="3pm - 4pm">3:00 PM - 4:00 PM</option>
+                  </select>
+
+                  <input className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '10px' }} />
+
+                  <div className="upload-box" onClick={() => maximFileInputRef.current?.click()}>
+                    {maximScreenshot ? `âœ… ${maximScreenshot.name}` : 'ðŸ“Ž Upload Maxim Pin Point Screen'}
+                  </div>
+                  <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PHASE 4: Payment Instructions & Receipt */}
+          {deliveryMode !== '' && (
+            <div className="form-section fade-in">
+              <div className="form-section-title">Complete Payment:</div>
+
+              <div className="price-summary-box" style={{ marginBottom: '15px' }}>
+                <div className="price-row">
+                  <span className="price-label">Selected Mode:</span>
+                  <span className="price-value" style={{ textTransform: 'capitalize' }}>{deliveryMode === 'meetup' ? 'Meetup' : 'Maxim'} â€¢ {paymentMode}</span>
+                </div>
+
+                {/* Secondary payment option toggle (Full vs DP) for GCash/Maxim */}
+                {(paymentMode === 'gcash' || (deliveryMode === 'maxim')) && (
+                  <div className="payment-type-selector" style={{ margin: '10px 0' }}>
+                    <div className={`pay-opt ${paymentOption === 'down' ? 'active' : ''}`} onClick={() => setPaymentOption('down')}>
+                      <div className="pay-opt-circle"></div>
+                      <span className="pay-opt-title">Pay 50% DP</span>
+                    </div>
+                    <div className={`pay-opt ${paymentOption === 'full' ? 'active' : ''}`} onClick={() => setPaymentOption('full')}>
+                      <div className="pay-opt-circle"></div>
+                      <span className="pay-opt-title">Pay Full</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="price-row price-row-main" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '5px' }}>
+                  <span className="price-label">{paymentOption === 'full' ? 'Total to Pay now:' : 'Minimum DP to Pay now:'}</span>
+                  <span className="price-value">â‚±{downpaymentPrice.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="gcash-payment-card" style={{ background: '#eff6ff', borderRadius: '15px', padding: '15px' }}>
+                <div className="gcash-detail-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="gcash-info">
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>SEND GCASH TO:</div>
+                    <div style={{ fontSize: '1.1rem', color: '#1e40af', fontWeight: 900 }}>Elaisha Faith M.</div>
+                    <div style={{ fontSize: '1rem', color: '#1e40af', fontWeight: 700 }}>0906 065 9030</div>
+                  </div>
+                  <button type="button" className="copy-btn" onClick={() => { navigator.clipboard.writeText('09060659030'); alert('Copied!'); }} style={{ padding: '8px 15px', background: '#3b82f6', color: '#fff', borderRadius: '10px', fontWeight: 800 }}>Copy</button>
+                </div>
+
+                <div className="gcash-steps" style={{ fontSize: '0.75rem', marginTop: '10px', color: '#1d4ed8' }}>
+                  1. Send <strong>â‚±{downpaymentPrice.toLocaleString()}</strong> via GCash.<br />
+                  2. Upload the screenshot below. <strong>(Important!)</strong>
+                </div>
+
+                <div className="upload-box" onClick={() => fileInputRef.current?.click()} style={{ marginTop: '15px', background: '#fff' }}>
+                  {gcashScreenshot ? `âœ… Screenshot Uploaded` : 'ðŸ“Ž Click to Upload Receipt'}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+                {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
+              </div>
+
+              <div className="checkbox-row" style={{ marginTop: '15px' }}>
+                <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
+                <label htmlFor="understood" className="checkbox-label" style={{ fontSize: '0.75rem' }}>
+                  I understand that my slot is only secured after sending the payment. Payments are <strong>strictly NON-REFUNDABLE.</strong>
+                </label>
+              </div>
+              {errors.understood && <span className="err-msg">{errors.understood}</span>}
+            </div>
+          )}
+
+          {/* PHASE 5: Instructions & Submit */}
+          {gcashScreenshot && (
+            <div className="form-section fade-in">
+              <label className="form-section-title">Special Instructions (Optional):</label>
+              <textarea className="form-textarea" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} rows={3} placeholder="Any notes for your order?" />
+
+              <div className="form-submit-row" style={{ marginTop: '20px' }}>
+                <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack}>Back</button>
+                <button type="submit" className="place-order-btn">Review Order Summary</button>
+              </div>
+            </div>
+          )}
+
+        </form>
+      </div>
+    </div>
+  );
+}
