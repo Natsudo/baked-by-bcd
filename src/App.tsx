@@ -730,7 +730,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
                 <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
                   <a
-                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.globe.gcash.android;end;" : "gcash://"}
+                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;end;" : "gcash://"}
                     className="launch-gcash-btn"
                   >
                     <span>Launch GCash App</span>
@@ -1048,11 +1048,14 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
             <h1 className="admin-title">Admin Panel</h1>
           </div>
           <div className="admin-nav-actions">
-            <button className="admin-nav-btn admin-nav-btn-secondary" onClick={onBack}>
-              <span>←</span> Back to Site
+            <button className="admin-nav-btn admin-nav-btn-secondary" onClick={() => setShowDeliveryList(true)}>
+              <span>🚚</span> Delivery List
             </button>
             <button className="admin-nav-btn admin-nav-btn-primary" onClick={handleExportExcel}>
               <span>📊</span> Export Excel
+            </button>
+            <button className="admin-nav-btn admin-nav-btn-secondary" onClick={onBack}>
+              <span>←</span> Back
             </button>
             <button className="admin-nav-btn admin-nav-btn-danger" onClick={handleLogout}>
               Logout <span>🚪</span>
@@ -1062,28 +1065,34 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
       </nav>
 
       <div className="admin-content">
-        <div className="admin-highlight-section">
-          <div className="production-summary-card fade-in">
-            <div className="prod-card-header">
-              <span className="prod-card-icon">🏗️</span>
-              <h3>Baking Production Goals</h3>
-            </div>
-            <div className="prod-grid">
-              {(() => {
-                let b4 = 0, b6 = 0, b12 = 0;
-                orders.forEach(o => {
-                  if (o.status === 'Delivered' && o.is_paid) return;
-                  const typeVal = o.quantity_type || '';
-                  if (typeVal.includes('Box4:')) {
-                    const parts = typeVal.split(', ');
-                    b4 += parseInt(parts[0].split(': ')[1]) || 0;
-                    b6 += parseInt(parts[1].split(': ')[1]) || 0;
-                    b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
-                  }
-                });
-                const totalCookies = (b4 * 4) + (b6 * 6) + (b12 * 12);
-                return (
-                  <>
+        {(() => {
+          let b4 = 0, b6 = 0, b12 = 0;
+          let recentNotes: string[] = [];
+          orders.forEach(o => {
+            if (o.status === 'Delivered' && o.is_paid) return;
+            const typeVal = o.quantity_type || '';
+            if (typeVal.includes('Box4:')) {
+              const parts = typeVal.split(', ');
+              b4 += parseInt(parts[0].split(': ')[1]) || 0;
+              b6 += parseInt(parts[1].split(': ')[1]) || 0;
+              b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+            }
+            if (o.special_instructions && o.special_instructions.trim()) {
+              if (!recentNotes.includes(o.special_instructions)) {
+                recentNotes.push(o.special_instructions);
+              }
+            }
+          });
+          const totalCookiesVal = (b4 * 4) + (b6 * 6) + (b12 * 12);
+          return (
+            <>
+              <div className="admin-highlight-section">
+                <div className="production-summary-card fade-in">
+                  <div className="prod-card-header">
+                    <span className="prod-card-icon">🏗️</span>
+                    <h3>Baking Production Goals</h3>
+                  </div>
+                  <div className="prod-grid">
                     <div className="prod-item">
                       <span className="prod-label">Box of 4</span>
                       <span className="prod-val">{b4}</span>
@@ -1097,113 +1106,153 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                       <span className="prod-val">{b12}</span>
                     </div>
                     <div className="prod-item prod-total-box clickable" onClick={() => setShowProductionDetails(true)} style={{ cursor: 'pointer' }}>
-                      <span className="prod-label">Total Cookies (View Details)</span>
-                      <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookies}</span>
+                      <span className="prod-label">Total Cookies</span>
+                      <span className="prod-val" style={{ color: '#fbbf24' }}>{totalCookiesVal}</span>
                     </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-
-          {showProductionDetails && (
-            <div className="admin-modal-overlay" onClick={() => setShowProductionDetails(false)}>
-              <div className="admin-modal" style={{ maxWidth: '700px', width: '95%' }} onClick={e => e.stopPropagation()}>
-                <div className="admin-modal-header">
-                  <h2>Production Details</h2>
-                  <button className="close-btn" onClick={() => setShowProductionDetails(false)}>&times;</button>
+                  </div>
                 </div>
-                <div className="admin-modal-content" style={{ maxHeight: '75vh' }}>
-                  <div className="production-details-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '10px' }}>
-                      <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: '#0369a1', fontFamily: 'Patrick Hand' }}>Quick Production Summary</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {['10am - 12pm', '3pm - 4pm'].map(time => (
-                          <div key={time}>
-                            <h4 style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px', borderBottom: '1px solid #e0f2fe' }}>🕒 {time === '10am - 12pm' ? 'Morning Batch' : 'Afternoon Batch'}</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
-                              {['Box of 4', 'Box of 6', 'Box of 12'].map(type => {
-                                const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
+
+                <div className="admin-stat-card admin-stat-card-sparkle">
+                  <h3>Total Gross Revenue</h3>
+                  <div className="admin-stat-val sparkle-text">
+                    ₱{Math.round(orders.reduce((acc, o) => acc + o.total_price, 0)).toLocaleString()}
+                  </div>
+                  <p className="admin-stat-sub">Overall value sum</p>
+                </div>
+              </div>
+
+              {showProductionDetails && (
+                <div className="admin-modal-overlay" onClick={() => setShowProductionDetails(false)}>
+                  <div className="admin-modal" style={{ maxWidth: '700px', width: '95%' }} onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-header">
+                      <h2>Production Details</h2>
+                      <button className="close-btn" onClick={() => setShowProductionDetails(false)}>&times;</button>
+                    </div>
+                    <div className="admin-modal-content" style={{ maxHeight: '75vh' }}>
+                      <div className="production-details-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '10px' }}>
+                          <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: '#0369a1', fontFamily: 'Patrick Hand' }}>Quick Production Summary</h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {['10am - 12pm', '3pm - 4pm'].map(time =\u003e (
+                            <div key={time}>
+                              <h4 style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px', borderBottom: '1px solid #e0f2fe' }}>🕒 {time === '10am - 12pm' ? 'Morning Batch' : 'Afternoon Batch'}</h4>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                                {['Box of 4', 'Box of 6', 'Box of 12'].map(type =\u003e {
+                                    const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
                                 let metCount = 0;
                                 let maxCount = 0;
-                                orders.forEach(o => {
-                                  if (o.status === 'Delivered' && o.is_paid) return;
-                                  if (o.meetup_time !== time || !o.quantity_type) return;
-                                  const q = parseInt(o.quantity_type.split(`${typeKey}: `)[1]) || 0;
-                                  if (o.delivery_mode === 'maxim') maxCount += q; else metCount += q;
-                                });
-                                if (metCount === 0 && maxCount === 0) return null;
+                                orders.forEach(o =\u003e {
+                                      if (o.status === 'Delivered' \u0026\u0026 o.is_paid) return;
+                                if (o.meetup_time !== time || !o.quantity_type) return;
+                                const q = parseInt(o.quantity_type.split(`${typeKey}: `)[1]) || 0;
+                                if (o.delivery_mode === 'maxim') maxCount += q; else metCount += q;
+                                    });
+                                if (metCount === 0 \u0026\u0026 maxCount === 0) return null;
                                 return (
-                                  <div key={type} style={{ background: 'white', padding: '10px', borderRadius: '8px', border: '1px solid #e0f2fe' }}>
-                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{type}</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6366f1' }}>{metCount + maxCount} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>total</span></div>
-                                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px', lineHeight: '1.2' }}>
-                                      🤝 Meetup: {metCount}<br />
-                                      🚚 Maxim: {maxCount}
-                                    </div>
+                                <div key={type} style={{ background: 'white', padding: '10px', borderRadius: '8px', border: '1px solid #e0f2fe' }}>
+                                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{type}</div>
+                                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6366f1' }}>{metCount + maxCount} <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b' }}>total</span></div>
+                                  <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px', lineHeight: '1.2' }}>
+                                    🤝 Meetup: {metCount}\u003cbr /\u003e
+                                    🚚 Maxim: {maxCount}
                                   </div>
+                                </div>
                                 );
-                              })}
+                                  })}
+                              </div>
                             </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    {(() => {
-                      const boxTypes = ['Box of 4', 'Box of 6', 'Box of 12'];
-                      return boxTypes.map(type => {
-                        const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
-                        const typeOrders = orders.filter(o => {
-                          if (o.status === 'Delivered' && o.is_paid) return false;
-                          const typeVal = o.quantity_type || '';
-                          return typeVal.includes(`${typeKey}:`) && parseInt(typeVal.split(`${typeKey}: `)[1]) > 0;
-                        }).sort((a, b) => {
-                          if (a.meetup_time !== b.meetup_time) return a.meetup_time.localeCompare(b.meetup_time);
-                          return a.delivery_mode.localeCompare(b.delivery_mode);
-                        });
+                        </div>
+                        {(() =\u003e {
+                          const boxTypes = ['Box of 4', 'Box of 6', 'Box of 12'];
+                        return boxTypes.map(type =\u003e {
+                            const typeKey = type === 'Box of 4' ? 'Box4' : type === 'Box of 6' ? 'Box6' : 'Box12';
+                        const typeOrders = orders.filter(o =\u003e {
+                              if (o.status === 'Delivered' \u0026\u0026 o.is_paid) return false;
+                        const typeVal = o.quantity_type || '';
+                        return typeVal.includes(`${typeKey}:`) \u0026\u0026 parseInt(typeVal.split(`${typeKey}: `)[1]) \u003e 0;
+                            }).sort((a, b) =\u003e {
+                              if (a.meetup_time !== b.meetup_time) return a.meetup_time.localeCompare(b.meetup_time);
+                        return a.delivery_mode.localeCompare(b.delivery_mode);
+                            });
 
                         if (typeOrders.length === 0) return null;
 
                         return (
-                          <div key={type} className="prod-detail-group">
-                            <h3 style={{ borderBottom: '2px solid #6366f1', paddingBottom: '5px', color: '#1e293b' }}>{type}</h3>
-                            <div className="prod-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', marginTop: '10px' }}>
-                              {typeOrders.map(o => {
-                                const qty = parseInt((o.quantity_type || '').split(`${typeKey}: `)[1]);
-                                return (
-                                  <div key={o.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
-                                    <div style={{ fontWeight: 800 }}>{o.full_name} <span style={{ color: '#6366f1' }}>({qty})</span></div>
-                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                      🕒 {o.meetup_time}<br />
-                                      {o.delivery_mode === 'maxim' ? '🚚 Maxim' : '🤝 Meetup'}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                        <div key={type} className="prod-detail-group">
+                          <h3 style={{ borderBottom: '2px solid #6366f1', paddingBottom: '5px', color: '#1e293b' }}>{type}</h3>
+                          <div className="prod-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                            {typeOrders.map(o =\u003e {
+                                    const qty = parseInt((o.quantity_type || '').split(`${typeKey}: `)[1]);
+                            return (
+                            <div key={o.id} style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+                              <div style={{ fontWeight: 800 }}>{o.full_name} <span style={{ color: '#6366f1' }}>({qty})</span></div>
+                              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                🕒 {o.meetup_time}\u003cbr /\u003e
+                                {o.delivery_mode === 'maxim' ? '🚚 Maxim' : '🤝 Meetup'}
+                              </div>
                             </div>
+                            );
+                                  })}
                           </div>
+                        </div>
                         );
-                      });
-                    })()}
+                          });
+                        })()}
+                      </div>
+                    </div>
+                    <div className="admin-modal-footer" style={{ padding: '15px', textAlign: 'center' }}>
+                      <button className="place-order-btn place-order-btn-sm" onClick={() => setShowProductionDetails(false)}>Close</button>
+                    </div>
                   </div>
                 </div>
-                <div className="admin-modal-footer" style={{ padding: '15px', textAlign: 'center' }}>
-                  <button className="place-order-btn place-order-btn-sm" onClick={() => setShowProductionDetails(false)}>Close</button>
+              )}
+
+              <div className="admin-stats-row">
+                <div className="admin-stat-card clickable" onClick={() => setShowProductionDetails(true)}>
+                  <h3 style={{ color: '#fbbf24' }}>Total Cookies</h3>
+                  <div className="admin-stat-val" style={{ color: '#fbbf24' }}>{totalCookiesVal}</div>
+                  <p className="admin-stat-sub">Across all pending orders</p>
+                </div>
+                <div className="admin-stat-card">
+                  <h3 style={{ color: '#10b981' }}>Total Received</h3>
+                  <div className="admin-stat-val" style={{ color: '#10b981' }}>
+                    ₱{Math.round(orders.reduce((acc, o) => {
+                      if (o.is_paid) return acc + o.total_price;
+                      if (o.payment_mode === 'gcash') return acc + o.downpayment_price;
+                      return acc;
+                    }, 0)).toLocaleString()}
+                  </div>
+                  <p className="admin-stat-sub">Cash/GCash in hand</p>
+                </div>
+                <div className="admin-stat-card clickable" onClick={() => setShowToCollect(true)}>
+                  <h3 style={{ color: '#6366f1' }}>To be Received</h3>
+                  <div className="admin-stat-val" style={{ color: '#6366f1' }}>
+                    ₱{Math.round(orders.reduce((acc, o) => {
+                      if (o.is_paid) return acc;
+                      const pending = o.payment_mode === 'gcash' ? (o.total_price - o.downpayment_price) : o.total_price;
+                      return acc + pending;
+                    }, 0)).toLocaleString()}
+                  </div>
+                  <p className="admin-stat-sub">Remaining balance</p>
+                </div>
+                <div className="admin-stat-card">
+                  <h3 style={{ color: '#f59e0b' }}>Recent Notes</h3>
+                  <div className="admin-stat-sub" style={{ textAlign: 'left', maxHeight: '60px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {recentNotes.length > 0 ? (
+                      recentNotes.slice(0, 2).map((n, i) => (
+                        <div key={i} style={{ fontSize: '0.7rem', borderBottom: '1px solid #eee', padding: '2px 0' }}>• {n.substring(0, 30)}...</div>
+                      ))
+                    ) : 'No notes'}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            </>
+          );
+        })()}
 
-          <div className="admin-stat-card admin-stat-card-sparkle">
-            <h3>Total Gross Revenue</h3>
-            <div className="admin-stat-val sparkle-text">
-              ₱{Math.round(orders.reduce((acc, o) => acc + o.total_price, 0)).toLocaleString()}
-            </div>
-            <p className="admin-stat-sub">Overall value of all orders</p>
-          </div>
-        </div>
-
-        <div className="admin-stats-row">
+        <div className="admin-stats-row" style={{ marginTop: '20px' }}>
           <div className="admin-stat-card">
             <h3>Live Stock</h3>
             <div className="admin-stock-control">
@@ -1216,29 +1265,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
           <div className="admin-stat-card">
             <h3>Total Orders</h3>
             <div className="admin-stat-val">{orders.length}</div>
-            <p className="admin-stat-sub">Recent orders in the system</p>
-          </div>
-          <div className="admin-stat-card">
-            <h3 style={{ color: '#10b981' }}>Total Received</h3>
-            <div className="admin-stat-val" style={{ color: '#10b981' }}>
-              ₱{Math.round(orders.reduce((acc, o) => {
-                if (o.is_paid) return acc + o.total_price;
-                if (o.payment_mode === 'gcash') return acc + o.downpayment_price;
-                return acc;
-              }, 0)).toLocaleString()}
-            </div>
-            <p className="admin-stat-sub">Money already in hand</p>
-          </div>
-          <div className="admin-stat-card clickable" onClick={() => setShowToCollect(true)}>
-            <h3 style={{ color: '#6366f1' }}>To be Received</h3>
-            <div className="admin-stat-val" style={{ color: '#6366f1' }}>
-              ₱{Math.round(orders.reduce((acc, o) => {
-                if (o.is_paid) return acc;
-                const pending = o.payment_mode === 'gcash' ? (o.total_price - o.downpayment_price) : o.total_price;
-                return acc + pending;
-              }, 0)).toLocaleString()}
-            </div>
-            <p className="admin-stat-sub">Remaining balance to collect (Click to view)</p>
+            <p className="admin-stat-sub">Total in system</p>
           </div>
         </div>
 
