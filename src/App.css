@@ -2744,3 +2744,146 @@ input:checked+.slider:before {
 .finished-row:hover {
   background-color: #dcfce7 !important;
 }
+
+/* ═══════════════════════════════════════
+   BROWSER GUARD (INSTAGRAM/FB)
+   ═══════════════════════════════════════ */
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.bg-card {
+  max-width: 400px;
+  width: 100%;
+  background: white;
+  padding: 40px 30px;
+  border-radius: 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  border: 4px solid #f1f5f9;
+}
+
+.bg-icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+
+.bg-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  margin-bottom: 15px;
+  line-height: 1.2;
+}
+
+.bg-text {
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.bg-highlight {
+  color: #3b82f6;
+  font-weight: 800;
+  display: block;
+  margin-top: 5px;
+}
+
+.bg-steps {
+  background: #f8fafc;
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  border: 2px dashed #cbd5e1;
+}
+
+.bg-step-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.bg-step-item:last-child {
+  margin-bottom: 0;
+}
+
+.bg-step-num {
+  width: 24px;
+  height: 24px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.bg-step-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.bg-btn-primary {
+  width: 100%;
+  padding: 16px;
+  background: #2563eb;
+  color: white;
+  border-radius: 12px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  margin-bottom: 12px;
+}
+
+.bg-btn-secondary {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 480px) {
+  .bg-title {
+    font-size: 1.75rem;
+  }
+
+  .bg-card {
+    padding: 30px 20px;
+  }
+}

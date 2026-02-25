@@ -2054,6 +2054,53 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
 
 
 /* ═══════════════════════════════════════
+   BROWSER GUARD (INSTAGRAM/FB)
+═══════════════════════════════════════ */
+function BrowserGuard({ onDismiss }: { onDismiss: () => void }) {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  const handleOpenExternal = () => {
+    if (isAndroid) {
+      // Intent trick for Android to try and force open Chrome
+      window.location.href = "intent://bakedbybcd.vercel.app#Intent;scheme=https;package=com.android.chrome;end";
+    } else {
+      // iOS cannot be forced easily, so we just show the native instructions
+      alert("Tap the three dots (...) at the top right and select 'Open in Browser' or 'Open in Safari'.");
+    }
+  };
+
+  return (
+    <div className="bg-overlay fade-in">
+      <div className="bg-card">
+        <div className="bg-icon">🍪</div>
+        <h2 className="bg-title">Almost There!</h2>
+        <p className="bg-text">
+          To pay with <span style={{ color: '#3b82f6', fontWeight: 800 }}>GCash</span>, you need to open this page in your regular browser.
+        </p>
+
+        <div className="bg-steps">
+          <div className="bg-step-item">
+            <div className="bg-step-num">1</div>
+            <div className="bg-step-text">Tap the <strong>three dots (⋮ / ...)</strong> at the top right.</div>
+          </div>
+          <div className="bg-step-item">
+            <div className="bg-step-num">2</div>
+            <div className="bg-step-text">Select <strong>"Open in Browser"</strong> or <strong>"Open in Safari"</strong>.</div>
+          </div>
+        </div>
+
+        <button className="bg-btn-primary" onClick={handleOpenExternal}>
+          {isAndroid ? 'Try Opening in Chrome 🚀' : 'Got it! 👍'}
+        </button>
+        <button className="bg-btn-secondary" onClick={onDismiss}>
+          Wait, let me browse here first
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
    ROOT
 ═══════════════════════════════════════ */
 export default function App() {
@@ -2062,6 +2109,7 @@ export default function App() {
   const [bypassLocked, setBypassLocked] = useState(false);
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
+  const [showBrowserGuard, setShowBrowserGuard] = useState(false);
   const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
 
   const fetchStock = async () => {
@@ -2088,6 +2136,13 @@ export default function App() {
 
     checkTime();
     const interval = setInterval(checkTime, 10000); // Check every 10s
+
+    // Instagram / FB Browser Detection
+    const isInApp = /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+    const hasSeenGuard = sessionStorage.getItem('baked_browser_guard_seen');
+    if (isInApp && !hasSeenGuard) {
+      setShowBrowserGuard(true);
+    }
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -2121,6 +2176,11 @@ export default function App() {
     }
   };
 
+  const dismissBrowserGuard = () => {
+    setShowBrowserGuard(false);
+    sessionStorage.setItem('baked_browser_guard_seen', 'true');
+  };
+
   // If locked, only allow admin pages or if bypassed
   const showLocked = isLocked && !bypassLocked && page !== 'admin-login' && page !== 'admin-dashboard';
 
@@ -2130,6 +2190,7 @@ export default function App() {
 
   return (
     <>
+      {showBrowserGuard && <BrowserGuard onDismiss={dismissBrowserGuard} />}
       {page === 'home' && <HomePage stock={stock} stockLoading={stockLoading} onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
       {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
       {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
