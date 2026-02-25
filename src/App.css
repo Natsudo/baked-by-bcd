@@ -1777,59 +1777,99 @@ input:checked+.slider:before {
 /* Mobile Fixes */
 @media (max-width: 600px) {
   .admin-content {
-    padding: 15px 10px;
+    padding: 10px 8px;
   }
 
   .admin-stats-row {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 15px;
   }
 
   .admin-stat-card {
-    padding: 15px;
+    padding: 12px 10px;
+    border-width: 2px !important;
   }
 
   .admin-stat-val {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
   }
 
   .admin-stat-card h3 {
-    font-size: 0.7rem;
-    margin-bottom: 5px;
+    font-size: 0.65rem;
+    margin-bottom: 4px;
   }
 
   .admin-stat-sub {
-    font-size: 0.65rem;
-    margin-top: 4px;
+    font-size: 0.6rem;
+    margin-top: 2px;
   }
 
   .admin-highlight-section {
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
   }
 
   .prod-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .prod-val {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
 
   .admin-modal {
-    width: 95vw !important;
-    max-height: 90vh;
+    width: 98vw !important;
+    max-height: 95vh;
   }
 
   .admin-modal-content {
-    padding: 15px;
+    padding: 12px;
+  }
+
+  .admin-table-scroll {
+    overflow-x: auto;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 8px 6px;
+    font-size: 0.7rem;
+    min-width: 90px;
+  }
+
+  .admin-note {
+    display: inline-block;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f1f5f9;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  .admin-title {
+    font-size: 1.1rem;
+  }
+
+  .admin-nav-actions {
+    gap: 4px;
+  }
+
+  .admin-nav-btn {
+    padding: 4px 6px;
+    font-size: 0.65rem;
   }
 
   .delivery-grid {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
   .delivery-card {
@@ -1837,7 +1877,7 @@ input:checked+.slider:before {
   }
 
   .delivery-section-box {
-    padding: 15px !important;
+    padding: 12px !important;
   }
 }
 
