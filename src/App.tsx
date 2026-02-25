@@ -158,6 +158,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [meetupLocation, setMeetupLocation] = useState<MeetupLocation>('');
   const [meetupTime, setMeetupTime] = useState<MeetupTime>('');
   const [maximAddress, setMaximAddress] = useState('');
+  const [maximDetails, setMaximDetails] = useState('');
   const [maximScreenshot, setMaximScreenshot] = useState<File | null>(null);
 
   const [gcashName, setGcashName] = useState('');
@@ -273,7 +274,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           delivery_mode: deliveryMode,
           meetup_location: meetupLocation,
           meetup_time: meetupTime,
-          maxim_address: maximAddress,
+          maxim_address: maximAddress + (maximDetails ? ` (Additional: ${maximDetails})` : ''),
           maxim_screenshot_path: uploadedMaximScreenshotPath,
           gcash_name: gcashName,
           gcash_number: gcashNumber.replace(/\s/g, ''),
@@ -416,7 +417,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   </div>
                   <div className="invoice-row">
                     <span className="inv-label">Address:</span>
-                    <span className="inv-val">{maximAddress}</span>
+                    <span className="inv-val">{maximAddress}{maximDetails ? ` (Additional: ${maximDetails})` : ''}</span>
                   </div>
                   <div className="invoice-row">
                     <span className="inv-label">Pin Point:</span>
@@ -639,6 +640,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   </select>
                   {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
                   <input className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '8px' }} />
+                  <input className="form-input pill" type="text" value={maximDetails} onChange={e => setMaximDetails(e.target.value)} placeholder="Additional (Gate color, building, etc.) (Optional)" style={{ marginBottom: '8px' }} />
                   <div className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
                     {maximScreenshot ? <span className="upload-done">✅ {maximScreenshot.name}</span> : <span className="upload-hint">📎 Upload Pin Point Screenshot (Maxim App)</span>}
                   </div>
@@ -717,23 +719,13 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
 
                 <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
-                  <button
-                    type="button"
+                  <a
+                    href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera) ? "intent://#Intent;package=com.globe.gcash.android;scheme=gcash;end;" : "gcash://"}
                     className="launch-gcash-btn"
-                    style={{ width: '100%', border: 'none', cursor: 'pointer' }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera);
-                      if (isAndroid) {
-                        window.location.href = 'intent://#Intent;package=com.globe.gcash.android;scheme=gcash;end;';
-                      } else {
-                        window.location.href = 'gcash://';
-                      }
-                    }}
                   >
                     <span>Launch GCash App</span>
                     <span>🚀</span>
-                  </button>
+                  </a>
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
