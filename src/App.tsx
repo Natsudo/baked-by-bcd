@@ -2056,7 +2056,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
 /* ═══════════════════════════════════════
    BROWSER GUARD (INSTAGRAM/FB)
 ═══════════════════════════════════════ */
-function BrowserGuard({ onDismiss }: { onDismiss: () => void }) {
+function BrowserGuard() {
   const isAndroid = /Android/i.test(navigator.userAgent);
   const siteUrl = "https://bakedbybcd.vercel.app";
 
@@ -2094,9 +2094,6 @@ function BrowserGuard({ onDismiss }: { onDismiss: () => void }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button className="bg-btn-primary" onClick={handleOpenExternal}>
             {isAndroid ? 'Open in Chrome Directly 🚀' : 'Copy Link & Instructions 📋'}
-          </button>
-          <button className="bg-btn-secondary" onClick={onDismiss}>
-            Wait, let me browse here first
           </button>
         </div>
       </div>
@@ -2180,16 +2177,12 @@ export default function App() {
     }
   };
 
-  const dismissBrowserGuard = () => {
-    setShowBrowserGuard(false);
-    sessionStorage.setItem('baked_browser_guard_seen', 'true');
-  };
 
   const showLocked = isLocked && !bypassLocked && page !== 'admin-login' && page !== 'admin-dashboard';
 
   return (
     <>
-      {showBrowserGuard && <BrowserGuard onDismiss={dismissBrowserGuard} />}
+      {showBrowserGuard && <BrowserGuard />}
       {showLocked ? (
         <MaintenancePage onUnlock={handleUnlock} />
       ) : (
