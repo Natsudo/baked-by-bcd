@@ -55,6 +55,7 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
     setExpandedFaq(expandedFaq === index ? null : index);
   };
 
+
   const handleLogoClick = () => {
     tapCount.current += 1;
     if (tapCount.current === 5) {
@@ -187,6 +188,16 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const handleMaximFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) setMaximScreenshot(e.target.files[0]);
   };
+
+  // Auto-redirect to Instagram after 3.5 seconds once confirmed
+  useEffect(() => {
+    if (isConfirmed) {
+      const timer = setTimeout(() => {
+        window.location.href = "https://ig.me/m/bakedby.bcd";
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmed]);
 
   const totalPrice = (quantityBox4 * 285) + (quantityBox6 * 425) + (quantityBox12 * 845);
   const downpaymentPrice = paymentOption === 'full' ? totalPrice : Math.round(totalPrice * 0.5);
@@ -332,16 +343,43 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   /* ── SUCCESS STATE (INVOICE) ── */
   if (submitted) {
     if (isConfirmed) {
+
       return (
         <div className="order-page fade-in">
           <div className="op-card" style={{ textAlign: 'center', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src="/baked-by-logo.png" alt="BAKED BY" style={{ width: '130px', marginBottom: '20px' }} />
             <span style={{ fontSize: '3.5rem', marginBottom: '10px' }}>✅</span>
             <h2 className="success-header" style={{ fontSize: '2.5rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>Order Submitted!</h2>
-            <p className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '30px', fontWeight: 600 }}>
-              Thank you for ordering with us! <br />We have officially received your order and we'll start baking soon!
+            <p className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '20px', fontWeight: 600 }}>
+              Thank you for ordering with us! <br />We'll start baking soon!
             </p>
-            <button className="place-order-btn place-order-btn-sm" onClick={onBack} style={{ minWidth: '200px' }}>Return Home</button>
+
+            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', marginBottom: '30px', border: '2px dashed #cbd5e1' }}>
+              <p style={{ color: '#1e3a8a', fontSize: '1rem', fontWeight: 800, marginBottom: '15px' }}>
+                PLEASE MESSAGE US TO CONFIRM! 📥
+              </p>
+              <a
+                href="https://ig.me/m/bakedby.bcd"
+                className="place-order-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  textDecoration: 'none',
+                  fontSize: '1rem',
+                  padding: '12px 25px'
+                }}
+              >
+                <span>Message @BAKEDBY.BCD</span>
+                <span style={{ fontSize: '1.2rem' }}>💬</span>
+              </a>
+            </div>
+
+            <button className="bg-btn-secondary" onClick={onBack} style={{ textDecoration: 'none', color: '#94a3b8' }}>
+              Return to Website
+            </button>
           </div>
         </div>
       );
@@ -1033,6 +1071,61 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
     }
   };
 
+  const handleConfirmAndDM = (o: any) => {
+    const isDP = !o.is_paid && o.payment_mode === 'gcash';
+    const payLabel = isDP ? 'downpayment' : 'full payment';
+    const amt = isDP ? o.downpayment_price : o.total_price;
+
+    // Format quantities
+    const qtyText = o.quantity_type ? o.quantity_type.split(', ').filter((s: string) => !s.endsWith(': 0')).join(', ') : 'order';
+
+    let meetupNote = '';
+    if (o.delivery_mode === 'meetup') {
+      meetupNote = ` Meet up at USLS Gate 6 Canteen at ${o.meetup_time}.`;
+    }
+
+    const msg = `Hi ${o.full_name}! 🍪 We've received your ${payLabel} of ₱${amt}. Your order for ${qtyText} is now CONFIRMED!${meetupNote} Thanks for ordering! - Baked By BCD`;
+
+    navigator.clipboard.writeText(msg);
+    alert('Confirmation message copied to clipboard! 📋\nNow opening Instagram...');
+    window.open(`https://www.instagram.com/${o.instagram.replace('@', '')}`, '_blank');
+  };
+
+  const handleCopyMaximInfo = (o: any) => {
+    const from = o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle Gate 6';
+    const text = `FROM: ${from}\nTO: ${o.maxim_address}\nCUSTOMER: ${o.full_name}`;
+    navigator.clipboard.writeText(text);
+
+    // Deep linking for Maxim (Taxsee)
+    const encodedFrom = encodeURIComponent(from);
+    const encodedTo = encodeURIComponent(o.maxim_address || '');
+
+    // Fallback web URL
+    const webUrl = `https://taximaxim.com/ph/order/?from=${encodedFrom}&to=${encodedTo}`;
+
+    // Android Intent
+    const androidIntent = `intent://order?from=${encodedFrom}&to=${encodedTo}#Intent;scheme=taxsee;package=com.taxsee.taxsee;S.browser_fallback_url=${encodeURIComponent(webUrl)};end;`;
+
+    // iOS Scheme
+    const iosScheme = `taxsee://order?from=${encodedFrom}&to=${encodedTo}`;
+
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    alert(`Maxim Route Info Copied! 🚚\n\nFROM: ${from}\nTO: ${o.maxim_address}\n\nNow opening Maxim...`);
+
+    if (isAndroid) {
+      window.location.href = androidIntent;
+    } else if (isIOS) {
+      window.location.href = iosScheme;
+      setTimeout(() => {
+        window.location.href = webUrl;
+      }, 1500);
+    } else {
+      window.open(webUrl, '_blank');
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     onLogout();
@@ -1453,18 +1546,25 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                                       <span>{o.contact_number}</span>
                                     </div>
                                     <div className="dc-body">
-                                      <div style={{ marginTop: '5px' }}>
+                                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                         {o.instagram && (
-                                          <a
-                                            href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="chat-link"
-                                            style={{ fontSize: '0.8rem' }}
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
+                                            className="dc-link"
+                                            style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
                                           >
-                                            📸 @{o.instagram.replace('@', '')}
-                                          </a>
+                                            ✅ Confirm & DM
+                                          </button>
                                         )}
+                                        <a
+                                          href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="chat-link"
+                                          style={{ fontSize: '0.8rem', marginTop: 0 }}
+                                        >
+                                          📸 Profile
+                                        </a>
                                       </div>
 
                                       <div className="dc-info-row">
@@ -1564,18 +1664,23 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                                     <div className="dc-body">
                                       <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
                                       <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle'}</div>
-                                      <div style={{ marginTop: '5px' }}>
+                                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                         {o.instagram && (
-                                          <a
-                                            href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="chat-link"
-                                            style={{ fontSize: '0.8rem' }}
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
+                                            className="dc-link"
+                                            style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
                                           >
-                                            📸 @{o.instagram.replace('@', '')}
-                                          </a>
+                                            ✅ Confirm & DM
+                                          </button>
                                         )}
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleCopyMaximInfo(o); }}
+                                          className="dc-link"
+                                          style={{ background: '#0ea5e9', border: 'none', cursor: 'pointer' }}
+                                        >
+                                          🚚 Copy Maxim Info
+                                        </button>
                                       </div>
 
                                       <div className="dc-info-row">
@@ -1883,17 +1988,37 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                       </td>
                       <td><strong>₱{order.total_price}</strong></td>
                       <td>
-                        <button
-                          className="admin-delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log('Delete icon clicked for order:', order.id);
-                            setOrderToDelete(order);
-                          }}
-                          title="Delete Order"
-                        >
-                          🗑️
-                        </button>
+                        <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                          <button
+                            className="admin-action-btn"
+                            style={{ padding: '6px', fontSize: '1rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}
+                            onClick={() => handleConfirmAndDM(order)}
+                            title="Confirm & DM"
+                          >
+                            💬
+                          </button>
+                          {order.delivery_mode === 'maxim' && (
+                            <button
+                              className="admin-action-btn"
+                              style={{ padding: '6px', fontSize: '1rem', background: '#fff7ed', borderRadius: '8px', border: '1px solid #fed7aa' }}
+                              onClick={() => handleCopyMaximInfo(order)}
+                              title="Copy Maxim Info"
+                            >
+                              🚚
+                            </button>
+                          )}
+                          <button
+                            className="admin-delete-btn"
+                            style={{ margin: 0 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOrderToDelete(order);
+                            }}
+                            title="Delete Order"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
