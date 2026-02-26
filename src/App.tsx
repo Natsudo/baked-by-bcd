@@ -102,6 +102,7 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
           </button>
 
           <p className="location-note">
+            <strong>Batch 4 — Delivery Date: March 4 (Wed)</strong><br />
             We only cater @ Bacolod City for now.<br />
             Thank you for your support!
           </p>
@@ -539,8 +540,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
-            <div className="op-product-sub">Delivery Date: February 28, 2026</div>
-            <div className="op-product-sub">Batch 4</div>
+            <div className="op-product-sub">Batch 4 — Delivery Date: March 4, 2026 (Wednesday)</div>
             <div className="op-product-price-list">
               ₱285 for Box of 4 • ₱425 for Box of 6 • ₱845 for Box of 12
             </div>
@@ -2226,16 +2226,25 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         </div>
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
         <p className="maintenance-subtitle">
-          Our preorder forms for Dubai Chewy Cookie will open on February 26
+          Our preorder forms for Dubai Chewy Cookie (Batch 4) will open on February 26
           <span className="highlight-text">THURSDAY, 7:00 PM</span>
+          <br />
+          <span style={{ fontSize: '1rem', opacity: 0.9 }}>Delivery Date: <strong>March 4, 2026 (Wednesday)</strong></span>
         </p>
 
-        <div className="maintenance-warning gcash-warning" style={{ marginTop: '-25px', marginBottom: '35px', padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '15px', color: '#ff7070', fontSize: '0.9rem', fontWeight: 700, lineHeight: '1.4' }}>
-          🚨 A 50% downpayment in GCASH is REQUIRED for all orders to confirm your slot.
-          <br /><br />
-          🚚 Maxim Orders: Only GCash payments are allowed. Please screenshot in advance your pinpoint location.
-          <br /><br />
-          <span style={{ color: '#ffde59' }}>📍 We only accept Bacolod City orders for now. Thank you for your understanding!</span>
+        <div className="maintenance-warning gcash-warning" style={{ marginTop: '-15px', marginBottom: '35px', padding: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '15px', color: '#fff', fontSize: '0.85rem', fontWeight: 600, lineHeight: '1.6', textAlign: 'left' }}>
+          <h3 style={{ color: '#ff7070', fontSize: '1.1rem', marginBottom: '10px', textAlign: 'center' }}>📝 Pre-Order Reminders:</h3>
+          <ul style={{ paddingLeft: '20px', margin: 0 }}>
+            <li>Minimum <strong>50% non-refundable downpayment</strong> via GCash to secure slot. Full payment is also accepted.</li>
+            <li>Limited slots only. First come, first served! 🏃‍♂️</li>
+            <li><strong>Strictly via Website only.</strong> Orders via DMs will not be entertained.</li>
+            <li><strong>Limit per person:</strong> Max 2 boxes (B4), 2 boxes (B6), and 1 box (B12).</li>
+            <li><strong>Maxim Orders:</strong> Please screenshot your pinpoint location in advance.</li>
+            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>Website is locked until 7PM — Preorders go live then!</li>
+          </ul>
+          <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#ffde59', textAlign: 'center', fontSize: '0.8rem' }}>
+            📍 Bacolod City orders only.
+          </div>
         </div>
 
         <div className="countdown-timer">
