@@ -2493,6 +2493,17 @@ input:checked+.slider:before {
   font-weight: 700;
 }
 
+.status-badge.status-refund-needed {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+}
+
+.refund-row {
+  background: #fff1f2 !important;
+  border-left: 5px solid #ef4444 !important;
+}
+
 .pi-amount {
   text-align: right;
   display: flex;

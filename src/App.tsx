@@ -176,10 +176,37 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
+  const [localStock, setLocalStock] = useState<number | null>(currentStock);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const maximFileInputRef = useRef<HTMLInputElement>(null);
   const paymentRef = useRef<HTMLDivElement>(null);
+
+  // ─── ACTIVE STOCK MONITORING ───
+  useEffect(() => {
+    const pollStock = async () => {
+      try {
+        const { data } = await supabase
+          .from('inventory')
+          .select('stock_count')
+          .eq('item_name', 'Chewy Cookie')
+          .single();
+
+        if (data) {
+          setLocalStock(data.stock_count);
+          if (data.stock_count === 0 && !submitted) {
+            alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
+            onBack();
+          }
+        }
+      } catch (e) {
+        console.error("Poll error:", e);
+      }
+    };
+
+    const interval = setInterval(pollStock, 15000); // Poll every 15s
+    return () => clearInterval(interval);
+  }, [onBack, submitted]);
 
   // Auto-scroll logic removed to prevent jumping before sub-fields are filled
 
@@ -283,8 +310,45 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         .single();
 
       if (stockCheckData && stockCheckData.stock_count < totalPiecesOrdered) {
-        alert('So sorry! Someone just grabbed the last pieces. We are now SOLD OUT! 😭');
+        // INSTEAD OF BLOCKING, WE MARK AS REFUND NEEDED
+        // This ensures the customer doesn't lose their data and we know they paid.
+        const confirmRefund = window.confirm(
+          "🚨 URGENT: Someone else just grabbed the last few slots milliseconds ago! \n\n" +
+          "Your order will be saved as 'REFUND NEEDED'. \n\n" +
+          "Do you still want to submit your details so we can track your payment for a refund?"
+        );
+
+        if (!confirmRefund) {
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Proceed to save but with Refund Needed status
+        const { error: refundError } = await supabase
+          .from('orders')
+          .insert([{
+            full_name: fullName,
+            contact_number: contactNumber.replace(/\s/g, ''),
+            instagram: instagram,
+            quantity_type: `Box4: ${quantityBox4}, Box6: ${quantityBox6}, Box12: ${quantityBox12}`,
+            quantity: 1,
+            total_price: totalPrice,
+            downpayment_price: downpaymentPrice,
+            payment_mode: paymentMode,
+            delivery_mode: deliveryMode,
+            status: 'Refund Needed',
+            is_paid: false, // Mark unpaid to clearly indicate action needed
+            gcash_name: gcashName,
+            gcash_number: gcashNumber.replace(/\s/g, ''),
+            gcash_screenshot_path: uploadedGcashScreenshotPath,
+            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED. | ${specialInstructions}`
+          }]);
+
+        if (refundError) throw refundError;
+
         setIsSubmitting(false);
+        setSubmitted(true);
+        setIsConfirmed(true);
         return;
       }
 
@@ -719,17 +783,48 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                     (deliveryMode === 'maxim' && !!meetupLocation && !!meetupTime && !!maximAddress.trim() && !!maximScreenshot)) ? (
                     <button
                       type="button"
+                      disabled={isCheckingStock}
                       className="place-order-btn place-order-btn-sm fade-in"
                       style={{
                         marginTop: '20px',
                         width: '100%',
                         fontSize: '1rem',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                        background: isCheckingStock ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        boxShadow: isCheckingStock ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.3)'
                       }}
-                      onClick={() => paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      onClick={async () => {
+                        setIsCheckingStock(true);
+                        // ─── LIVE STOCK CHECK ───
+                        try {
+                          const { data } = await supabase
+                            .from('inventory')
+                            .select('stock_count')
+                            .eq('item_name', 'Chewy Cookie')
+                            .single();
+
+                          const freshStock = data?.stock_count ?? 0;
+                          setLocalStock(freshStock);
+
+                          const totalPieces = (quantityBox4 * 4) + (quantityBox6 * 6) + (quantityBox12 * 12);
+
+                          if (freshStock < totalPieces) {
+                            alert(`🚨 TOO SLOW!\n\nI'm so sorry, but someone else just took the last slots while you were filling the form.\n\nRemaining stock: ${freshStock} cookies.\n\nPLEASE DO NOT PROCEED WITH PAYMENT.`);
+                            // Scroll to quantity section so they can adjust or see it's sold out
+                            document.getElementById('quantity')?.scrollIntoView({ behavior: 'smooth' });
+                          } else {
+                            // Stock is safe, proceed
+                            paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        } catch (err) {
+                          console.error("Stock check error:", err);
+                          // If network fails, still proceed but warn
+                          paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } finally {
+                          setIsCheckingStock(false);
+                        }
+                      }}
                     >
-                      Done with Step 3! Proceed to Payment →
+                      {isCheckingStock ? 'Checking Stock...' : 'Done with Step 3! Proceed to Payment →'}
                     </button>
                   ) : (
                     <div className="scroll-indicator fade-in" style={{ opacity: 0.7 }}>
@@ -756,6 +851,16 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
                 Please fill up the payment details below to see the <strong>Review Order</strong> button. Your slot is only confirmed after we verify the receipt!
               </div>
+
+              {localStock !== null && localStock > 0 && localStock < 10 && (
+                <div className="payment-alert bounce-soft" style={{ background: '#fef2f2', border: '1px solid #ef4444', color: '#b91c1c', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                    <strong>LOW STOCK ALERT: Only {localStock} cookies left!</strong>
+                  </div>
+                  Pay and upload your receipt immediately to secure your slot before it's gone.
+                </div>
+              )}
 
               <div className="price-summary-box" style={{ marginBottom: '14px' }}>
                 <div className="price-row">
@@ -1676,7 +1781,23 @@ Thank you for supporting Baked By BCD.`;
                       }}
                     >
                       <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Maxim Deliveries</div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f59e0b' }}>{orders.filter(o => o.delivery_mode === 'maxim').length}</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f59e0b' }}>{orders.filter(o => o.delivery_mode === 'maxim' && o.status !== 'Refund Needed').length}</div>
+                    </div>
+                    <div
+                      onClick={() => setActiveDeliveryTab('meetup')} // Using meetup as simple toggle for now or add 'refund' tab
+                      style={{
+                        textAlign: 'center',
+                        flex: 1,
+                        cursor: 'pointer',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        transition: 'all 0.2s',
+                        background: orders.some(o => o.status === 'Refund Needed') ? '#fef2f2' : 'transparent',
+                        border: orders.some(o => o.status === 'Refund Needed') ? '2px solid #ef4444' : '2px solid transparent'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>To Refund</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ef4444' }}>{orders.filter(o => o.status === 'Refund Needed').length}</div>
                     </div>
                   </div>
 
@@ -1747,6 +1868,7 @@ Thank you for supporting Baked By BCD.`;
                                           >
                                             <option value="Pending">Pending</option>
                                             <option value="Delivered">Delivered</option>
+                                            <option value="Refund Needed">Refund Needed</option>
                                           </select>
                                         </div>
                                       </div>
@@ -1755,7 +1877,7 @@ Thank you for supporting Baked By BCD.`;
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                           <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
                                           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: o.is_paid ? '#10b981' : '#f59e0b', marginTop: '2px' }}>
-                                            {o.is_paid ? 'PAID FULL' : 'DP RECEIVED'}
+                                            {o.status === 'Refund Needed' ? '⚠️ REFUND NEEDED' : (o.is_paid ? 'PAID FULL' : 'DP RECEIVED')}
                                           </span>
                                           {!o.is_paid && (
                                             <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
@@ -1863,6 +1985,7 @@ Thank you for supporting Baked By BCD.`;
                                           >
                                             <option value="Pending">Pending</option>
                                             <option value="Delivered">Delivered</option>
+                                            <option value="Refund Needed">Refund Needed</option>
                                           </select>
                                         </div>
                                       </div>
@@ -2008,7 +2131,7 @@ Thank you for supporting Baked By BCD.`;
                   <tr><td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>No orders matching your criteria</td></tr>
                 ) : (
                   filteredOrders.map(order => (
-                    <tr key={order.id} className={order.status === 'Delivered' && order.is_paid ? 'finished-row' : ''}>
+                    <tr key={order.id} className={`${order.status === 'Delivered' && order.is_paid ? 'finished-row' : ''} ${order.status === 'Refund Needed' ? 'refund-row' : ''}`}>
                       <td>{new Date(order.created_at).toLocaleDateString()}</td>
                       <td>
                         <strong>{order.full_name}</strong><br />
@@ -2138,6 +2261,7 @@ Thank you for supporting Baked By BCD.`;
                           >
                             <option value="Pending">Pending</option>
                             <option value="Delivered">Delivered</option>
+                            <option value="Refund Needed">Refund Needed</option>
                           </select>
                         </div>
                       </td>
@@ -2419,7 +2543,7 @@ export default function App() {
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
-  const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
+  const TARGET_DATE = new Date('2026-02-27T02:36:00+08:00');
 
   const fetchStock = async () => {
     try {
