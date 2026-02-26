@@ -1206,9 +1206,29 @@ We’re so excited for you to enjoy your Dubai Chewy cookies! 🤍
 
 Thank you for supporting Baked By BCD.`;
 
+    // 1. Copy to clipboard immediately
     navigator.clipboard.writeText(msg);
-    alert('Confirmation message copied to clipboard! 📋\nNow opening Instagram...');
-    window.open(`https://www.instagram.com/${o.instagram.replace('@', '')}`, '_blank');
+
+    // 2. Open Instagram - Try Deep Link first for App, then Web
+    const username = o.instagram.replace('@', '').trim();
+    const webUrl = `https://www.instagram.com/${username}/`;
+    const appUrl = `instagram://user?username=${username}`;
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // On mobile, window.location.href is more reliable than window.open
+      window.location.href = appUrl;
+      // Fallback to web if app doesn't open
+      setTimeout(() => {
+        if (!document.hidden) window.location.href = webUrl;
+      }, 1500);
+    } else {
+      window.open(webUrl, '_blank');
+    }
+
+    // 3. Alert last so it doesn't block the navigation logic
+    alert('Confirmation message copied to clipboard! 📋\n\nLaunching Instagram...');
   };
 
   const handleCopyMaximInfo = (o: any) => {
