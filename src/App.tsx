@@ -181,6 +181,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
   const [localStock, setLocalStock] = useState<number | null>(currentStock);
   const fileInputRef = useRef<HTMLInputElement>(null);
