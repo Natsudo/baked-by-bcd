@@ -1214,27 +1214,35 @@ Thank you for supporting Baked By BCD.`;
     const webUrl = `https://www.instagram.com/${username}/`;
     const appUrl = `instagram://user?username=${username}`;
 
-    // 3. Inform user and then redirect
-    // We alert first so the "OK" click becomes the trigger for the app launch.
-    // This is the most reliable way to avoid "Untitled" tabs and blocked redirects.
-    alert('Confirmation message copied to clipboard! 📋\n\nOpening Instagram...');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isIOS) {
+      // iOS: BLOCKING ALERTS BREAK DEEP LINKS
+      // We navigate immediately, then show the message.
+      window.location.href = appUrl;
 
-    if (isMobile) {
-      if (/Android/i.test(navigator.userAgent)) {
-        // Android Intent - Most reliable for opening the app directly
-        const androidIntent = `intent://www.instagram.com/_u/${username}/#Intent;package=com.instagram.android;scheme=https;end`;
-        window.location.href = androidIntent;
-      } else {
-        // iOS / Other Mobile - Try custom scheme
-        window.location.href = appUrl;
-        // Fallback to web if app doesn't open
-        setTimeout(() => {
-          if (!document.hidden) window.location.href = webUrl;
-        }, 1200);
-      }
+      // Fallback to web if app doesn't open
+      setTimeout(() => {
+        if (!document.hidden) {
+          window.location.href = webUrl;
+        }
+      }, 1500);
+
+      // Optional: Small delay before alert so it doesn't interrupt the app switch request
+      setTimeout(() => {
+        alert('Confirmation message copied! 📋\nCheck your Instagram DMs.');
+      }, 100);
+
+    } else if (isAndroid) {
+      // Android: Intent is most reliable
+      alert('Confirmation message copied! 📋\nOpening Instagram...');
+      const androidIntent = `intent://www.instagram.com/_u/${username}/#Intent;package=com.instagram.android;scheme=https;end`;
+      window.location.href = androidIntent;
     } else {
+      // Desktop
+      navigator.clipboard.writeText(msg);
+      alert('Confirmation message copied! 📋\nOpening Instagram...');
       window.open(webUrl, '_blank');
     }
   };
