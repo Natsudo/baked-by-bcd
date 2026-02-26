@@ -1292,7 +1292,7 @@ Thank you for supporting Baked By BCD.`;
         <div className="admin-nav-content">
           <div className="admin-logo-row">
             <img src="/baked-by-logo.png" alt="BB" className="admin-nav-logo" />
-            <h1 className="admin-title">Admin Panel</h1>
+            <h1 className="admin-title">Admin Panel v2.1</h1>
           </div>
           <div className="admin-nav-actions">
             <button className="admin-nav-btn admin-nav-btn-secondary" onClick={() => setShowDeliveryList(true)}>
