@@ -2536,6 +2536,9 @@ function BrowserGuard() {
 /* ═══════════════════════════════════════
    ROOT
 ═══════════════════════════════════════ */
+const MANUAL_LOCK = true; // Set to true to force lock regardless of timer
+const TARGET_DATE = new Date('2026-02-27T02:40:00+08:00');
+
 export default function App() {
   const [page, setPage] = useState<Page>('home');
   const [isLocked, setIsLocked] = useState(true);
@@ -2543,7 +2546,6 @@ export default function App() {
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
-  const TARGET_DATE = new Date('2026-02-27T02:36:00+08:00');
 
   const fetchStock = async () => {
     try {
@@ -2564,7 +2566,7 @@ export default function App() {
     const stockInterval = setInterval(fetchStock, 30000); // Poll every 30s
     const checkTime = () => {
       const now = new Date().getTime();
-      setIsLocked(now < TARGET_DATE.getTime());
+      setIsLocked(MANUAL_LOCK || now < TARGET_DATE.getTime());
     };
 
     checkTime();
