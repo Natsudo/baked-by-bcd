@@ -5,8 +5,8 @@ import * as XLSX from 'xlsx';
 import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
-const MANUAL_LOCK = false;
-const TARGET_DATE = new Date('2026-02-27T02:47:00+08:00');
+const MANUAL_LOCK = true;
+const TARGET_DATE = new Date('2026-02-27T02:52:00+08:00');
 
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
