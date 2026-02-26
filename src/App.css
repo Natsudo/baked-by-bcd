@@ -2504,6 +2504,12 @@ input:checked+.slider:before {
   border-left: 5px solid #ef4444 !important;
 }
 
+.refunded-row {
+  background: #f0fdf4 !important;
+  border-left: 5px solid #10b981 !important;
+  opacity: 0.8;
+}
+
 @keyframes pulse-red {
   0% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);

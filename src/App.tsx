@@ -7,7 +7,6 @@ import './App.css';
 // ─── GLOBAL LOCK CONFIGURATION ───
 const MANUAL_LOCK = true;
 const TARGET_DATE = new Date('2026-02-27T02:52:00+08:00');
-console.log("Current Build: v2.2 - Force Locked");
 
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
@@ -29,6 +28,7 @@ const FAQS = [
   { q: "What time are meetup orders?", a: "Available meetup time slots will be indicated in the preorder form. Kindly choose the time most convenient for you. Please be punctual when meeting up, as we are students and are only available at the selected time." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
+  { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
   { q: "Do you offer boxes of 12 or 24?", a: "We currently offer boxes of 4 and 6 only. Box of 12 options will be available soon, so stay tuned for announcements." },
   { q: "How much are your products?", a: "• Solo - ₱70\n• Box of 4 - ₱285\n• Box of 6 - ₱425\n\nOur full price list is also pinned on our page, so kindly follow us to check for updates." },
   { q: "Can I change my order after submitting the form?", a: "Order information such as address or meetup details may still be updated if needed by messaging us through our Instagram handle @BAKEDBY.BCD. However, the quantity ordered cannot be changed since slots are limited." },
@@ -141,9 +141,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
-  const [quantityBox4, setQuantityBox4] = useState(0);
-  const [quantityBox6, setQuantityBox6] = useState(0);
-  const [quantityBox12, setQuantityBox12] = useState(0);
+  const [holdingOrderId, setHoldingOrderId] = useState<string | null>(null);
+  const [quantities, setQuantities] = useState({ Box4: 0, Box6: 0, Box12: 0 });
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('');
   const [paymentOption, setPaymentOption] = useState<'down' | 'full'>('down');
@@ -187,6 +186,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const fileInputRef = useRef<HTMLInputElement>(null);
   const maximFileInputRef = useRef<HTMLInputElement>(null);
   const paymentRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(3); // 3 for delivery, 4 for payment
 
   // Track deliveryMode for the interval to avoid stale closures
   const deliveryModeRef = useRef(deliveryMode);
@@ -225,9 +225,53 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     return () => clearInterval(interval);
   }, [onBack, submitted]);
 
-  // Auto-scroll logic removed to prevent jumping before sub-fields are filled
+  // Janitor effect for expired holding orders
+  useEffect(() => {
+    const cleanupHoldingOrders = async () => {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: expiredHolds, error } = await supabase
+        .from('orders')
+        .select('id, quantity_type')
+        .eq('status', 'Holding')
+        .lt('created_at', tenMinutesAgo);
 
+      if (error) {
+        console.error("Error fetching expired holding orders:", error);
+        return;
+      }
 
+      if (expiredHolds && expiredHolds.length > 0) {
+        console.log(`Cleaning up ${expiredHolds.length} expired holding orders.`);
+        for (const hold of expiredHolds) {
+          let cookiesToReturn = 0;
+          const typeVal = hold.quantity_type || '';
+          if (typeVal.includes('Box4:')) {
+            const parts = typeVal.split(', ');
+            const b4 = parseInt(parts[0].split(': ')[1]) || 0;
+            const b6 = parseInt(parts[1].split(': ')[1]) || 0;
+            const b12 = parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
+            cookiesToReturn = (b4 * 4) + (b6 * 6) + (b12 * 12);
+          }
+          if (cookiesToReturn > 0) {
+            await supabase.rpc('increment_stock', { p_amount: cookiesToReturn });
+          }
+          await supabase.from('orders').delete().eq('id', hold.id);
+        }
+        // Re-fetch stock after cleanup
+        const { data: newStockData } = await supabase
+          .from('inventory')
+          .select('stock_count')
+          .eq('item_name', 'Chewy Cookie')
+          .single();
+        if (newStockData) setLocalStock(newStockData.stock_count);
+      }
+    };
+
+    // Run once on mount and then every 30 seconds
+    cleanupHoldingOrders();
+    const interval = setInterval(cleanupHoldingOrders, 30 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,7 +292,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     }
   }, [isConfirmed]);
 
-  const totalPrice = (quantityBox4 * 285) + (quantityBox6 * 425) + (quantityBox12 * 845);
+  const totalPrice = (quantities.Box4 * 285) + (quantities.Box6 * 425) + (quantities.Box12 * 845);
   const downpaymentPrice = paymentOption === 'full' ? totalPrice : Math.round(totalPrice * 0.5);
 
   const validate = () => {
@@ -256,7 +300,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     if (!fullName.trim()) errs.fullName = 'Full Name is required.';
     if (!contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
     if (!instagram.trim()) errs.instagram = 'Instagram Handle is required.';
-    if (quantityBox4 === 0 && quantityBox6 === 0 && quantityBox12 === 0) errs.quantity = 'Please select at least one box.';
+    if (quantities.Box4 === 0 && quantities.Box6 === 0 && quantities.Box12 === 0) errs.quantity = 'Please select at least one box.';
     if (!paymentMode) errs.paymentMode = 'Please select a payment method.';
     if (!deliveryMode) errs.deliveryMode = 'Please select a delivery method.';
     if (deliveryMode === 'meetup' && !meetupTime) errs.meetupTime = 'Please select a pick-up time.';
@@ -317,7 +361,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         if (!error && data) uploadedGcashScreenshotPath = data.path;
       }
 
-      const totalPiecesOrdered = (quantityBox4 * 4) + (quantityBox6 * 6) + (quantityBox12 * 12);
+      const totalPiecesOrdered = (quantities.Box4 * 4) + (quantities.Box6 * 6) + (quantities.Box12 * 12);
 
       // Verify stock before inserting order
       const { data: stockCheckData } = await supabase
@@ -331,7 +375,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         // This ensures the customer doesn't lose their data and we know they paid.
         const confirmRefund = window.confirm(
           "🚨 URGENT: Someone else just grabbed the last few slots milliseconds ago! \n\n" +
-          "Your order will be saved as 'REFUND NEEDED'. \n\n" +
+          "Your order will be saved as 'Refund Needed'. \n\n" +
           "Do you still want to submit your details so we can track your payment for a refund?"
         );
 
@@ -340,26 +384,22 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           return;
         }
 
-        // Proceed to save but with Refund Needed status
+        // Update Existing HOLDING Reservation to Refund Needed
         const { error: refundError } = await supabase
           .from('orders')
-          .insert([{
+          .update({
             full_name: fullName,
             contact_number: contactNumber.replace(/\s/g, ''),
             instagram: instagram,
-            quantity_type: `Box4: ${quantityBox4}, Box6: ${quantityBox6}, Box12: ${quantityBox12}`,
-            quantity: 1,
-            total_price: totalPrice,
-            downpayment_price: downpaymentPrice,
-            payment_mode: paymentMode,
-            delivery_mode: deliveryMode,
             status: 'Refund Needed',
             is_paid: false, // Mark unpaid to clearly indicate action needed
             gcash_name: gcashName,
             gcash_number: gcashNumber.replace(/\s/g, ''),
             gcash_screenshot_path: uploadedGcashScreenshotPath,
-            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED. | ${specialInstructions}`
-          }]);
+            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED. | ${specialInstructions}`,
+            created_at: new Date().toISOString() // refresh timestamp
+          })
+          .eq('id', holdingOrderId);
 
         if (refundError) throw refundError;
 
@@ -369,44 +409,36 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         return;
       }
 
-      const { error: dbError } = await supabase
+      // 3. Update Existing HOLDING Reservation to real Order
+      const { error: orderError } = await supabase
         .from('orders')
-        .insert([{
+        .update({
           full_name: fullName,
           contact_number: contactNumber.replace(/\s/g, ''),
           instagram: instagram,
-          quantity_type: `Box4: ${quantityBox4}, Box6: ${quantityBox6}, Box12: ${quantityBox12}`,
-          quantity: 1, // Placeholder
-          total_price: totalPrice,
-          downpayment_price: downpaymentPrice,
+          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Box12: ${quantities.Box12}`,
+          quantity: 1, // keeping count as 1 order
+          status: 'Pending',
           payment_mode: paymentMode,
           delivery_mode: deliveryMode,
           meetup_location: meetupLocation,
           meetup_time: meetupTime,
-          maxim_address: maximAddress + (maximDetails ? ` (Additional: ${maximDetails})` : ''),
-          maxim_screenshot_path: uploadedMaximScreenshotPath,
+          is_paid: paymentMode === 'cash' ? false : true,
           gcash_name: gcashName,
           gcash_number: gcashNumber.replace(/\s/g, ''),
           gcash_screenshot_path: uploadedGcashScreenshotPath,
-          is_paid: paymentOption === 'full',
-          special_instructions: specialInstructions
-        }]);
+          maxim_screenshot_path: uploadedMaximScreenshotPath,
+          maxim_address: maximAddress + (maximDetails ? ` (Additional: ${maximDetails})` : ''),
+          special_instructions: specialInstructions,
+          created_at: new Date().toISOString() // refresh timestamp
+        })
+        .eq('id', holdingOrderId);
 
-      if (dbError) {
-        console.error('Database Error:', dbError);
-        alert(`Database Error: ${dbError.message}`);
-        setIsSubmitting(false);
-        return;
-      }
+      if (orderError) throw orderError;
 
-      // ─── REDUCE STOCK ───
-      if (stockCheckData) {
-        const newStockCount = Math.max(0, stockCheckData.stock_count - totalPiecesOrdered);
-        await supabase
-          .from('inventory')
-          .update({ stock_count: newStockCount })
-          .eq('item_name', 'Chewy Cookie');
-      }
+      // 4. Perma-deduct from stock count
+      await supabase.rpc('decrement_stock', { p_amount: totalPiecesOrdered });
+
     } catch (e: any) {
       console.error('Submission Exception:', e);
       alert(`Error: ${e.message || 'Network error'}`);
@@ -506,11 +538,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="inv-val item-val">
                   Dubai Chewy Chocolate<br />
                   <small>
-                    {quantityBox4 > 0 && `Box of 4 x ${quantityBox4}`}
-                    {quantityBox4 > 0 && (quantityBox6 > 0 || quantityBox12 > 0) && <br />}
-                    {quantityBox6 > 0 && `Box of 6 x ${quantityBox6}`}
-                    {quantityBox6 > 0 && quantityBox12 > 0 && <br />}
-                    {quantityBox12 > 0 && `Box of 12 x ${quantityBox12}`}
+                    {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
+                    {quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Box12 > 0) && <br />}
+                    {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
+                    {quantities.Box6 > 0 && quantities.Box12 > 0 && <br />}
+                    {quantities.Box12 > 0 && `Box of 12 x ${quantities.Box12}`}
                   </small>
                 </span>
               </div>
@@ -605,6 +637,78 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     );
   }
 
+  const handleQuantityChange = (boxType: 'Box4' | 'Box6' | 'Box12', change: number) => {
+    setQuantities(prev => {
+      const newQty = Math.max(0, prev[boxType] + change);
+      let max = 0;
+      if (boxType === 'Box4') max = 2;
+      if (boxType === 'Box6') max = 2;
+      if (boxType === 'Box12') max = 1;
+      return { ...prev, [boxType]: Math.min(max, newQty) };
+    });
+  };
+
+  const handleProceedToPayment = async () => {
+    const pieces = (quantities.Box4 * 4) + (quantities.Box6 * 6) + (quantities.Box12 * 12);
+
+    try {
+      // 1. Check current physical and reserved stock
+      const { data: inventory } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Chewy Cookie').single();
+      const { data: activeHolds } = await supabase.from('orders')
+        .select('quantity_type')
+        .eq('status', 'Holding')
+        .gt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+      let reservedPieces = 0;
+      activeHolds?.forEach(h => {
+        const parts = h.quantity_type.split(', ');
+        parts.forEach((p: string) => {
+          const [type, count] = p.split(': ');
+          const mult = type === 'Box4' ? 4 : type === 'Box6' ? 6 : 12;
+          reservedPieces += (parseInt(count) || 0) * mult;
+        });
+      });
+
+      const available = (inventory?.stock_count || 0) - reservedPieces;
+
+      if (available < pieces) {
+        alert(`So sorry! Others are currently paying for the last ${available} cookies. Your selection (${pieces}) exceeds available stock.`);
+        return;
+      }
+
+      setIsCheckingStock(true);
+
+      // 2. Create HOLDING reservation
+      const { data: holdOrder, error: holdError } = await supabase
+        .from('orders')
+        .insert([{
+          full_name: fullName || 'Holding...',
+          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Box12: ${quantities.Box12}`,
+          status: 'Holding',
+          total_price: totalPrice,
+          downpayment_price: downpaymentPrice
+        }])
+        .select()
+        .single();
+
+      if (holdError) {
+        alert("System busy. Please try again in a few seconds.");
+        setIsCheckingStock(false);
+        return;
+      }
+
+      setHoldingOrderId(holdOrder.id);
+      setIsCheckingStock(false);
+      setLocalStock(available - pieces);
+      setStep(4);
+      setTimeout(() => paymentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err) {
+      console.error(err);
+      setIsCheckingStock(false);
+    }
+  };
+
+
   return (
     <div className="order-page fade-in">
 
@@ -690,9 +794,9 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="qty-sub">Max 2 boxes</span>
               </div>
               <div className="qty-stepper">
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.max(0, quantityBox4 - 1))}>−</button>
-                <span className="qty-val">{quantityBox4}</span>
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox4(Math.min(2, quantityBox4 + 1))}>+</button>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box4', -1)}>−</button>
+                <span className="qty-val">{quantities.Box4}</span>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box4', 1)}>+</button>
               </div>
             </div>
 
@@ -702,9 +806,9 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="qty-sub">Max 2 boxes</span>
               </div>
               <div className="qty-stepper">
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.max(0, quantityBox6 - 1))}>−</button>
-                <span className="qty-val">{quantityBox6}</span>
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox6(Math.min(2, quantityBox6 + 1))}>+</button>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box6', -1)}>−</button>
+                <span className="qty-val">{quantities.Box6}</span>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box6', 1)}>+</button>
               </div>
             </div>
 
@@ -714,9 +818,9 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="qty-sub">Max 1 box</span>
               </div>
               <div className="qty-stepper">
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.max(0, quantityBox12 - 1))}>−</button>
-                <span className="qty-val">{quantityBox12}</span>
-                <button type="button" className="qty-btn" onClick={() => setQuantityBox12(Math.min(1, quantityBox12 + 1))}>+</button>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box12', -1)}>−</button>
+                <span className="qty-val">{quantities.Box12}</span>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box12', 1)}>+</button>
               </div>
             </div>
           </div>
@@ -809,37 +913,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                         background: isCheckingStock ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                         boxShadow: isCheckingStock ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.3)'
                       }}
-                      onClick={async () => {
-                        setIsCheckingStock(true);
-                        // ─── LIVE STOCK CHECK ───
-                        try {
-                          const { data } = await supabase
-                            .from('inventory')
-                            .select('stock_count')
-                            .eq('item_name', 'Chewy Cookie')
-                            .single();
-
-                          const freshStock = data?.stock_count ?? 0;
-                          setLocalStock(freshStock);
-
-                          const totalPieces = (quantityBox4 * 4) + (quantityBox6 * 6) + (quantityBox12 * 12);
-
-                          if (freshStock < totalPieces) {
-                            alert(`🚨 TOO SLOW!\n\nI'm so sorry, but someone else just took the last slots while you were filling the form.\n\nRemaining stock: ${freshStock} cookies.\n\nPLEASE DO NOT PROCEED WITH PAYMENT.`);
-                            // Scroll to quantity section so they can adjust or see it's sold out
-                            document.getElementById('quantity')?.scrollIntoView({ behavior: 'smooth' });
-                          } else {
-                            // Stock is safe, proceed
-                            paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        } catch (err) {
-                          console.error("Stock check error:", err);
-                          // If network fails, still proceed but warn
-                          paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        } finally {
-                          setIsCheckingStock(false);
-                        }
-                      }}
+                      onClick={handleProceedToPayment}
                     >
                       {isCheckingStock ? 'Checking Stock...' : 'Done with Step 3! Proceed to Payment →'}
                     </button>
@@ -854,7 +928,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           )}
 
           {/* Payment Section */}
-          {deliveryMode !== '' && (
+          {step >= 4 && (
             <div className="form-section fade-in payment-highlight-section" ref={paymentRef}>
               {errors.global && (
                 <div style={{ background: '#fef2f2', color: '#ef4444', padding: '15px', borderRadius: '10px', border: '5px solid #ef4444', marginBottom: '15px', fontWeight: 900, fontSize: '1rem', textAlign: 'center', animation: 'pulse-red 2s infinite' }}>
@@ -1186,6 +1260,25 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
       .eq('item_name', 'Chewy Cookie');
     if (!error) setStock(newStock);
     setUpdatingStock(false);
+  };
+
+  const handleMarkAsRefunded = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to mark this order as 'Refunded'? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'Refunded' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      fetchOrders(); // Refresh orders to show updated status
+      alert('Order marked as Refunded.');
+    } catch (err: any) {
+      console.error('Error marking order as refunded:', err);
+      alert('Failed to mark order as refunded: ' + err.message);
+    }
   };
 
   const confirmDeleteOrder = async () => {
@@ -2063,12 +2156,13 @@ Thank you for supporting Baked By BCD.`;
 
                   {activeDeliveryTab === 'refund' && (
                     <div className="delivery-section-box toggle-refund" style={{ marginTop: '30px' }}>
-                      <h3 className="delivery-section-title" style={{ color: '#ef4444' }}>⚠️ Refunds Required</h3>
-                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>These customers submitted exactly when stock hit zero. Verify if they paid and contact them via IG.</p>
 
+                      {/* ── PENDING REFUNDS ── */}
+                      <h3 className="delivery-section-title" style={{ color: '#ef4444' }}>⚠️ Needs Refund</h3>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>Verify if they paid and DM them. Click "Mark Refunded" once money is returned.</p>
                       <div className="delivery-grid">
                         {orders.filter(o => o.status === 'Refund Needed').length === 0 ? (
-                          <p className="no-data">No refunds pending. Great!</p>
+                          <p className="no-data">✅ No pending refunds. Great!</p>
                         ) : (
                           orders
                             .filter(o => o.status === 'Refund Needed')
@@ -2080,10 +2174,10 @@ Thank you for supporting Baked By BCD.`;
                                 </div>
                                 <div className="dc-body">
                                   <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#991b1b', marginBottom: '8px' }}>IG: @{o.instagram}</div>
-                                  <div style={{ padding: '8px', background: '#fff', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '0.75rem' }}>
-                                    {o.special_instructions}
+                                  <div style={{ padding: '8px', background: '#fff', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '0.75rem', marginBottom: '10px' }}>
+                                    {o.special_instructions || 'No notes'}
                                   </div>
-                                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                     {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link" style={{ background: '#ef4444' }}>View Receipt</a>}
                                     {o.instagram && (
                                       <button
@@ -2094,12 +2188,44 @@ Thank you for supporting Baked By BCD.`;
                                         DM Customer
                                       </button>
                                     )}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleMarkAsRefunded(o.id); }}
+                                      className="dc-link"
+                                      style={{ background: '#10b981', border: 'none', cursor: 'pointer' }}
+                                    >
+                                      ✅ Mark Refunded
+                                    </button>
                                   </div>
                                 </div>
                               </div>
                             ))
                         )}
                       </div>
+
+                      {/* ── COMPLETED REFUNDS HISTORY ── */}
+                      {orders.some(o => o.status === 'Refunded') && (
+                        <>
+                          <h3 className="delivery-section-title" style={{ color: '#10b981', marginTop: '30px' }}>✅ Completed Refunds</h3>
+                          <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>These refunds have been processed. Kept for your records.</p>
+                          <div className="delivery-grid">
+                            {orders
+                              .filter(o => o.status === 'Refunded')
+                              .map(o => (
+                                <div key={o.id} className="delivery-card" style={{ borderLeft: '4px solid #10b981', background: '#f0fdf4', opacity: 0.85 }}>
+                                  <div className="dc-header">
+                                    <strong>{o.full_name}</strong>
+                                    <span style={{ color: '#10b981' }}>{o.contact_number}</span>
+                                  </div>
+                                  <div className="dc-body">
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#065f46', marginBottom: '6px' }}>IG: @{o.instagram}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>💚 Refund Completed</div>
+                                  </div>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -2195,7 +2321,7 @@ Thank you for supporting Baked By BCD.`;
                   <tr><td colSpan={11} style={{ textAlign: 'center', padding: '40px' }}>No orders matching your criteria</td></tr>
                 ) : (
                   filteredOrders.map(order => (
-                    <tr key={order.id} className={`${order.status === 'Delivered' && order.is_paid ? 'finished-row' : ''} ${order.status === 'Refund Needed' ? 'refund-row' : ''}`}>
+                    <tr key={order.id} className={`${order.status === 'Delivered' && order.is_paid ? 'finished-row' : ''} ${order.status === 'Refund Needed' ? 'refund-row' : ''} ${order.status === 'Refunded' ? 'refunded-row' : ''}`}>
                       <td>{new Date(order.created_at).toLocaleDateString()}</td>
                       <td>
                         <strong>{order.full_name}</strong><br />
@@ -2326,6 +2452,7 @@ Thank you for supporting Baked By BCD.`;
                             <option value="Pending">Pending</option>
                             <option value="Delivered">Delivered</option>
                             <option value="Refund Needed">Refund Needed</option>
+                            <option value="Refunded">Refunded ✅</option>
                           </select>
                         </div>
                       </td>
@@ -2350,7 +2477,16 @@ Thank you for supporting Baked By BCD.`;
                       </td>
                       <td><strong>₱{order.total_price}</strong></td>
                       <td>
-                        <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {order.status === 'Refund Needed' && (
+                            <button
+                              className="admin-action-btn"
+                              style={{ padding: '6px 10px', fontSize: '0.75rem', background: '#f0fdf4', borderRadius: '8px', border: '2px solid #86efac', color: '#166534', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              onClick={() => handleMarkAsRefunded(order.id)}
+                            >
+                              ✅ Mark Refunded
+                            </button>
+                          )}
                           <button
                             className="admin-action-btn"
                             style={{ padding: '6px', fontSize: '1rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}
@@ -2602,7 +2738,7 @@ function BrowserGuard() {
 ═══════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked] = useState<boolean>(MANUAL_LOCK || new Date() < TARGET_DATE);
   const [bypassLocked, setBypassLocked] = useState(false);
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
@@ -2623,15 +2759,18 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchStock();
-    const stockInterval = setInterval(fetchStock, 30000); // Poll every 30s
-    const checkTime = () => {
-      const now = new Date().getTime();
-      setIsLocked(MANUAL_LOCK || now < TARGET_DATE.getTime());
+    // ─── JANITOR: Clean Expired Holds & Poll Stock ───
+    const janitor = async () => {
+      // 1. Delete Holding orders older than 10 mins
+      const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      await supabase.from('orders').delete().eq('status', 'Holding').lt('created_at', tenMinsAgo);
+
+      // 2. Refresh Stock
+      fetchStock();
     };
 
-    checkTime();
-    const interval = setInterval(checkTime, 10000); // Check every 10s
+    janitor();
+    const interval = setInterval(janitor, 30000); // Run every 30s
 
     // Instagram / FB Browser Detection
     const isInApp = /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
@@ -2659,7 +2798,6 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeydown);
       clearInterval(interval);
-      clearInterval(stockInterval);
     };
   }, [page]);
 
