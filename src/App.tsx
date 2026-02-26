@@ -1125,29 +1125,49 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   };
 
   const handleExportExcel = () => {
-    const dataToExport = orders.map(order => ({
-      'Date': new Date(order.created_at).toLocaleDateString(),
-      'Customer Name': order.full_name,
-      'Contact Number': order.contact_number,
-      'Instagram': order.instagram || 'N/A',
-      'Order Type': order.quantity_type,
-      'Quantity': order.quantity,
-      'Total Price': order.total_price,
-      'Downpayment': order.downpayment_price,
-      'Payment Mode': order.payment_mode,
-      'Delivery Mode': order.delivery_mode,
-      'Meetup Location': order.meetup_location === 'alijis' ? 'Alijis' : 'La Salle',
-      'Meetup Time': order.meetup_time,
-      'Maxim Address': order.maxim_address || 'N/A',
-      'Special Instructions': order.special_instructions || 'N/A',
-      'GCash Name': order.gcash_name || 'N/A',
-      'GCash Number': order.gcash_number || 'N/A'
-    }));
+    const dataToExport = orders.map(order => {
+      const remainingBalance = order.is_paid ? 0 : (order.total_price - order.downpayment_price);
+
+      // Calculate total pieces from quantity_type (e.g. "Box4: 1, Box6: 1")
+      let totalPieces = 0;
+      if (order.quantity_type && order.quantity_type.includes(':')) {
+        const items = order.quantity_type.split(', ');
+        items.forEach((item: string) => {
+          const parts = item.split(': ');
+          const type = parts[0];
+          const count = parseInt(parts[1]) || 0;
+          const multiplier = type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : 0;
+          totalPieces += (count * multiplier);
+        });
+      }
+
+      return {
+        'Date': new Date(order.created_at).toLocaleDateString(),
+        'Order Status': order.status || 'Pending',
+        'Customer Name': order.full_name,
+        'Instagram': order.instagram || 'N/A',
+        'Quantity Details': order.quantity_type,
+        'Total Pieces': totalPieces,
+        'Total Price': order.total_price,
+        'Amount Paid': order.is_paid ? order.total_price : order.downpayment_price,
+        'Remaining Balance': remainingBalance,
+        'Payment Status': order.is_paid ? 'PAID FULL' : 'DP ONLY',
+        'Payment Mode': order.payment_mode,
+        'Delivery Details': order.delivery_mode === 'meetup'
+          ? `Meetup: USLS Gate 6 (${order.meetup_time})`
+          : `Maxim: ${order.maxim_address} (${order.meetup_time})`,
+        'Receipt URL': order.gcash_screenshot_path ? getMediaUrl(order.gcash_screenshot_path) : 'No Receipt',
+        'Contact Number': order.contact_number,
+        'Special Instructions': order.special_instructions || 'N/A',
+        'GCash Name': order.gcash_name || 'N/A',
+        'GCash Number': order.gcash_number || 'N/A'
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    XLSX.writeFile(workbook, `BakedBy_Orders_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Order Accounting");
+    XLSX.writeFile(workbook, `BakedBy_Accounting_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const getMediaUrl = (path: string | null) => {
