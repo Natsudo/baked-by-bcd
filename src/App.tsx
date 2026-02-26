@@ -211,6 +211,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               onBack();
             } else {
               setErrors(prev => ({ ...prev, global: "🚨 SOLD OUT ALERT: Slots just ran out! DO NOT send your payment. If you already sent money, please finish the form so we can refund you." }));
+              // Auto-scroll to the warning so they see it
+              paymentRef.current?.scrollIntoView({ behavior: 'smooth' });
             }
           }
         }
@@ -268,7 +270,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       if (!gcashName.trim()) errs.gcashName = 'GCash Sender Name is required.';
       if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
     }
-    if (!gcashScreenshot) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
+    if (!gcashScreenshot && localStock !== 0) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
     if (!understood) errs.understood = 'Please tick the acknowledgement checkbox.';
     return errs;
   };
@@ -593,7 +595,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               <div className="form-submit-row" style={{ width: '100%' }}>
                 <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Back to Form</button>
                 <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
-                  {isSubmitting ? 'Confirming...' : 'Confirm Order'}
+                  {isSubmitting ? 'Confirming...' : (localStock === 0 ? 'Confirm for Refund' : 'Confirm Order')}
                 </button>
               </div>
             </div>
@@ -1068,8 +1070,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               />
               <div className="form-submit-row" style={{ marginTop: '20px' }}>
                 <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack}>Back</button>
-                <button type="submit" className="place-order-btn place-order-btn-sm" disabled={currentStock === 0}>
-                  {currentStock === 0 ? 'Sold Out' : 'Review Order'}
+                <button type="submit" className="place-order-btn place-order-btn-sm" disabled={false}>
+                  {localStock === 0 ? 'Submit for Refund' : 'Review Order'}
                 </button>
               </div>
             </div>
