@@ -678,21 +678,28 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
       setIsCheckingStock(true);
 
-      // 2. Create HOLDING reservation
+      // 2. Create HOLDING reservation (must include all NOT NULL cols)
       const { data: holdOrder, error: holdError } = await supabase
         .from('orders')
         .insert([{
-          full_name: fullName || 'Holding...',
+          full_name: fullName || '(Holding)',
+          contact_number: contactNumber.replace(/\s/g, '') || '00000000000',
+          instagram: instagram || '_holding_',
           quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Box12: ${quantities.Box12}`,
+          quantity: 1,
           status: 'Holding',
+          payment_mode: paymentMode || 'gcash',
+          delivery_mode: deliveryMode || 'meetup',
           total_price: totalPrice,
-          downpayment_price: downpaymentPrice
+          downpayment_price: downpaymentPrice,
+          is_paid: false,
         }])
         .select()
         .single();
 
       if (holdError) {
-        alert("System busy. Please try again in a few seconds.");
+        console.error('Holding order error:', holdError);
+        alert(`Could not reserve slot: ${holdError.message}`);
         setIsCheckingStock(false);
         return;
       }
