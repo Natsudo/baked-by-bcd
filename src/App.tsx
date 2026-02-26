@@ -188,6 +188,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const maximFileInputRef = useRef<HTMLInputElement>(null);
   const paymentRef = useRef<HTMLDivElement>(null);
 
+  // Track deliveryMode for the interval to avoid stale closures
+  const deliveryModeRef = useRef(deliveryMode);
+  useEffect(() => { deliveryModeRef.current = deliveryMode; }, [deliveryMode]);
+
   // ─── ACTIVE STOCK MONITORING ───
   useEffect(() => {
     const pollStock = async () => {
@@ -201,12 +205,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         if (data) {
           setLocalStock(data.stock_count);
           if (data.stock_count === 0 && !submitted) {
-            // ONLY kick to home if they haven't seen the GCash info yet
-            if (deliveryMode === '') {
+            // Check the dynamic ref, NOT the captured state
+            if (deliveryModeRef.current === '') {
               alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
               onBack();
             } else {
-              // They are likely looking at payment info - show warning but stay on page so they can upload if they already paid
               setErrors(prev => ({ ...prev, global: "🚨 SOLD OUT ALERT: Slots just ran out! DO NOT send your payment. If you already sent money, please finish the form so we can refund you." }));
             }
           }
@@ -851,6 +854,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           {/* Payment Section */}
           {deliveryMode !== '' && (
             <div className="form-section fade-in payment-highlight-section" ref={paymentRef}>
+              {errors.global && (
+                <div style={{ background: '#fef2f2', color: '#ef4444', padding: '15px', borderRadius: '10px', border: '5px solid #ef4444', marginBottom: '15px', fontWeight: 900, fontSize: '1rem', textAlign: 'center', animation: 'pulse-red 2s infinite' }}>
+                  {errors.global}
+                </div>
+              )}
               <div className="form-section-title" style={{ background: '#3b82f6', color: '#fff', margin: '-16px -16px 16px -16px', padding: '12px 16px', borderRadius: '10px 10px 0 0', border: 'none' }}>
                 <span className="form-step-badge" style={{ background: '#fff', color: '#3b82f6' }}>4</span>
                 Complete Your Payment:
