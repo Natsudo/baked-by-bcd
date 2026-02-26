@@ -165,6 +165,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [gcashName, setGcashName] = useState('');
   const [gcashNumber, setGcashNumber] = useState('');
   const [gcashScreenshot, setGcashScreenshot] = useState<File | null>(null);
+  const [paymentSubMode, setPaymentSubMode] = useState<'gcash' | 'bank'>('gcash');
 
   const handleGcashPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGcashNumber(formatPhoneNumber(e.target.value));
@@ -177,6 +178,9 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const maximFileInputRef = useRef<HTMLInputElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll logic removed to prevent jumping before sub-fields are filled
 
 
 
@@ -217,8 +221,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       if (!maximAddress.trim()) errs.maximAddress = 'Delivery address is required.';
       if (!maximScreenshot) errs.maximScreenshot = 'Please upload a pin point screenshot.';
     }
-    if (!gcashName.trim()) errs.gcashName = 'GCash Sender Name is required.';
-    if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
+    if (paymentSubMode === 'gcash') {
+      if (!gcashName.trim()) errs.gcashName = 'GCash Sender Name is required.';
+      if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
+    }
     if (!gcashScreenshot) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
     if (!understood) errs.understood = 'Please tick the acknowledgement checkbox.';
     return errs;
@@ -548,7 +554,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
           {/* Customer Details */}
           <div className="form-section">
-            <div className="form-section-title">Customer Details:</div>
+            <div className="form-section-title">
+              <span className="form-step-badge">1</span>
+              Customer Details:
+            </div>
 
             {/* Full Name */}
             <div className="form-row">
@@ -588,7 +597,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
           {/* Quantity Selection */}
           <div className="form-section">
-            <div className="form-section-title" id="quantity">Order Quantity:</div>
+            <div className="form-section-title" id="quantity">
+              <span className="form-step-badge">2</span>
+              Order Quantity:
+            </div>
             {errors.quantity && <span className="err-msg">{errors.quantity}</span>}
 
             <div className="qty-row-item">
@@ -633,7 +645,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           {/* Service Mode — Smart Toggle */}
           {totalPrice > 0 && (
             <div className="form-section fade-in">
-              <div className="form-section-title" id="deliveryMode">How should we get it to you?</div>
+              <div className="form-section-title" id="deliveryMode">
+                <span className="form-step-badge">3</span>
+                How should we get it to you?
+              </div>
               {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
 
               <div className="service-mode-grid">
@@ -696,13 +711,51 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
                 </div>
               )}
+
+              {deliveryMode !== '' && (
+                <>
+                  {/* Internal validation for Step 3 */}
+                  {((deliveryMode === 'meetup' && !!meetupTime) ||
+                    (deliveryMode === 'maxim' && !!meetupLocation && !!meetupTime && !!maximAddress.trim() && !!maximScreenshot)) ? (
+                    <button
+                      type="button"
+                      className="place-order-btn place-order-btn-sm fade-in"
+                      style={{
+                        marginTop: '20px',
+                        width: '100%',
+                        fontSize: '1rem',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                      }}
+                      onClick={() => paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    >
+                      Done with Step 3! Proceed to Payment →
+                    </button>
+                  ) : (
+                    <div className="scroll-indicator fade-in" style={{ opacity: 0.7 }}>
+                      <span>Please complete delivery details above...</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
           {/* Payment Section */}
           {deliveryMode !== '' && (
-            <div className="form-section fade-in">
-              <div className="form-section-title">Complete Your Payment:</div>
+            <div className="form-section fade-in payment-highlight-section" ref={paymentRef}>
+              <div className="form-section-title" style={{ background: '#3b82f6', color: '#fff', margin: '-16px -16px 16px -16px', padding: '12px 16px', borderRadius: '10px 10px 0 0', border: 'none' }}>
+                <span className="form-step-badge" style={{ background: '#fff', color: '#3b82f6' }}>4</span>
+                Complete Your Payment:
+              </div>
+
+              <div className="payment-alert">
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>💎</span>
+                  <strong>ALMOST THERE!</strong>
+                </div>
+                Please fill up the payment details below to see the <strong>Review Order</strong> button. Your slot is only confirmed after we verify the receipt!
+              </div>
 
               <div className="price-summary-box" style={{ marginBottom: '14px' }}>
                 <div className="price-row">
@@ -728,6 +781,46 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               </div>
 
               <div className="gcash-payment-card" style={{ background: '#eff6ff', borderRadius: '15px', padding: '14px', marginBottom: '12px' }}>
+                {/* Payment Sub-Mode Tabs */}
+                <div className="payment-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
+                  <button
+                    type="button"
+                    className={`payment-tab-btn ${paymentSubMode === 'gcash' ? 'active' : ''}`}
+                    onClick={() => setPaymentSubMode('gcash')}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: paymentSubMode === 'gcash' ? '#3b82f6' : '#e2e8f0',
+                      color: paymentSubMode === 'gcash' ? '#fff' : '#475569',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    GCash Payment
+                  </button>
+                  <button
+                    type="button"
+                    className={`payment-tab-btn ${paymentSubMode === 'bank' ? 'active' : ''}`}
+                    onClick={() => setPaymentSubMode('bank')}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: paymentSubMode === 'bank' ? '#3b82f6' : '#e2e8f0',
+                      color: paymentSubMode === 'bank' ? '#fff' : '#475569',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Gotyme/Bank Transfer
+                  </button>
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <div className="gcash-info">
                     <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: '2px' }}>SEND GCASH TO:</div>
@@ -741,78 +834,83 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 </div>
 
                 <div className="gcash-section" style={{ marginTop: '10px', marginBottom: '15px', background: '#fff', padding: '10px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-                  <div className="form-row" style={{ marginBottom: '8px' }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashName">GCash Name:</label>
-                    <div className="form-field">
-                      <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" style={{ fontSize: '0.9rem', padding: '8px 12px' }} />
-                      {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashNumber">GCash Number:</label>
-                    <div className="form-field">
-                      <input
-                        id="gcashNumber"
-                        className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
-                        type="tel"
-                        value={gcashNumber}
-                        onChange={handleGcashPhoneChange}
-                        placeholder="09XX XXX XXXX"
-                        maxLength={13}
-                        style={{ fontSize: '0.9rem', padding: '8px 12px' }}
-                      />
-                      {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
-                    </div>
-                  </div>
 
-                  <div className="gcash-launch-container" style={{ marginBottom: '15px' }}>
-                    <a
-                      href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera)
-                        ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fwww.gcash.com;end;"
-                        : "gcash://"}
-                      className="launch-gcash-btn"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}
-                    >
-                      <span>Launch GCash App</span>
-                      <span>🚀</span>
-                    </a>
-
-                    {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
-                      <div className="ig-browser-tip" style={{
-                        marginTop: '12px',
-                        padding: '12px',
-                        background: '#fff7ed',
-                        border: '2px solid #ffedd5',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
-                        color: '#9a3412',
-                        textAlign: 'center',
-                        lineHeight: '1.5'
-                      }}>
-                        <div style={{ fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-                          <span>⚠️</span> Instagram Limitation
+                  {paymentSubMode === 'gcash' && (
+                    <>
+                      <div className="form-row" style={{ marginBottom: '8px' }}>
+                        <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashName">GCash Name:</label>
+                        <div className="form-field">
+                          <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" style={{ fontSize: '0.9rem', padding: '8px 12px' }} />
+                          {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
                         </div>
-                        If the app doesn't open, tap the <strong>three dots (⋮ / ...)</strong> at the top right and select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong>.
                       </div>
-                    )}
-                  </div>
+                      <div className="form-row">
+                        <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashNumber">GCash Number:</label>
+                        <div className="form-field">
+                          <input
+                            id="gcashNumber"
+                            className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
+                            type="tel"
+                            value={gcashNumber}
+                            onChange={handleGcashPhoneChange}
+                            placeholder="09XX XXX XXXX"
+                            maxLength={13}
+                            style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                          />
+                          {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
+                        </div>
+                      </div>
 
-                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px' }}>
-                    1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via GCash to the number above.<br />
+                      <div className="gcash-launch-container" style={{ margin: '15px 0' }}>
+                        <a
+                          href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera)
+                            ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fwww.gcash.com;end;"
+                            : "gcash://"}
+                          className="launch-gcash-btn"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}
+                        >
+                          <span>Launch GCash App</span>
+                          <span>🚀</span>
+                        </a>
+
+                        {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
+                          <div className="ig-browser-tip" style={{
+                            marginTop: '12px',
+                            padding: '12px',
+                            background: '#fff7ed',
+                            border: '2px solid #ffedd5',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            color: '#9a3412',
+                            textAlign: 'center',
+                            lineHeight: '1.5'
+                          }}>
+                            <div style={{ fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                              <span>⚠️</span> Instagram Limitation
+                            </div>
+                            If the app doesn't open, tap the <strong>three dots (⋮ / ...)</strong> at the top right and select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong>.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px', marginTop: paymentSubMode === 'bank' ? '5px' : '0' }}>
+                    1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via {paymentSubMode === 'gcash' ? 'GCash' : 'Gotyme/Bank'} to the number/QR above.<br />
                     2. Screenshot the receipt and upload it below.
                   </div>
 
                   <div id="gcashScreenshot" className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
-                    {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload GCash Receipt</span>}
+                    {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload Receipt</span>}
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
                   {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
 
                   <div className="gcash-qr-container" style={{ marginTop: '15px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
-                    <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '180px', borderRadius: '10px' }} />
+                    <p style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
+                    <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '280px', width: '100%', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                   </div>
                 </div>
               </div>
@@ -830,7 +928,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           {/* Notes + Submit (revealed after screenshot) */}
           {gcashScreenshot && (
             <div className="form-section fade-in" style={{ marginTop: '16px' }}>
-              <label className="form-section-title" htmlFor="specialInstructions">Special Instructions (Optional):</label>
+              <div className="form-section-title">
+                <span className="form-step-badge">5</span>
+                Finalize Order:
+              </div>
+              <label className="form-label" htmlFor="specialInstructions" style={{ marginBottom: '8px', display: 'block' }}>Special Instructions (Optional):</label>
               <textarea
                 id="specialInstructions"
                 className="form-textarea"
@@ -1076,15 +1178,31 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
     const payLabel = isDP ? 'downpayment' : 'full payment';
     const amt = isDP ? o.downpayment_price : o.total_price;
 
-    // Format quantities
-    const qtyText = o.quantity_type ? o.quantity_type.split(', ').filter((s: string) => !s.endsWith(': 0')).join(', ') : 'order';
-
-    let meetupNote = '';
-    if (o.delivery_mode === 'meetup') {
-      meetupNote = ` Meet up at USLS Gate 6 Canteen at ${o.meetup_time}.`;
+    // Format quantities into bullet points
+    // Expected format: "Box4: 1, Box6: 1, Box12: 0"
+    let orderList = '';
+    if (o.quantity_type) {
+      const items = o.quantity_type.split(', ');
+      items.forEach((item: string) => {
+        const parts = item.split(': ');
+        const type = parts[0];
+        const count = parseInt(parts[1]);
+        if (count > 0) {
+          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+          orderList += `\n• ${label} x ${count}`;
+        }
+      });
     }
 
-    const msg = `Hi ${o.full_name}! 🍪 We've received your ${payLabel} of ₱${amt}. Your order for ${qtyText} is now CONFIRMED!${meetupNote} Thanks for ordering! - Baked By BCD`;
+    const msg = `Hi ${o.full_name}! 🍪✨
+
+Great news — we’ve successfully received your ${payLabel} of ₱${amt.toLocaleString()}.
+
+Your order is now officially CONFIRMED:${orderList}
+
+We’re so excited for you to enjoy your Dubai Chewy cookies! 🤍
+
+Thank you for supporting Baked By BCD.`;
 
     navigator.clipboard.writeText(msg);
     alert('Confirmation message copied to clipboard! 📋\nNow opening Instagram...');
@@ -1092,38 +1210,44 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   };
 
   const handleCopyMaximInfo = (o: any) => {
-    const from = o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle Gate 6';
-    const text = `FROM: ${from}\nTO: ${o.maxim_address}\nCUSTOMER: ${o.full_name}`;
+    // Add City for better geolocation in the Maxim App
+    const fromClean = (o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle Gate 6') + ', Bacolod';
+    const toClean = (o.maxim_address || '') + ', Bacolod';
+
+    const text = `FROM: ${fromClean}\nTO: ${toClean}\nCUSTOMER: ${o.full_name}`;
     navigator.clipboard.writeText(text);
 
-    // Deep linking for Maxim (Taxsee)
-    const encodedFrom = encodeURIComponent(from);
-    const encodedTo = encodeURIComponent(o.maxim_address || '');
+    // Deep linking for Maxim (Taxsee) using official parameter names
+    const encodedFrom = encodeURIComponent(fromClean);
+    const encodedTo = encodeURIComponent(toClean);
 
-    // Fallback web URL
+    // Web Fallback
     const webUrl = `https://taximaxim.com/ph/order/?from=${encodedFrom}&to=${encodedTo}`;
 
-    // Android Intent
-    const androidIntent = `intent://order?from=${encodedFrom}&to=${encodedTo}#Intent;scheme=taxsee;package=com.taxsee.taxsee;S.browser_fallback_url=${encodeURIComponent(webUrl)};end;`;
-
-    // iOS Scheme
-    const iosScheme = `taxsee://order?from=${encodedFrom}&to=${encodedTo}`;
+    // Android/iOS App Scheme
+    // taxsee://order?from_address=...&to_address=... is the standard format for Taxsee engine apps
+    const appSchemeUrl = `taxsee://order?from_address=${encodedFrom}&to_address=${encodedTo}`;
 
     const isAndroid = /android/i.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-    alert(`Maxim Route Info Copied! 🚚\n\nFROM: ${from}\nTO: ${o.maxim_address}\n\nNow opening Maxim...`);
-
+    // We trigger the launch immediately to ensure it's within the user gesture window
     if (isAndroid) {
+      // Intent scheme is more reliable for Android Chrome
+      const androidIntent = `intent://order?from_address=${encodedFrom}&to_address=${encodedTo}#Intent;scheme=taxsee;package=com.taxsee.taxsee;S.browser_fallback_url=${encodeURIComponent(webUrl)};end;`;
       window.location.href = androidIntent;
     } else if (isIOS) {
-      window.location.href = iosScheme;
+      window.location.href = appSchemeUrl;
+      // Simple timeout fallback for iOS if app isn't installed
       setTimeout(() => {
-        window.location.href = webUrl;
-      }, 1500);
+        if (!document.hidden) window.location.href = webUrl;
+      }, 2000);
     } else {
       window.open(webUrl, '_blank');
     }
+
+    // Alert at the end so it doesn't block the initial navigation logic
+    alert(`Maxim Info Copied! 🚚\n\nFROM: ${fromClean}\nTO: ${toClean}\n\nLaunching Maxim App...`);
   };
 
   const handleLogout = async () => {
@@ -1903,8 +2027,16 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
                         )}
                       </td>
                       <td>
-                        {order.delivery_mode === 'meetup' ? 'Meetup' : 'Maxim'}<br />
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}>{order.meetup_time}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 700 }}>{order.delivery_mode === 'meetup' ? '🤝 Meetup' : '🚚 Maxim'}</span>
+                          <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: 600 }}>🕒 {order.meetup_time}</span>
+                          {order.delivery_mode === 'maxim' && (
+                            <>
+                              <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 800 }}>🏠 {order.maxim_address}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 800 }}>📍 Pickup: {order.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle'}</div>
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
