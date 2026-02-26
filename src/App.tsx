@@ -1214,21 +1214,29 @@ Thank you for supporting Baked By BCD.`;
     const webUrl = `https://www.instagram.com/${username}/`;
     const appUrl = `instagram://user?username=${username}`;
 
+    // 3. Inform user and then redirect
+    // We alert first so the "OK" click becomes the trigger for the app launch.
+    // This is the most reliable way to avoid "Untitled" tabs and blocked redirects.
+    alert('Confirmation message copied to clipboard! 📋\n\nOpening Instagram...');
+
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
-      // On mobile, window.location.href is more reliable than window.open
-      window.location.href = appUrl;
-      // Fallback to web if app doesn't open
-      setTimeout(() => {
-        if (!document.hidden) window.location.href = webUrl;
-      }, 1500);
+      if (/Android/i.test(navigator.userAgent)) {
+        // Android Intent - Most reliable for opening the app directly
+        const androidIntent = `intent://www.instagram.com/_u/${username}/#Intent;package=com.instagram.android;scheme=https;end`;
+        window.location.href = androidIntent;
+      } else {
+        // iOS / Other Mobile - Try custom scheme
+        window.location.href = appUrl;
+        // Fallback to web if app doesn't open
+        setTimeout(() => {
+          if (!document.hidden) window.location.href = webUrl;
+        }, 1200);
+      }
     } else {
       window.open(webUrl, '_blank');
     }
-
-    // 3. Alert last so it doesn't block the navigation logic
-    alert('Confirmation message copied to clipboard! 📋\n\nLaunching Instagram...');
   };
 
   const handleCopyMaximInfo = (o: any) => {
