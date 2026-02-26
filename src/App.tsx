@@ -1218,30 +1218,14 @@ Thank you for supporting Baked By BCD.`;
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     if (isIOS) {
-      // iOS: BLOCKING ALERTS BREAK DEEP LINKS
-      // We navigate immediately, then show the message.
+      // iOS: Strictly open app if possible, no fallback, no alerts
       window.location.href = appUrl;
-
-      // Fallback to web if app doesn't open
-      setTimeout(() => {
-        if (!document.hidden) {
-          window.location.href = webUrl;
-        }
-      }, 1500);
-
-      // Optional: Small delay before alert so it doesn't interrupt the app switch request
-      setTimeout(() => {
-        alert('Confirmation message copied! 📋\nCheck your Instagram DMs.');
-      }, 100);
-
     } else if (isAndroid) {
-      // Android: Intent is most reliable
-      alert('Confirmation message copied! 📋\nOpening Instagram...');
+      // Android: Use Intent to force open app directly
       const androidIntent = `intent://www.instagram.com/_u/${username}/#Intent;package=com.instagram.android;scheme=https;end`;
       window.location.href = androidIntent;
     } else {
-      // Desktop
-      navigator.clipboard.writeText(msg);
+      // Desktop: Keep fallback and alert
       alert('Confirmation message copied! 📋\nOpening Instagram...');
       window.open(webUrl, '_blank');
     }
