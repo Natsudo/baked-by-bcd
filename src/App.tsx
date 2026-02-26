@@ -201,8 +201,14 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         if (data) {
           setLocalStock(data.stock_count);
           if (data.stock_count === 0 && !submitted) {
-            alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
-            onBack();
+            // ONLY kick to home if they haven't seen the GCash info yet
+            if (deliveryMode === '') {
+              alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
+              onBack();
+            } else {
+              // They are likely looking at payment info - show warning but stay on page so they can upload if they already paid
+              setErrors(prev => ({ ...prev, global: "🚨 SOLD OUT ALERT: Slots just ran out! DO NOT send your payment. If you already sent money, please finish the form so we can refund you." }));
+            }
           }
         }
       } catch (e) {
@@ -1128,7 +1134,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeliveryList, setShowDeliveryList] = useState(false);
   const [showProductionDetails, setShowProductionDetails] = useState(false);
-  const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | null>(null);
+  const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | 'refund' | null>(null);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -1790,7 +1796,7 @@ Thank you for supporting Baked By BCD.`;
                       <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f59e0b' }}>{orders.filter(o => o.delivery_mode === 'maxim' && o.status !== 'Refund Needed').length}</div>
                     </div>
                     <div
-                      onClick={() => setActiveDeliveryTab('meetup')} // Using meetup as simple toggle for now or add 'refund' tab
+                      onClick={() => setActiveDeliveryTab('refund')}
                       style={{
                         textAlign: 'center',
                         flex: 1,
@@ -1798,8 +1804,8 @@ Thank you for supporting Baked By BCD.`;
                         padding: '10px',
                         borderRadius: '10px',
                         transition: 'all 0.2s',
-                        background: orders.some(o => o.status === 'Refund Needed') ? '#fef2f2' : 'transparent',
-                        border: orders.some(o => o.status === 'Refund Needed') ? '2px solid #ef4444' : '2px solid transparent'
+                        background: activeDeliveryTab === 'refund' ? '#fef2f2' : (orders.some(o => o.status === 'Refund Needed') ? 'rgba(239, 68, 68, 0.05)' : 'transparent'),
+                        border: activeDeliveryTab === 'refund' ? '2px solid #ef4444' : (orders.some(o => o.status === 'Refund Needed') ? '2px dashed #ef4444' : '2px solid transparent')
                       }}
                     >
                       <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>To Refund</div>
@@ -1814,18 +1820,18 @@ Thank you for supporting Baked By BCD.`;
                   )}
 
                   {activeDeliveryTab === 'meetup' && (
-                    <div className="delivery-section-box fade-in">
+                    <div className="delivery-section-box toggle-meetup">
                       <h3 className="delivery-section-title">🤝 La Salle Meetup List</h3>
 
                       {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
                         <div className="delivery-time-block" key={timeSlot}>
                           <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
                           <div className="delivery-grid">
-                            {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot).length === 0 ? (
+                            {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot && o.status !== 'Refund Needed').length === 0 ? (
                               <p className="no-data">No meetups at this time.</p>
                             ) : (
                               orders
-                                .filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot)
+                                .filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot && o.status !== 'Refund Needed')
                                 .sort((a, b) => {
                                   const af = a.status === 'Delivered' && a.is_paid;
                                   const bf = b.status === 'Delivered' && b.is_paid;
@@ -1938,11 +1944,11 @@ Thank you for supporting Baked By BCD.`;
                         <div className="delivery-time-block" key={timeSlot}>
                           <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
                           <div className="delivery-grid">
-                            {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot).length === 0 ? (
+                            {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot && o.status !== 'Refund Needed').length === 0 ? (
                               <p className="no-data">No deliveries at this time.</p>
                             ) : (
                               orders
-                                .filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot)
+                                .filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot && o.status !== 'Refund Needed')
                                 .sort((a, b) => {
                                   const af = a.status === 'Delivered' && a.is_paid;
                                   const bf = b.status === 'Delivered' && b.is_paid;
@@ -2042,6 +2048,48 @@ Thank you for supporting Baked By BCD.`;
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {activeDeliveryTab === 'refund' && (
+                    <div className="delivery-section-box toggle-refund" style={{ marginTop: '30px' }}>
+                      <h3 className="delivery-section-title" style={{ color: '#ef4444' }}>⚠️ Refunds Required</h3>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>These customers submitted exactly when stock hit zero. Verify if they paid and contact them via IG.</p>
+
+                      <div className="delivery-grid">
+                        {orders.filter(o => o.status === 'Refund Needed').length === 0 ? (
+                          <p className="no-data">No refunds pending. Great!</p>
+                        ) : (
+                          orders
+                            .filter(o => o.status === 'Refund Needed')
+                            .map(o => (
+                              <div key={o.id} className="delivery-card refund-card" style={{ borderLeft: '4px solid #ef4444', background: '#fff1f2' }}>
+                                <div className="dc-header">
+                                  <strong>{o.full_name}</strong>
+                                  <span style={{ color: '#ef4444' }}>{o.contact_number}</span>
+                                </div>
+                                <div className="dc-body">
+                                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#991b1b', marginBottom: '8px' }}>IG: @{o.instagram}</div>
+                                  <div style={{ padding: '8px', background: '#fff', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '0.75rem' }}>
+                                    {o.special_instructions}
+                                  </div>
+                                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                                    {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link" style={{ background: '#ef4444' }}>View Receipt</a>}
+                                    {o.instagram && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
+                                        className="dc-link"
+                                        style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
+                                      >
+                                        DM Customer
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                        )}
+                      </div>
                     </div>
                   )}
 
