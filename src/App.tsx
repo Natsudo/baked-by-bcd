@@ -7,6 +7,7 @@ import './App.css';
 // ─── GLOBAL LOCK CONFIGURATION ───
 const MANUAL_LOCK = true;
 const TARGET_DATE = new Date('2026-02-27T02:52:00+08:00');
+console.log("Current Build: v2.2 - Force Locked");
 
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
@@ -2392,6 +2393,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           <img src="/baked-by-logo.png" alt="Baked By Logo" className="maintenance-logo" />
         </div>
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
+        <div style={{ fontSize: '0.7rem', opacity: 0.5, marginBottom: '10px' }}>Build v2.2-LOCKED</div>
         <p className="maintenance-subtitle">
           Our preorder forms for Dubai Chewy Cookie (Batch 4) will open on February 26
           <span className="highlight-text">THURSDAY, 7:00 PM</span>
@@ -2541,7 +2543,7 @@ function BrowserGuard() {
 ═══════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [isLocked, setIsLocked] = useState(MANUAL_LOCK || new Date().getTime() < TARGET_DATE.getTime());
+  const [isLocked, setIsLocked] = useState(true);
   const [bypassLocked, setBypassLocked] = useState(false);
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
