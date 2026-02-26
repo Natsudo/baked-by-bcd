@@ -4,6 +4,10 @@ import { supabase } from './supabaseClient';
 import * as XLSX from 'xlsx';
 import './App.css';
 
+// ─── GLOBAL LOCK CONFIGURATION ───
+const MANUAL_LOCK = false;
+const TARGET_DATE = new Date('2026-02-27T02:47:00+08:00');
+
 type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
 type DeliveryMode = 'meetup' | 'maxim' | '';
@@ -2346,7 +2350,6 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);
   };
-  const TARGET_DATE = new Date('2026-02-26T19:00:00+08:00');
 
   useEffect(() => {
     const calculateTime = () => {
@@ -2404,7 +2407,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
             <li><strong>Strictly via Website only.</strong> Orders via DMs will not be entertained.</li>
             <li><strong>Limit per person:</strong> Max 2 boxes (B4), 2 boxes (B6), and 1 box (B12).</li>
             <li><strong>Maxim Orders:</strong> Please screenshot your pinpoint location in advance.</li>
-            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>Website is locked until 7PM — Preorders go live then!</li>
+            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>Website is temporarily locked — Preorders go live in 2 hours!</li>
           </ul>
           <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#ffde59', textAlign: 'center', fontSize: '0.8rem' }}>
             📍 Bacolod City orders only.
@@ -2536,12 +2539,9 @@ function BrowserGuard() {
 /* ═══════════════════════════════════════
    ROOT
 ═══════════════════════════════════════ */
-const MANUAL_LOCK = true; // Set to true to force lock regardless of timer
-const TARGET_DATE = new Date('2026-02-27T02:40:00+08:00');
-
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [isLocked, setIsLocked] = useState(true);
+  const [isLocked, setIsLocked] = useState(MANUAL_LOCK || new Date().getTime() < TARGET_DATE.getTime());
   const [bypassLocked, setBypassLocked] = useState(false);
   const [stock, setStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
