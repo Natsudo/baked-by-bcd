@@ -1174,7 +1174,9 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   };
 
   const handleConfirmAndDM = (o: any) => {
-    const isDP = !o.is_paid && o.payment_mode === 'gcash';
+    // If IS_PAID is false, we are confirming receiving the Downpayment (regardless of cash/gcash mode)
+    // If IS_PAID is true, we are confirming the Full Payment
+    const isDP = !o.is_paid;
     const payLabel = isDP ? 'downpayment' : 'full payment';
     const amt = isDP ? o.downpayment_price : o.total_price;
 
@@ -1713,7 +1715,7 @@ Thank you for supporting Baked By BCD.`;
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                           <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
                                           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: o.is_paid ? '#10b981' : '#f59e0b', marginTop: '2px' }}>
-                                            {o.is_paid ? 'PAID FULL' : o.payment_mode === 'gcash' ? 'DP ONLY' : 'UNPAID'}
+                                            {o.is_paid ? 'PAID FULL' : 'DP RECEIVED'}
                                           </span>
                                           {!o.is_paid && (
                                             <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
@@ -2052,7 +2054,7 @@ Thank you for supporting Baked By BCD.`;
                             </>
                           ) : (
                             <span style={{ fontSize: '0.8rem', color: order.is_paid ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
-                              {order.is_paid ? 'Paid' : 'Pending Cash'}
+                              {order.is_paid ? 'Paid' : 'DP RECEIVED (Balance Pending)'}
                             </span>
                           )}
 
