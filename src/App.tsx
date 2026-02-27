@@ -2581,7 +2581,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
       const now = new Date().getTime();
       if (TARGET_DATE.getTime() - now < 0) {
         clearInterval(timer);
-        window.location.reload();
+        // Countdown finished — do not reload (MANUAL_LOCK controls visibility)
       }
     }, 1000);
 
