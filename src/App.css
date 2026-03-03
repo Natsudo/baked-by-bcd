@@ -1746,6 +1746,30 @@
   transform: scale(1.1);
 }
 
+.admin-edit-btn {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-family: inherit;
+  height: 36px;
+  min-width: 36px;
+}
+
+.admin-edit-btn:hover {
+  background: #4338ca;
+  color: white;
+  border-color: #3730a3;
+  transform: scale(1.1);
+}
+
 /* ── Payment Toggle Switch ── */
 .admin-pay-toggle {
   display: flex;

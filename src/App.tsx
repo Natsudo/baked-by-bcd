@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { supabase } from './supabaseClient';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
@@ -1226,6 +1226,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [showDeliveryList, setShowDeliveryList] = useState(false);
   const [showProductionDetails, setShowProductionDetails] = useState(false);
   const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | 'refund' | null>(null);
+  const [editingOrder, setEditingOrder] = useState<any | null>(null);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -1352,49 +1353,252 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   };
 
   const handleExportExcel = () => {
-    const dataToExport = orders.map(order => {
-      const remainingBalance = order.is_paid ? 0 : (order.total_price - order.downpayment_price);
-
-      // Calculate total pieces from quantity_type (e.g. "Box4: 1, Box6: 1")
+    // Helper: parse quantity_type string into readable quantity and total pieces
+    const parseQuantity = (quantityType: string) => {
       let totalPieces = 0;
-      if (order.quantity_type && order.quantity_type.includes(':')) {
-        const items = order.quantity_type.split(', ');
+      const parts: string[] = [];
+      if (quantityType && quantityType.includes(':')) {
+        const items = quantityType.split(', ');
         items.forEach((item: string) => {
-          const parts = item.split(': ');
-          const type = parts[0];
-          const count = parseInt(parts[1]) || 0;
-          const multiplier = type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : 0;
-          totalPieces += (count * multiplier);
+          const p = item.split(': ');
+          const type = p[0];
+          const count = parseInt(p[1]) || 0;
+          if (count > 0) {
+            const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
+            parts.push(`${count}x ${label}`);
+            const multiplier = type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : 0;
+            totalPieces += (count * multiplier);
+          }
         });
       }
+      return { display: parts.join(', ') || 'N/A', totalPieces };
+    };
 
+    // ── Style definitions for colored section headers ──
+    const headerStyleOrange = { fill: { fgColor: { rgb: 'F4B084' } }, font: { bold: true, sz: 11, color: { rgb: '000000' } }, alignment: { horizontal: 'left' as const } };
+    const headerStyleGreen = { fill: { fgColor: { rgb: 'A9D18E' } }, font: { bold: true, sz: 11, color: { rgb: '000000' } }, alignment: { horizontal: 'left' as const } };
+    const headerStyleTeal = { fill: { fgColor: { rgb: '4BACC6' } }, font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, alignment: { horizontal: 'left' as const } };
+    const headerStyleOrange2 = { fill: { fgColor: { rgb: 'ED7D31' } }, font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, alignment: { horizontal: 'left' as const } };
+
+    // Apply a style to every cell in a given row
+    const styleRow = (ws: any, rowIdx: number, colCount: number, style: any) => {
+      for (let c = 0; c < colCount; c++) {
+        const ref = XLSX.utils.encode_cell({ r: rowIdx, c });
+        if (!ws[ref]) ws[ref] = { v: '', t: 's' };
+        ws[ref].s = style;
+      }
+    };
+
+    // Auto-fit column widths from AOA data
+    const autoFitAoa = (ws: any, aoa: any[][]) => {
+      if (aoa.length === 0) return;
+      const colCount = Math.max(...aoa.map(r => r.length));
+      ws['!cols'] = Array.from({ length: colCount }, (_, i) => {
+        const maxLen = Math.max(...aoa.map(row => String(row[i] ?? '').length));
+        return { wch: Math.min(Math.max(maxLen + 2, 10), 55) };
+      });
+    };
+
+    const workbook = XLSX.utils.book_new();
+    const timeSlots = ['10am - 12pm', '3pm - 4pm'];
+
+    // ═══════════════════════════════════════
+    //  SHEET 1: Maxim Deliveries
+    // ═══════════════════════════════════════
+    const maximOrders = orders.filter(o => o.delivery_mode === 'maxim' && o.status !== 'Refund Needed' && o.status !== 'Refunded');
+    const maximCols = ['', 'Name', 'Quantity', 'Total Pieces', 'Total Price', 'Payment Status', 'Remaining Balance', 'Contact', 'Instagram'];
+    const maximAoa: any[][] = [];
+
+    const pickupLocations = [
+      { filter: (o: any) => o.meetup_location !== 'rolling-hills', label: 'LASALLE' },
+      { filter: (o: any) => o.meetup_location === 'rolling-hills', label: 'ROLLING HILLS' },
+    ];
+
+    for (const timeSlot of timeSlots) {
+      for (const loc of pickupLocations) {
+        const groupOrders = maximOrders.filter(o => o.meetup_time === timeSlot && loc.filter(o));
+        if (groupOrders.length === 0) continue;
+
+        const timeLabel = timeSlot === '10am - 12pm' ? '10am - 12pm' : '3pm - 4pm';
+        // Blank separator row before each group (except the first)
+        if (maximAoa.length > 0) maximAoa.push([]);
+        // Section header row
+        maximAoa.push([`${timeLabel} (${loc.label})`, ...maximCols.slice(1)]);
+        // Data rows
+        for (const o of groupOrders) {
+          const qty = parseQuantity(o.quantity_type);
+          maximAoa.push([
+            o.maxim_address || 'No address',
+            o.full_name,
+            qty.display,
+            qty.totalPieces,
+            `₱${(o.total_price || 0).toLocaleString()}`,
+            o.is_paid ? 'PAID FULL' : 'DP ONLY',
+            o.is_paid ? '₱0' : `₱${Math.round(o.total_price - o.downpayment_price).toLocaleString()}`,
+            o.contact_number || 'N/A',
+            o.instagram || 'N/A',
+          ]);
+        }
+      }
+    }
+
+    if (maximAoa.length > 0) {
+      const maximSheet = XLSX.utils.aoa_to_sheet(maximAoa);
+      autoFitAoa(maximSheet, maximAoa);
+      // Color each section header row
+      const maximHeaderRows: { row: number; location: string }[] = [];
+      let ri = 0;
+      for (const timeSlot of timeSlots) {
+        for (const loc of pickupLocations) {
+          const cnt = maximOrders.filter(o => o.meetup_time === timeSlot && loc.filter(o)).length;
+          if (cnt === 0) continue;
+          if (ri > 0) ri++; // blank separator
+          maximHeaderRows.push({ row: ri, location: loc.label });
+          ri += cnt + 1;
+        }
+      }
+      for (const h of maximHeaderRows) {
+        styleRow(maximSheet, h.row, maximCols.length, h.location === 'ROLLING HILLS' ? headerStyleGreen : headerStyleOrange);
+      }
+      XLSX.utils.book_append_sheet(workbook, maximSheet, 'Maxim Deliveries');
+    }
+
+    // ═══════════════════════════════════════
+    //  SHEET 2: La Salle Meetup
+    // ═══════════════════════════════════════
+    const meetupOrders = orders.filter(o => o.delivery_mode === 'meetup' && o.status !== 'Refund Needed' && o.status !== 'Refunded');
+    const meetupCols = ['', 'Quantity', 'Total Pieces', 'Total Price', 'Payment Status', 'Remaining Balance', 'Contact', 'Instagram'];
+    const meetupAoa: any[][] = [];
+
+    for (const timeSlot of timeSlots) {
+      const groupOrders = meetupOrders.filter(o => o.meetup_time === timeSlot);
+      if (groupOrders.length === 0) continue;
+
+      const timeLabel = timeSlot === '10am - 12pm' ? '10AM-12PM' : '3PM-4PM';
+      // Blank separator row before each group (except the first)
+      if (meetupAoa.length > 0) meetupAoa.push([]);
+      // Section header row
+      meetupAoa.push([timeLabel, ...meetupCols.slice(1)]);
+      // Data rows
+      for (const o of groupOrders) {
+        const qty = parseQuantity(o.quantity_type);
+        meetupAoa.push([
+          o.full_name,
+          qty.display,
+          qty.totalPieces,
+          `₱${(o.total_price || 0).toLocaleString()}`,
+          o.is_paid ? 'PAID FULL' : 'DP ONLY',
+          o.is_paid ? '₱0' : `₱${Math.round(o.total_price - o.downpayment_price).toLocaleString()}`,
+          o.contact_number || 'N/A',
+          o.instagram || 'N/A',
+        ]);
+      }
+    }
+
+    if (meetupAoa.length > 0) {
+      const meetupSheet = XLSX.utils.aoa_to_sheet(meetupAoa);
+      autoFitAoa(meetupSheet, meetupAoa);
+      // Color each section header row
+      let mri = 0;
+      const meetupHeaderRows: { row: number; timeSlot: string }[] = [];
+      for (const timeSlot of timeSlots) {
+        const cnt = meetupOrders.filter(o => o.meetup_time === timeSlot).length;
+        if (cnt === 0) continue;
+        if (mri > 0) mri++; // blank separator
+        meetupHeaderRows.push({ row: mri, timeSlot });
+        mri += cnt + 1;
+      }
+      for (const h of meetupHeaderRows) {
+        styleRow(meetupSheet, h.row, meetupCols.length, h.timeSlot === '10am - 12pm' ? headerStyleTeal : headerStyleOrange2);
+      }
+      XLSX.utils.book_append_sheet(workbook, meetupSheet, 'La Salle Meetup');
+    }
+
+    // ═══════════════════════════════════════
+    //  SHEET 3: All Orders (Full Accounting)
+    // ═══════════════════════════════════════
+    const allOrdersData = orders.map(order => {
+      const remainingBalance = order.is_paid ? 0 : (order.total_price - order.downpayment_price);
+      const qty = parseQuantity(order.quantity_type);
       return {
         'Date': new Date(order.created_at).toLocaleDateString(),
         'Order Status': order.status || 'Pending',
         'Customer Name': order.full_name,
         'Instagram': order.instagram || 'N/A',
-        'Quantity Details': order.quantity_type,
-        'Total Pieces': totalPieces,
+        'Quantity': qty.display,
+        'Total Pieces': qty.totalPieces,
         'Total Price': order.total_price,
         'Amount Paid': order.is_paid ? order.total_price : order.downpayment_price,
         'Remaining Balance': remainingBalance,
         'Payment Status': order.is_paid ? 'PAID FULL' : 'DP ONLY',
         'Payment Mode': order.payment_mode,
-        'Delivery Details': order.delivery_mode === 'meetup'
-          ? `Meetup: USLS Gate 6 (${order.meetup_time})`
-          : `Maxim: ${order.maxim_address} (${order.meetup_time})`,
-        'Receipt URL': order.gcash_screenshot_path ? getMediaUrl(order.gcash_screenshot_path) : 'No Receipt',
+        'Delivery Mode': order.delivery_mode === 'meetup' ? 'La Salle Meetup' : 'Maxim Delivery',
+        'Location': order.delivery_mode === 'meetup'
+          ? `USLS Gate 6 (${order.meetup_time})`
+          : `${order.maxim_address} (${order.meetup_time})`,
         'Contact Number': order.contact_number,
         'Special Instructions': order.special_instructions || 'N/A',
-        'GCash Name': order.gcash_name || 'N/A',
-        'GCash Number': order.gcash_number || 'N/A'
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Order Accounting");
+    if (allOrdersData.length > 0) {
+      const allSheet = XLSX.utils.json_to_sheet(allOrdersData);
+      const allKeys = Object.keys(allOrdersData[0]);
+      allSheet['!cols'] = allKeys.map(key => {
+        const maxLen = Math.max(key.length, ...allOrdersData.map(r => String((r as any)[key] ?? '').length));
+        return { wch: Math.min(maxLen + 2, 45) };
+      });
+      XLSX.utils.book_append_sheet(workbook, allSheet, 'All Orders');
+    }
+
     XLSX.writeFile(workbook, `BakedBy_Accounting_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleExportInvoices = () => {
+    const meetupOrders = orders.filter(o => o.delivery_mode === 'meetup' && o.status !== 'Refund Needed' && o.status !== 'Refunded');
+
+    if (meetupOrders.length === 0) {
+      alert("No meetup orders to export.");
+      return;
+    }
+
+    let content = "";
+    meetupOrders.forEach((o) => {
+      const remainingBalance = o.is_paid ? 0 : (o.total_price - o.downpayment_price);
+
+      // Format quantity_type (e.g., "Box4: 1, Box6: 1") into readable text
+      const orderSummary = (o.quantity_type || "").split(', ')
+        .filter((item: string) => {
+          const count = item.split(': ')[1];
+          return count !== '0' && count !== undefined;
+        })
+        .map((item: string) => {
+          const parts = item.split(': ');
+          const type = parts[0];
+          const count = parts[1];
+          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
+          return `${count}x ${label}`;
+        }).join(', ');
+
+      content += `🧾 𝗜𝗡𝗩𝗢𝗜𝗖𝗘\n`;
+      content += `Name: ${o.full_name}\n`;
+      content += `Order: ${orderSummary || 'N/A'}\n`;
+      content += `Mode of Payment: ${o.payment_mode === 'cash' ? 'Cash' : 'GCash'}\n`;
+      content += `Total Amount: ₱${(o.total_price || 0).toLocaleString()}\n`;
+      content += `Downpayment Paid via GCash: ₱${(o.downpayment_price || 0).toLocaleString()}\n`;
+      content += `Remaining Balance: ₱${Math.round(remainingBalance).toLocaleString()}\n`;
+      content += `------------------------------------------\n\n`;
+    });
+
+    const blob = new Blob([content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Meetup_Invoices_${new Date().toISOString().split('T')[0]}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getMediaUrl = (path: string | null) => {
@@ -1517,6 +1721,42 @@ Thank you for supporting Baked By BCD.`;
 
     // Alert at the end so it doesn't block the initial navigation logic
     alert(`Maxim Info Copied! 🚚\n\nFROM: ${fromClean}\nTO: ${toClean}\n\nLaunching Maxim App...`);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingOrder) return;
+    try {
+      // Reconstruct quantity_type from box counts
+      const b4 = editingOrder._box4 ?? 0;
+      const b6 = editingOrder._box6 ?? 0;
+      const b12 = editingOrder._box12 ?? 0;
+      const quantityType = `Box4: ${b4}, Box6: ${b6}, Box12: ${b12}`;
+
+      const updates: any = {
+        full_name: editingOrder.full_name,
+        instagram: editingOrder.instagram,
+        contact_number: editingOrder.contact_number,
+        special_instructions: editingOrder.special_instructions || '',
+        meetup_time: editingOrder.meetup_time,
+        quantity_type: quantityType,
+        total_price: Number(editingOrder.total_price) || 0,
+        downpayment_price: Number(editingOrder.downpayment_price) || 0,
+      };
+      if (editingOrder.delivery_mode === 'maxim') {
+        updates.maxim_address = editingOrder.maxim_address;
+      }
+
+      const { error } = await supabase.from('orders').update(updates).eq('id', editingOrder.id);
+      if (error) throw error;
+
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === editingOrder.id ? { ...o, ...updates } : o));
+      setEditingOrder(null);
+      alert('Order updated successfully! ✅');
+    } catch (err: any) {
+      console.error('Edit error:', err);
+      alert('Failed to update order: ' + err.message);
+    }
   };
 
   const handleLogout = async () => {
@@ -1931,118 +2171,160 @@ Thank you for supporting Baked By BCD.`;
 
                   {activeDeliveryTab === 'meetup' && (
                     <div className="delivery-section-box toggle-meetup">
-                      <h3 className="delivery-section-title">🤝 La Salle Meetup List</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                        <h3 className="delivery-section-title" style={{ margin: 0 }}>🤝 La Salle Meetup List</h3>
+                        <button
+                          onClick={handleExportInvoices}
+                          className="place-order-btn place-order-btn-sm"
+                          style={{ padding: '6px 15px', fontSize: '0.8rem', background: '#475569' }}
+                        >
+                          📄 Export Invoices (.doc)
+                        </button>
+                      </div>
 
-                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
-                        <div className="delivery-time-block" key={timeSlot}>
-                          <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
-                          <div className="delivery-grid">
-                            {orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot && o.status !== 'Refund Needed').length === 0 ? (
-                              <p className="no-data">No meetups at this time.</p>
-                            ) : (
-                              orders
-                                .filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot && o.status !== 'Refund Needed')
-                                .sort((a, b) => {
-                                  const af = a.status === 'Delivered' && a.is_paid;
-                                  const bf = b.status === 'Delivered' && b.is_paid;
-                                  if (af !== bf) return af ? 1 : -1;
-                                  return 0;
-                                })
-                                .map(o => (
-                                  <div key={o.id} className={`delivery-card ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
-                                    <div className="dc-header">
-                                      <strong>{o.full_name}</strong>
-                                      <span>{o.contact_number}</span>
-                                    </div>
-                                    <div className="dc-body">
-                                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                        {o.instagram && (
+                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => {
+                        const slotOrders = orders.filter(o => o.delivery_mode === 'meetup' && o.meetup_time === timeSlot && o.status !== 'Refund Needed');
+                        const slotTotalBalance = slotOrders.reduce((acc, o) => {
+                          if (o.is_paid) return acc;
+                          return acc + (o.total_price - o.downpayment_price);
+                        }, 0);
+
+                        return (
+                          <div className="delivery-time-block" key={timeSlot}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e2e8f0', marginBottom: '15px', paddingBottom: '5px' }}>
+                              <h4 style={{ margin: 0 }}>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '4px 12px', borderRadius: '20px', border: '1px solid #10b981' }}>
+                                Total Bal: ₱{Math.round(slotTotalBalance).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="delivery-grid">
+                              {slotOrders.length === 0 ? (
+                                <p className="no-data">No meetups at this time.</p>
+                              ) : (
+                                slotOrders
+                                  .sort((a, b) => {
+                                    const af = a.status === 'Delivered' && a.is_paid;
+                                    const bf = b.status === 'Delivered' && b.is_paid;
+                                    if (af !== bf) return af ? 1 : -1;
+                                    return 0;
+                                  })
+                                  .map(o => (
+                                    <div key={o.id} className={`delivery-card ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
+                                      <div className="dc-header">
+                                        <strong>{o.full_name}</strong>
+                                        <span>{o.contact_number}</span>
+                                      </div>
+                                      <div className="dc-body">
+                                        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                           <button
-                                            onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
-                                            className="dc-link"
-                                            style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
-                                          >
-                                            ✅ Confirm & DM
-                                          </button>
-                                        )}
-                                        <a
-                                          href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="chat-link"
-                                          style={{ fontSize: '0.8rem', marginTop: 0 }}
-                                        >
-                                          📸 Profile
-                                        </a>
-                                      </div>
-
-                                      <div className="dc-info-row">
-                                        <span className="pi-label">Status</span>
-                                        <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
-                                          <select
-                                            className="status-select"
-                                            value={o.status || 'Pending'}
-                                            onChange={async (e) => {
-                                              const newStatus = e.target.value;
-                                              setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
-                                              await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const typeVal = o.quantity_type || '';
+                                              let _box4 = 0, _box6 = 0, _box12 = 0;
+                                              if (typeVal.includes('Box4:')) {
+                                                const parts = typeVal.split(', ');
+                                                _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                                                _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                                                _box12 = parts[2] ? parseInt(parts[2]?.split(': ')[1]) : 0;
+                                              }
+                                              setEditingOrder({ ...o, _box4, _box6, _box12 });
                                             }}
+                                            className="dc-link"
+                                            style={{ background: '#64748b', border: 'none', cursor: 'pointer' }}
                                           >
-                                            <option value="Pending">Pending</option>
-                                            <option value="Delivered">Delivered</option>
-                                            <option value="Refund Needed">Refund Needed</option>
-                                          </select>
-                                        </div>
-                                      </div>
-
-                                      <div className="dc-info-row">
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                          <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
-                                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: o.is_paid ? '#10b981' : '#f59e0b', marginTop: '2px' }}>
-                                            {o.status === 'Refund Needed' ? '⚠️ REFUND NEEDED' : (o.is_paid ? 'PAID FULL' : 'DP RECEIVED')}
-                                          </span>
-                                          {!o.is_paid && (
-                                            <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
+                                            ✏️ Edit
+                                          </button>
+                                          {o.instagram && (
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
+                                              className="dc-link"
+                                              style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
+                                            >
+                                              ✅ Confirm & DM
+                                            </button>
                                           )}
+                                          <a
+                                            href={`https://www.instagram.com/${o.instagram.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="chat-link"
+                                            style={{ fontSize: '0.8rem', marginTop: 0 }}
+                                          >
+                                            📸 Profile
+                                          </a>
                                         </div>
-                                        <div className="admin-pay-toggle" style={{ margin: 0 }}>
-                                          <label className="switch" style={{ transform: 'scale(0.8)' }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={!!o.is_paid}
-                                              onChange={async () => {
-                                                const newPaid = !o.is_paid;
-                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
-                                                await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+
+                                        <div className="dc-info-row">
+                                          <span className="pi-label">Status</span>
+                                          <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                            <select
+                                              className="status-select"
+                                              value={o.status || 'Pending'}
+                                              onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                                await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
                                               }}
-                                            />
-                                            <span className="slider round"></span>
-                                          </label>
+                                            >
+                                              <option value="Pending">Pending</option>
+                                              <option value="Delivered">Delivered</option>
+                                              <option value="Refund Needed">Refund Needed</option>
+                                            </select>
+                                          </div>
                                         </div>
-                                      </div>
 
-                                      <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
-                                        {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
-                                          const bits = bit.split(': ');
-                                          const type = bits[0];
-                                          const count = bits[1];
-                                          if (count === '0') return null;
-                                          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
-                                          return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
-                                        }) : 'No data'}
-                                      </div>
+                                        <div className="dc-info-row">
+                                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: '15px' }}>
+                                              <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>Total: ₱{(o.total_price || 0).toLocaleString()}</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: o.is_paid ? '#10b981' : '#f59e0b', marginTop: '2px' }}>
+                                              {o.status === 'Refund Needed' ? '⚠️ REFUND NEEDED' : (o.is_paid ? 'PAID FULL' : 'DP RECEIVED')}
+                                            </span>
+                                            {!o.is_paid && (
+                                              <span className="dc-balance" style={{ color: '#dc2626', fontWeight: 900, fontSize: '0.9rem' }}>Bal: ₱{Math.round(o.total_price - o.downpayment_price).toLocaleString()}</span>
+                                            )}
+                                          </div>
+                                          <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                            <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                              <input
+                                                type="checkbox"
+                                                checked={!!o.is_paid}
+                                                onChange={async () => {
+                                                  const newPaid = !o.is_paid;
+                                                  setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                                  await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                                }}
+                                              />
+                                              <span className="slider round"></span>
+                                            </label>
+                                          </div>
+                                        </div>
 
-                                      <div className="dc-screenshots">
-                                        {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                        <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                          <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
+                                          {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
+                                            const bits = bit.split(': ');
+                                            const type = bits[0];
+                                            const count = bits[1];
+                                            if (count === '0') return null;
+                                            const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+                                            return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
+                                          }) : 'No data'}
+                                        </div>
+
+                                        <div className="dc-screenshots">
+                                          {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ))
-                            )}
+                                  ))
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -2050,114 +2332,147 @@ Thank you for supporting Baked By BCD.`;
                     <div className="delivery-section-box toggle-maxim" style={{ marginTop: '30px' }}>
                       <h3 className="delivery-section-title">🚚 Maxim Delivery List</h3>
 
-                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => (
-                        <div className="delivery-time-block" key={timeSlot}>
-                          <h4>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
-                          <div className="delivery-grid">
-                            {orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot && o.status !== 'Refund Needed').length === 0 ? (
-                              <p className="no-data">No deliveries at this time.</p>
-                            ) : (
-                              orders
-                                .filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot && o.status !== 'Refund Needed')
-                                .sort((a, b) => {
-                                  const af = a.status === 'Delivered' && a.is_paid;
-                                  const bf = b.status === 'Delivered' && b.is_paid;
-                                  if (af !== bf) return af ? 1 : -1;
-                                  return 0;
-                                })
-                                .map(o => (
-                                  <div key={o.id} className={`delivery-card dc-maxim ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
-                                    <div className="dc-header">
-                                      <strong>{o.full_name}</strong>
-                                      <span>{o.contact_number}</span>
-                                    </div>
-                                    <div className="dc-body">
-                                      <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
-                                      <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle'}</div>
-                                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                        {o.instagram && (
+                      {['10am - 12pm', '3pm - 4pm'].map(timeSlot => {
+                        const slotOrders = orders.filter(o => o.delivery_mode === 'maxim' && o.meetup_time === timeSlot && o.status !== 'Refund Needed');
+                        const slotTotalBalance = slotOrders.reduce((acc, o) => {
+                          if (o.is_paid) return acc;
+                          return acc + (o.total_price - o.downpayment_price);
+                        }, 0);
+
+                        return (
+                          <div className="delivery-time-block" key={timeSlot}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e2e8f0', marginBottom: '15px', paddingBottom: '5px' }}>
+                              <h4 style={{ margin: 0 }}>{timeSlot === '10am - 12pm' ? '10:00 AM - 12:00 PM' : '3:00 PM - 4:00 PM'}</h4>
+                              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '4px 12px', borderRadius: '20px', border: '1px solid #10b981' }}>
+                                Total Bal: ₱{Math.round(slotTotalBalance).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="delivery-grid">
+                              {slotOrders.length === 0 ? (
+                                <p className="no-data">No deliveries at this time.</p>
+                              ) : (
+                                slotOrders
+                                  .sort((a, b) => {
+                                    const af = a.status === 'Delivered' && a.is_paid;
+                                    const bf = b.status === 'Delivered' && b.is_paid;
+                                    if (af !== bf) return af ? 1 : -1;
+                                    return 0;
+                                  })
+                                  .map(o => (
+                                    <div key={o.id} className={`delivery-card dc-maxim ${o.status === 'Delivered' && o.is_paid ? 'finished-card' : ''}`}>
+                                      <div className="dc-header">
+                                        <strong>{o.full_name}</strong>
+                                        <span>{o.contact_number}</span>
+                                      </div>
+                                      <div className="dc-body">
+                                        <div className="dc-addr">📍 {o.maxim_address || 'No address'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginBottom: '5px' }}>📦 Pickup: {o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle'}</div>
+                                        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                           <button
-                                            onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
-                                            className="dc-link"
-                                            style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
-                                          >
-                                            ✅ Confirm & DM
-                                          </button>
-                                        )}
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleCopyMaximInfo(o); }}
-                                          className="dc-link"
-                                          style={{ background: '#0ea5e9', border: 'none', cursor: 'pointer' }}
-                                        >
-                                          🚚 Copy Maxim Info
-                                        </button>
-                                      </div>
-
-                                      <div className="dc-info-row">
-                                        <span className="pi-label">Status</span>
-                                        <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
-                                          <select
-                                            className="status-select"
-                                            value={o.status || 'Pending'}
-                                            onChange={async (e) => {
-                                              const newStatus = e.target.value;
-                                              setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
-                                              await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const typeVal = o.quantity_type || '';
+                                              let _box4 = 0, _box6 = 0, _box12 = 0;
+                                              if (typeVal.includes('Box4:')) {
+                                                const parts = typeVal.split(', ');
+                                                _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                                                _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                                                _box12 = parts[2] ? parseInt(parts[2]?.split(': ')[1]) : 0;
+                                              }
+                                              setEditingOrder({ ...o, _box4, _box6, _box12 });
                                             }}
+                                            className="dc-link"
+                                            style={{ background: '#64748b', border: 'none', cursor: 'pointer' }}
                                           >
-                                            <option value="Pending">Pending</option>
-                                            <option value="Delivered">Delivered</option>
-                                            <option value="Refund Needed">Refund Needed</option>
-                                          </select>
-                                        </div>
-                                      </div>
-
-                                      <div className="dc-info-row">
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                          <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
-                                          {!o.is_paid && (
-                                            <span className="dc-balance">Bal: ₱{Math.round(o.total_price - o.downpayment_price)}</span>
+                                            ✏️ Edit
+                                          </button>
+                                          {o.instagram && (
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleConfirmAndDM(o); }}
+                                              className="dc-link"
+                                              style={{ background: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)', border: 'none', cursor: 'pointer' }}
+                                            >
+                                              ✅ Confirm & DM
+                                            </button>
                                           )}
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleCopyMaximInfo(o); }}
+                                            className="dc-link"
+                                            style={{ background: '#0ea5e9', border: 'none', cursor: 'pointer' }}
+                                          >
+                                            🚚 Copy Maxim Info
+                                          </button>
                                         </div>
-                                        <div className="admin-pay-toggle" style={{ margin: 0 }}>
-                                          <label className="switch" style={{ transform: 'scale(0.8)' }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={!!o.is_paid}
-                                              onChange={async () => {
-                                                const newPaid = !o.is_paid;
-                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
-                                                await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+
+                                        <div className="dc-info-row">
+                                          <span className="pi-label">Status</span>
+                                          <div className={`status-badge status-${(o.status || 'Pending').toLowerCase()}`} style={{ transform: 'scale(0.9)', transformOrigin: 'right' }}>
+                                            <select
+                                              className="status-select"
+                                              value={o.status || 'Pending'}
+                                              onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                setOrders(prev => prev.map(order => order.id === o.id ? { ...order, status: newStatus } : order));
+                                                await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
                                               }}
-                                            />
-                                            <span className="slider round"></span>
-                                          </label>
+                                            >
+                                              <option value="Pending">Pending</option>
+                                              <option value="Delivered">Delivered</option>
+                                              <option value="Refund Needed">Refund Needed</option>
+                                            </select>
+                                          </div>
                                         </div>
-                                      </div>
 
-                                      <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                        <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
-                                        {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
-                                          const bits = bit.split(': ');
-                                          const type = bits[0];
-                                          const count = bits[1];
-                                          if (count === '0') return null;
-                                          const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
-                                          return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
-                                        }) : 'No data'}
-                                      </div>
+                                        <div className="dc-info-row">
+                                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: '15px' }}>
+                                              <span className="pi-label">{o.payment_mode === 'gcash' ? 'GCash 50%' : 'Cash'}</span>
+                                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>Total: ₱{(o.total_price || 0).toLocaleString()}</span>
+                                            </div>
+                                            {!o.is_paid && (
+                                              <span className="dc-balance" style={{ color: '#dc2626', fontWeight: 900, fontSize: '0.9rem' }}>Bal: ₱{Math.round(o.total_price - o.downpayment_price).toLocaleString()}</span>
+                                            )}
+                                          </div>
+                                          <div className="admin-pay-toggle" style={{ margin: 0 }}>
+                                            <label className="switch" style={{ transform: 'scale(0.8)' }}>
+                                              <input
+                                                type="checkbox"
+                                                checked={!!o.is_paid}
+                                                onChange={async () => {
+                                                  const newPaid = !o.is_paid;
+                                                  setOrders(prev => prev.map(order => order.id === o.id ? { ...order, is_paid: newPaid } : order));
+                                                  await supabase.from('orders').update({ is_paid: newPaid }).eq('id', o.id);
+                                                }}
+                                              />
+                                              <span className="slider round"></span>
+                                            </label>
+                                          </div>
+                                        </div>
 
-                                      <div className="dc-screenshots">
-                                        {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                        {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                        <div className="dc-boxes" style={{ fontSize: '0.75rem', marginTop: '8px', padding: '6px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                          <strong style={{ display: 'block', marginBottom: '2px', color: '#64748b' }}>Boxes Ordered:</strong>
+                                          {o.quantity_type ? o.quantity_type.split(', ').map((bit: string) => {
+                                            const bits = bit.split(': ');
+                                            const type = bits[0];
+                                            const count = bits[1];
+                                            if (count === '0') return null;
+                                            const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+                                            return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
+                                          }) : 'No data'}
+                                        </div>
+
+                                        <div className="dc-screenshots">
+                                          {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                          {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ))
-                            )}
+                                  ))
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -2165,7 +2480,12 @@ Thank you for supporting Baked By BCD.`;
                     <div className="delivery-section-box toggle-refund" style={{ marginTop: '30px' }}>
 
                       {/* ── PENDING REFUNDS ── */}
-                      <h3 className="delivery-section-title" style={{ color: '#ef4444' }}>⚠️ Needs Refund</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #fee2e2', marginBottom: '15px', paddingBottom: '5px' }}>
+                        <h3 className="delivery-section-title" style={{ color: '#ef4444', margin: 0 }}>⚠️ Needs Refund</h3>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#991b1b', background: '#fef2f2', padding: '4px 12px', borderRadius: '20px', border: '1px solid #fecaca' }}>
+                          Total to Refund: ₱{orders.filter(o => o.status === 'Refund Needed').reduce((acc, o) => acc + (o.total_price || 0), 0).toLocaleString()}
+                        </div>
+                      </div>
                       <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>Verify if they paid and DM them. Click "Mark Refunded" once money is returned.</p>
                       <div className="delivery-grid">
                         {orders.filter(o => o.status === 'Refund Needed').length === 0 ? (
@@ -2180,7 +2500,10 @@ Thank you for supporting Baked By BCD.`;
                                   <span style={{ color: '#ef4444' }}>{o.contact_number}</span>
                                 </div>
                                 <div className="dc-body">
-                                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#991b1b', marginBottom: '8px' }}>IG: @{o.instagram}</div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#991b1b' }}>IG: @{o.instagram}</div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ef4444' }}>₱{(o.total_price || 0).toLocaleString()}</div>
+                                  </div>
                                   <div style={{ padding: '8px', background: '#fff', borderRadius: '8px', border: '1px solid #fecaca', fontSize: '0.75rem', marginBottom: '10px' }}>
                                     {o.special_instructions || 'No notes'}
                                   </div>
@@ -2281,6 +2604,181 @@ Thank you for supporting Baked By BCD.`;
           </div>
         )}
 
+
+        {/* ── EDIT ORDER MODAL ── */}
+        {editingOrder && (
+          <div className="admin-modal-overlay" onClick={() => setEditingOrder(null)}>
+            <div className="admin-modal" style={{ maxWidth: '520px', width: '95%' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>✏️ Edit Order</h2>
+                <button className="close-btn" onClick={() => setEditingOrder(null)}>&times;</button>
+              </div>
+              <div className="admin-modal-content" style={{ maxHeight: '70vh' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+                  {/* Name */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Full Name</label>
+                    <input
+                      className="form-input pill"
+                      type="text"
+                      value={editingOrder.full_name || ''}
+                      onChange={e => setEditingOrder({ ...editingOrder, full_name: e.target.value })}
+                      style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                    />
+                  </div>
+
+                  {/* Instagram & Contact */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Instagram</label>
+                      <input
+                        className="form-input pill"
+                        type="text"
+                        value={editingOrder.instagram || ''}
+                        onChange={e => setEditingOrder({ ...editingOrder, instagram: e.target.value })}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Contact Number</label>
+                      <input
+                        className="form-input pill"
+                        type="tel"
+                        value={editingOrder.contact_number || ''}
+                        onChange={e => setEditingOrder({ ...editingOrder, contact_number: e.target.value })}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Maxim Address (only for maxim orders) */}
+                  {editingOrder.delivery_mode === 'maxim' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Maxim Address</label>
+                      <input
+                        className="form-input pill"
+                        type="text"
+                        value={editingOrder.maxim_address || ''}
+                        onChange={e => setEditingOrder({ ...editingOrder, maxim_address: e.target.value })}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Time Slot */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Time Slot</label>
+                    <select
+                      className="form-input pill"
+                      value={editingOrder.meetup_time || ''}
+                      onChange={e => setEditingOrder({ ...editingOrder, meetup_time: e.target.value })}
+                      style={{ fontSize: '0.9rem', padding: '8px 12px' }}
+                    >
+                      <option value="10am - 12pm">10:00 AM - 12:00 PM</option>
+                      <option value="3pm - 4pm">3:00 PM - 4:00 PM</option>
+                    </select>
+                  </div>
+
+                  {/* Quantity - Box Counts */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Quantity (Boxes)</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Box of 4</span>
+                        <input
+                          className="form-input pill"
+                          type="number"
+                          min="0"
+                          value={editingOrder._box4 ?? 0}
+                          onChange={e => setEditingOrder({ ...editingOrder, _box4: parseInt(e.target.value) || 0 })}
+                          style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Box of 6</span>
+                        <input
+                          className="form-input pill"
+                          type="number"
+                          min="0"
+                          value={editingOrder._box6 ?? 0}
+                          onChange={e => setEditingOrder({ ...editingOrder, _box6: parseInt(e.target.value) || 0 })}
+                          style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Box of 12</span>
+                        <input
+                          className="form-input pill"
+                          type="number"
+                          min="0"
+                          value={editingOrder._box12 ?? 0}
+                          onChange={e => setEditingOrder({ ...editingOrder, _box12: parseInt(e.target.value) || 0 })}
+                          style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Total Price & Downpayment */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Total Price (₱)</label>
+                      <input
+                        className="form-input pill"
+                        type="number"
+                        min="0"
+                        value={editingOrder.total_price || 0}
+                        onChange={e => setEditingOrder({ ...editingOrder, total_price: parseInt(e.target.value) || 0 })}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px', fontWeight: 800 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Downpayment (₱)</label>
+                      <input
+                        className="form-input pill"
+                        type="number"
+                        min="0"
+                        value={editingOrder.downpayment_price || 0}
+                        onChange={e => setEditingOrder({ ...editingOrder, downpayment_price: parseInt(e.target.value) || 0 })}
+                        style={{ fontSize: '0.9rem', padding: '8px 12px', fontWeight: 800 }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Special Instructions */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Special Instructions</label>
+                    <textarea
+                      className="form-textarea"
+                      value={editingOrder.special_instructions || ''}
+                      onChange={e => setEditingOrder({ ...editingOrder, special_instructions: e.target.value })}
+                      rows={3}
+                      style={{ fontSize: '0.85rem', padding: '8px 12px' }}
+                    />
+                  </div>
+
+                </div>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                <button
+                  className="place-order-btn place-order-btn-sm btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setEditingOrder(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="place-order-btn place-order-btn-sm"
+                  style={{ flex: 1 }}
+                  onClick={handleSaveEdit}
+                >
+                  💾 Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         <div className="admin-table-container">
@@ -2512,6 +3010,24 @@ Thank you for supporting Baked By BCD.`;
                               🚚
                             </button>
                           )}
+                          <button
+                            className="admin-edit-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const typeVal = order.quantity_type || '';
+                              let _box4 = 0, _box6 = 0, _box12 = 0;
+                              if (typeVal.includes('Box4:')) {
+                                const parts = typeVal.split(', ');
+                                _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                                _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                                _box12 = parts[2] ? parseInt(parts[2]?.split(': ')[1]) : 0;
+                              }
+                              setEditingOrder({ ...order, _box4, _box6, _box12 });
+                            }}
+                            title="Edit Order"
+                          >
+                            ✏️
+                          </button>
                           <button
                             className="admin-delete-btn"
                             style={{ margin: 0 }}
