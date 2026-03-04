@@ -2998,6 +2998,70 @@ input:checked+.slider:before {
   }
 }
 
+/* ═══════════════════════════════════════
+   TRANSACTION HISTORY
+   ═══════════════════════════════════════ */
+.history-results {
+  margin-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.history-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-results::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.history-results::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.history-item-card {
+  transition: all 0.2s ease;
+}
+
+.history-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border-color: #7aa0f0 !important;
+}
+
+.status-badge.status-pending {
+  background: #fffbeb !important;
+  color: #d97706 !important;
+  border: 1px solid #fef3c7 !important;
+}
+
+.status-badge.status-baking {
+  background: #eef2ff !important;
+  color: #4f46e5 !important;
+  border: 1px solid #e0e7ff !important;
+}
+
+.status-badge.status-ready {
+  background: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid #d1fae5 !important;
+}
+
+.status-badge.status-delivered {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 1px solid #dcfce7 !important;
+}
+
+.status-badge.status-refund-needed {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border: 1px solid #fee2e2 !important;
+}
+
 @media (max-width: 480px) {
   .bg-title {
     font-size: 1.75rem;

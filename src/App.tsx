@@ -8,7 +8,7 @@ import './App.css';
 const MANUAL_LOCK = true;
 const TARGET_DATE = new Date('2026-02-27T02:52:00+08:00');
 
-type Page = 'home' | 'order' | 'admin-login' | 'admin-dashboard';
+type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
 type DeliveryMode = 'meetup' | 'maxim' | '';
 type MeetupLocation = 'rolling-hills' | 'lasalle' | '';
@@ -51,7 +51,7 @@ function StockCounter({ stock, loading }: { stock: number | null, loading: boole
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
+function HomePage({ onOrderClick, onHistoryClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onHistoryClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -104,6 +104,42 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
             disabled={stock === 0}
           >
             {stock === 0 ? 'SOLD OUT!' : 'Place Order!'}
+          </button>
+
+          <button
+            className="history-btn-home"
+            onClick={onHistoryClick}
+            style={{
+              marginTop: '15px',
+              background: 'rgba(255, 255, 255, 0.9)',
+              border: '2px solid #7aa0f0',
+              color: '#1e3a8a',
+              padding: '10px 20px',
+              borderRadius: '50px',
+              fontFamily: 'Patrick Hand',
+              fontSize: '1.1rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              boxShadow: '0 4px 15px rgba(122, 160, 240, 0.2)',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: '15px auto 0'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = '#7aa0f0';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+              e.currentTarget.style.color = '#1e3a8a';
+            }}
+          >
+            <span>Transactions</span>
+            <span style={{ fontSize: '1.2rem' }}>🕒</span>
           </button>
 
           <p className="location-note">
@@ -1227,6 +1263,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [showProductionDetails, setShowProductionDetails] = useState(false);
   const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | 'refund' | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
+  const [showFinanceHistory, setShowFinanceHistory] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -1804,6 +1841,9 @@ Thank you for supporting Baked By BCD.`;
             <h1 className="admin-title">Admin Panel v2.1</h1>
           </div>
           <div className="admin-nav-actions">
+            <button className="admin-nav-btn admin-nav-btn-secondary" onClick={() => setShowFinanceHistory(true)}>
+              <span>💰</span> Finance History
+            </button>
             <button className="admin-nav-btn admin-nav-btn-secondary" onClick={() => setShowDeliveryList(true)}>
               <span>🚚</span> Delivery List
             </button>
@@ -2079,6 +2119,95 @@ Thank you for supporting Baked By BCD.`;
                     ))
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showFinanceHistory && (
+          <div className="admin-modal-overlay" onClick={() => setShowFinanceHistory(false)}>
+            <div className="admin-modal" style={{ maxWidth: '700px', width: '95%' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>Finance & Payment History</h2>
+                <button className="close-btn" onClick={() => setShowFinanceHistory(false)}>&times;</button>
+              </div>
+              <div className="admin-modal-content">
+                <div style={{ background: '#f0fdf4', padding: '15px', borderRadius: '15px', border: '1px solid #bbf7d0', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>Total Accumulated</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10b981' }}>
+                      ₱{Math.round(orders.reduce((acc, o) => {
+                        if (o.is_paid) return acc + o.total_price;
+                        if (o.payment_mode === 'gcash') return acc + o.downpayment_price;
+                        return acc;
+                      }, 0)).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase' }}>Total Transactions</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10b981' }}>{orders.length}</div>
+                  </div>
+                </div>
+
+                <div className="finance-log" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h3 style={{ fontSize: '1rem', color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🕒</span> Chronological Payment Log
+                  </h3>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {[...orders].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((order, index, arr) => {
+                      // Calculate accumulation up to this point
+                      let runningTotal = 0;
+                      for (let i = 0; i <= index; i++) {
+                        const o = arr[i];
+                        if (o.is_paid) runningTotal += o.total_price;
+                        else if (o.payment_mode === 'gcash') runningTotal += o.downpayment_price;
+                      }
+
+                      const amtPaid = order.is_paid ? order.total_price : (order.payment_mode === 'gcash' ? order.downpayment_price : 0);
+                      const isFull = order.is_paid;
+
+                      return (
+                        <div key={order.id} style={{
+                          background: 'white',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          padding: '12px',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.2s ease',
+                          position: 'relative',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: isFull ? '#10b981' : '#f59e0b' }} />
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e3a8a' }}>{order.full_name}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                              {new Date(order.created_at).toLocaleString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e293b' }}>+₱{amtPaid.toLocaleString()}</div>
+                            <div style={{ fontSize: '0.65rem', color: isFull ? '#10b981' : '#f59e0b', fontWeight: 800 }}>{isFull ? 'FULL' : 'DP ONLY'}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Accumulated</div>
+                            <div style={{ fontSize: '1rem', fontWeight: 900, color: '#10b981' }}>₱{Math.round(runningTotal).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      );
+                    }).reverse()}
+                  </div>
+                </div>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button className="place-order-btn place-order-btn-sm" onClick={() => setShowFinanceHistory(false)}>Close</button>
               </div>
             </div>
           </div>
@@ -3257,6 +3386,188 @@ function BrowserGuard() {
 }
 
 /* ═══════════════════════════════════════
+   HISTORY PAGE
+   Allow users to view their past orders by phone number
+═══════════════════════════════════════ */
+function HistoryPage({ onBack }: { onBack: () => void }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [searched, setSearched] = useState(false);
+
+  const formatPhoneNumber = (val: string) => {
+    const numbers = val.replace(/\D/g, '');
+    if (numbers.length <= 4) return numbers;
+    if (numbers.length <= 7) return `${numbers.slice(0, 4)} ${numbers.slice(4)}`;
+    return `${numbers.slice(0, 4)} ${numbers.slice(4, 7)} ${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhoneNumber(formatPhoneNumber(e.target.value));
+  };
+
+  const fetchHistory = async () => {
+    const cleanPhone = phoneNumber.replace(/\s/g, '');
+    if (cleanPhone.length < 10) {
+      alert("Please enter a valid phone number.");
+      return;
+    }
+
+    setLoading(true);
+    setSearched(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('contact_number', cleanPhone)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (err: any) {
+      console.error("History fetch error:", err);
+      alert("Failed to fetch history: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const parseQuantity = (qtyStr: string) => {
+    if (!qtyStr) return 'N/A';
+    return qtyStr.split(', ')
+      .filter(item => !item.includes(': 0'))
+      .map(item => {
+        const [type, count] = item.split(': ');
+        const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+        return `${count}x ${label}`;
+      }).join(', ');
+  };
+
+  return (
+    <div className="order-page fade-in">
+      <div className="op-card" style={{ maxWidth: '500px' }}>
+        <div className="op-logo">
+          <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
+        </div>
+
+        <h2 className="success-header" style={{ textAlign: 'center', color: '#142376', marginBottom: '20px' }}>
+          Transaction History
+        </h2>
+
+        {!searched || (searched && orders.length > 0) ? (
+          <div style={{ marginBottom: '30px' }}>
+            <p style={{ textAlign: 'center', color: '#444', marginBottom: '15px', fontSize: '1.1rem' }}>
+              Enter your contact number to see your past orders.
+            </p>
+            <div className="form-row" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <input
+                className="form-input pill"
+                style={{ width: '100%', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '1px' }}
+                type="tel"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                placeholder="09XX XXX XXXX"
+                maxLength={13}
+              />
+              <button
+                className="place-order-btn"
+                style={{ width: '100%', marginTop: '10px' }}
+                onClick={fetchHistory}
+                disabled={loading}
+              >
+                {loading ? 'Searching...' : 'Search Transactions'}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {searched && !loading && (
+          <div className="history-results">
+            {orders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <span style={{ fontSize: '3rem' }}>🔍</span>
+                <h3 style={{ color: '#64748b', marginTop: '15px' }}>No orders found for this number.</h3>
+                <button
+                  className="bg-btn-secondary"
+                  onClick={() => { setSearched(false); setPhoneNumber(''); }}
+                  style={{ marginTop: '20px', color: '#7aa0f0' }}
+                >
+                  Try another number
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ color: '#1e3a8a', fontSize: '1.1rem' }}>Found {orders.length} Order(s)</h3>
+                  <button
+                    onClick={() => { setSearched(false); setPhoneNumber(''); }}
+                    style={{ background: 'none', border: 'none', color: '#7aa0f0', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
+                  >
+                    Change Number
+                  </button>
+                </div>
+                {orders.map(order => (
+                  <div key={order.id} className="history-item-card" style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '15px',
+                    padding: '15px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontWeight: 800, color: '#1e3a8a' }}>
+                        {new Date(order.created_at).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                      <span className={`status-badge status-${(order.status || 'Pending').toLowerCase().replace(' ', '-')}`} style={{ margin: 0, padding: '2px 8px', fontSize: '0.7rem' }}>
+                        {order.status || 'Pending'}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '10px', lineHeight: '1.4' }}>
+                      <div style={{ display: 'flex', gap: '5px', alignItems: 'flex-start' }}>
+                        <span style={{ fontWeight: 600 }}>Items:</span>
+                        <span>{parseQuantity(order.quantity_type)}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                        <span style={{ fontWeight: 600 }}>Total:</span>
+                        <span style={{ fontWeight: 900, color: '#142376' }}>₱{order.total_price.toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                        <span style={{ fontWeight: 600 }}>Time:</span>
+                        <span>{new Date(order.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'white', borderRadius: '10px', padding: '8px 12px', fontSize: '0.8rem', border: '1px dashed #cbd5e1' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Mode: {order.delivery_mode === 'meetup' ? '🤝 Meetup' : '🚚 Maxim'}</span>
+                        <span style={{ color: order.is_paid ? '#10b981' : '#f59e0b', fontWeight: 700 }}>
+                          {order.is_paid ? 'PAID FULL' : 'DP RECEIVED'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+          <button className="bg-btn-secondary" onClick={onBack} style={{ color: '#94a3b8' }}>
+            Back to Home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
    ROOT
 ═══════════════════════════════════════ */
 export default function App() {
@@ -3343,8 +3654,17 @@ export default function App() {
         <MaintenancePage onUnlock={handleUnlock} />
       ) : (
         <>
-          {page === 'home' && <HomePage stock={stock} stockLoading={stockLoading} onOrderClick={() => setPage('order')} onAdminClick={() => setPage('admin-login')} />}
+          {page === 'home' && (
+            <HomePage
+              stock={stock}
+              stockLoading={stockLoading}
+              onOrderClick={() => setPage('order')}
+              onHistoryClick={() => setPage('history')}
+              onAdminClick={() => setPage('admin-login')}
+            />
+          )}
           {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
+          {page === 'history' && <HistoryPage onBack={() => setPage('home')} />}
           {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
           {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
         </>
