@@ -3261,24 +3261,26 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           </div>
         </div>
 
-        <div className="countdown-timer">
-          <div className="countdown-box">
-            <span className="countdown-value">{timeLeft.d}</span>
-            <span className="countdown-label">Days</span>
+        {new Date() < TARGET_DATE && (
+          <div className="countdown-timer">
+            <div className="countdown-box">
+              <span className="countdown-value">{timeLeft.d}</span>
+              <span className="countdown-label">Days</span>
+            </div>
+            <div className="countdown-box">
+              <span className="countdown-value">{timeLeft.h}</span>
+              <span className="countdown-label">Hours</span>
+            </div>
+            <div className="countdown-box">
+              <span className="countdown-value">{timeLeft.m}</span>
+              <span className="countdown-label">Mins</span>
+            </div>
+            <div className="countdown-box">
+              <span className="countdown-value">{timeLeft.s}</span>
+              <span className="countdown-label">Secs</span>
+            </div>
           </div>
-          <div className="countdown-box">
-            <span className="countdown-value">{timeLeft.h}</span>
-            <span className="countdown-label">Hours</span>
-          </div>
-          <div className="countdown-box">
-            <span className="countdown-value">{timeLeft.m}</span>
-            <span className="countdown-label">Mins</span>
-          </div>
-          <div className="countdown-box">
-            <span className="countdown-value">{timeLeft.s}</span>
-            <span className="countdown-label">Secs</span>
-          </div>
-        </div>
+        )}
 
         <div className="admin-bypass-section">
           {!showBypass ? (
