@@ -3242,10 +3242,8 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
         <div style={{ fontSize: '0.7rem', opacity: 0.5, marginBottom: '10px' }}>Build v2.2-LOCKED</div>
         <p className="maintenance-subtitle">
-          Our preorder forms for Dubai Chewy Cookie (Batch 4) will open on February 26
-          <span className="highlight-text">THURSDAY, 7:00 PM</span>
-          <br />
-          <span style={{ fontSize: '1rem', opacity: 0.9 }}>Delivery Date: <strong>March 4, 2026 (Wednesday)</strong></span>
+          Our next batch is coming soon! <br />
+          <span style={{ fontSize: '1rem', opacity: 0.9 }}>Stay tuned for updates on our page.</span>
         </p>
 
         <div className="maintenance-warning gcash-warning" style={{ marginTop: '-15px', marginBottom: '35px', padding: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '15px', color: '#fff', fontSize: '0.85rem', fontWeight: 600, lineHeight: '1.6', textAlign: 'left' }}>
@@ -3256,7 +3254,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
             <li><strong>Strictly via Website only.</strong> Orders via DMs will not be entertained.</li>
             <li><strong>Limit per person:</strong> Max 2 boxes (B4), 2 boxes (B6), and 1 box (B12).</li>
             <li><strong>Maxim Orders:</strong> Please screenshot your pinpoint location in advance.</li>
-            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>Website is temporarily locked — Preorders go live in 2 hours!</li>
+            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>hello, we are currently not open yet for preorders but stay tuned for updates on our page</li>
           </ul>
           <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#ffde59', textAlign: 'center', fontSize: '0.8rem' }}>
             📍 Bacolod City orders only.
