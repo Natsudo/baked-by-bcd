@@ -3283,21 +3283,14 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           <img src="/baked-by-logo.png" alt="Baked By Logo" className="maintenance-logo" />
         </div>
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
-        <div style={{ fontSize: '0.7rem', opacity: 0.5, marginBottom: '10px' }}>Build v2.2-LOCKED</div>
-        <p className="maintenance-subtitle">
-          Our next batch is coming soon! <br />
-          <span style={{ fontSize: '1rem', opacity: 0.9 }}>Stay tuned for updates on our page.</span>
-        </p>
-
         <div className="maintenance-warning gcash-warning" style={{ marginTop: '-15px', marginBottom: '35px', padding: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '15px', color: '#fff', fontSize: '0.85rem', fontWeight: 600, lineHeight: '1.6', textAlign: 'left' }}>
-          <h3 style={{ color: '#ff7070', fontSize: '1.1rem', marginBottom: '10px', textAlign: 'center' }}>📝 Pre-Order Reminders:</h3>
-          <ul style={{ paddingLeft: '20px', margin: 0 }}>
-            <li>Minimum <strong>50% non-refundable downpayment</strong> via GCash to secure slot. Full payment is also accepted.</li>
-            <li>Limited slots only. First come, first served! 🏃‍♂️</li>
-            <li><strong>Strictly via Website only.</strong> Orders via DMs will not be entertained.</li>
-            <li><strong>Limit per person:</strong> Max 2 boxes (B4), 2 boxes (B6), and 1 box (B12).</li>
-            <li><strong>Maxim Orders:</strong> Please screenshot your pinpoint location in advance.</li>
-            <li className="sparkle-text-sm" style={{ color: '#facc15' }}>hello, we are currently not open yet for preorders but stay tuned for updates on our page</li>
+          <h3 style={{ color: '#ff7070', fontSize: '1.1rem', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>📝 Preorder Details</h3>
+          <ul style={{ paddingLeft: '20px', margin: 0, listStyleType: 'none' }}>
+            <li style={{ marginBottom: '8px' }}>• Limited boxes available</li>
+            <li style={{ marginBottom: '8px' }}>• Meetups only – Ayala Fiesta Market</li>
+            <li style={{ marginBottom: '8px' }}>• Meetup time: 12:00 PM – 2:00 PM</li>
+            <li style={{ marginBottom: '8px' }}>• Orders via website only. Orders via DMs will not be entertained.</li>
+            <li style={{ marginBottom: '8px' }}>• Full payment basis via GCASH / Bank Transfer only!</li>
           </ul>
           <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#ffde59', textAlign: 'center', fontSize: '0.8rem' }}>
             📍 Bacolod City orders only.
@@ -3305,24 +3298,29 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
         </div>
 
         {new Date() < TARGET_DATE && (
-          <div className="countdown-timer">
-            <div className="countdown-box">
-              <span className="countdown-value">{timeLeft.d}</span>
-              <span className="countdown-label">Days</span>
+          <>
+            <div className="countdown-timer">
+              <div className="countdown-box">
+                <span className="countdown-value">{timeLeft.d}</span>
+                <span className="countdown-label">Days</span>
+              </div>
+              <div className="countdown-box">
+                <span className="countdown-value">{timeLeft.h}</span>
+                <span className="countdown-label">Hours</span>
+              </div>
+              <div className="countdown-box">
+                <span className="countdown-value">{timeLeft.m}</span>
+                <span className="countdown-label">Mins</span>
+              </div>
+              <div className="countdown-box">
+                <span className="countdown-value">{timeLeft.s}</span>
+                <span className="countdown-label">Secs</span>
+              </div>
             </div>
-            <div className="countdown-box">
-              <span className="countdown-value">{timeLeft.h}</span>
-              <span className="countdown-label">Hours</span>
+            <div style={{ color: '#3b82f6', fontWeight: 800, fontSize: '1.1rem', marginTop: '-15px', marginBottom: '20px', textShadow: '0 0 10px rgba(59, 130, 246, 0.5)' }}>
+              Reserve early — boxes sell out fast.
             </div>
-            <div className="countdown-box">
-              <span className="countdown-value">{timeLeft.m}</span>
-              <span className="countdown-label">Mins</span>
-            </div>
-            <div className="countdown-box">
-              <span className="countdown-value">{timeLeft.s}</span>
-              <span className="countdown-label">Secs</span>
-            </div>
-          </div>
+          </>
         )}
 
         <div className="admin-bypass-section">
