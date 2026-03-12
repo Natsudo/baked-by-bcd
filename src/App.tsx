@@ -1,12 +1,12 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { supabase } from './supabaseClient';
 import * as XLSX from 'xlsx-js-style';
 import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
-const MANUAL_LOCK = true;
-const TARGET_DATE = new Date('2026-02-27T02:52:00+08:00');
+const MANUAL_LOCK = false;
+const TARGET_DATE = new Date('2026-03-13T19:00:00+08:00');
 
 type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
@@ -51,7 +51,7 @@ function StockCounter({ stock, loading }: { stock: number | null, loading: boole
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onHistoryClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onHistoryClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
+function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -106,44 +106,10 @@ function HomePage({ onOrderClick, onHistoryClick, onAdminClick, stock, stockLoad
             {stock === 0 ? 'SOLD OUT!' : 'Place Order!'}
           </button>
 
-          <button
-            className="history-btn-home"
-            onClick={onHistoryClick}
-            style={{
-              marginTop: '15px',
-              background: 'rgba(255, 255, 255, 0.9)',
-              border: '2px solid #7aa0f0',
-              color: '#1e3a8a',
-              padding: '10px 20px',
-              borderRadius: '50px',
-              fontFamily: 'Patrick Hand',
-              fontSize: '1.1rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              boxShadow: '0 4px 15px rgba(122, 160, 240, 0.2)',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              margin: '15px auto 0'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.background = '#7aa0f0';
-              e.currentTarget.style.color = 'white';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-              e.currentTarget.style.color = '#1e3a8a';
-            }}
-          >
-            <span>Transactions</span>
-            <span style={{ fontSize: '1.2rem' }}>🕒</span>
-          </button>
+
 
           <p className="location-note">
-            <strong>Batch 4 — Delivery Date: March 4 (Wed)</strong><br />
+            <strong>Batch 5 — Delivery Date: March 14 (Sat)</strong><br />
             We only cater @ Bacolod City for now.<br />
             Thank you for your support!
           </p>
@@ -1264,6 +1230,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   const [activeDeliveryTab, setActiveDeliveryTab] = useState<'meetup' | 'maxim' | 'refund' | null>(null);
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<number>(5); // Default to current batch
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -1814,7 +1781,14 @@ Thank you for supporting Baked By BCD.`;
     const matchesDelivery = filterDelivery === 'all' || o.delivery_mode === filterDelivery;
     const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
 
-    return matchesSearch && matchesPayment && matchesDelivery && matchesStatus;
+    // --- Virtual Batching (Batch 4 vs Batch 5) ---
+    // Batch 5 starts from March 12, 2026. Batch 4 is prior.
+    const cutoff = new Date('2026-03-12T00:00:00+08:00').getTime();
+    const orderTime = new Date(o.created_at).getTime();
+    const batchNumber = orderTime >= cutoff ? 5 : 4;
+    const matchesBatch = selectedBatch === 0 || selectedBatch === batchNumber;
+
+    return matchesSearch && matchesPayment && matchesDelivery && matchesStatus && matchesBatch;
   }).sort((a, b) => {
     // Priority sorting: unfinished on top
     const aFinished = a.status === 'Delivered' && a.is_paid;
@@ -1862,46 +1836,115 @@ Thank you for supporting Baked By BCD.`;
 
       <div className="admin-content">
         {(() => {
-          let b4 = 0, b6 = 0, b12 = 0;
+          const cutoff = new Date('2026-03-12T00:00:00+08:00').getTime();
+          const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff);
+          const batch5Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff);
+
+          const getStats = (list: any[]) => {
+            let b4 = 0, b6 = 0, b12 = 0;
+            let rev = 0;
+            list.forEach(o => {
+              const typeVal = o.quantity_type || '';
+              if (typeVal.includes('Box4:')) {
+                const parts = typeVal.split(', ');
+                b4 += parseInt(parts[0]?.split(': ')[1]) || 0;
+                b6 += parseInt(parts[1]?.split(': ')[1]) || 0;
+                b12 += parts[2] ? parseInt(parts[2]?.split(': ')[1]) : 0;
+              }
+              rev += o.total_price || 0;
+            });
+            return { b4, b6, b12, cookies: (b4 * 4) + (b6 * 6) + (b12 * 12), revenue: rev, count: list.length };
+          };
+
+          const s4 = getStats(batch4Orders);
+          const s5 = getStats(batch5Orders);
+
+          // Current active view stats (for notes and delivery stats)
+          const activeOrders = selectedBatch === 5 ? batch5Orders : (selectedBatch === 4 ? batch4Orders : orders);
+          const activeStats = getStats(activeOrders.filter(o => !(o.status === 'Delivered' && o.is_paid)));
+
           let recentNotes: { name: string, note: string }[] = [];
-          orders.forEach(o => {
+          activeOrders.forEach(o => {
             if (o.status === 'Delivered' && o.is_paid) return;
-            const typeVal = o.quantity_type || '';
-            if (typeVal.includes('Box4:')) {
-              const parts = typeVal.split(', ');
-              b4 += parseInt(parts[0].split(': ')[1]) || 0;
-              b6 += parseInt(parts[1].split(': ')[1]) || 0;
-              b12 += parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
-            }
             if (o.special_instructions && o.special_instructions.trim()) {
               if (!recentNotes.some(rn => rn.note === o.special_instructions)) {
                 recentNotes.push({ name: o.full_name, note: o.special_instructions });
               }
             }
           });
-          const totalCookiesVal = (b4 * 4) + (b6 * 6) + (b12 * 12);
+
           return (
             <>
-              {/* ─── LEVEL 1: TOP PRIORITY STATS ─── */}
+              {/* ─── BATCH SELECTOR & SUMMARY ─── */}
+              <div className="admin-stats-row" style={{ marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                <div
+                  className={`admin-stat-card clickable ${selectedBatch === 5 ? 'active-batch-card' : ''}`}
+                  onClick={() => setSelectedBatch(5)}
+                  style={{
+                    background: selectedBatch === 5 ? '#eff6ff' : '#fff',
+                    border: selectedBatch === 5 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                    transform: selectedBatch === 5 ? 'scale(1.02)' : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 5)</h3>
+                    {selectedBatch === 5 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
+                  </div>
+                  <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s5.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+                  <p className="admin-stat-sub">Revenue: ₱{s5.revenue.toLocaleString()} • {s5.count} Orders</p>
+                </div>
+
+                <div
+                  className={`admin-stat-card clickable ${selectedBatch === 4 ? 'active-batch-card' : ''}`}
+                  onClick={() => setSelectedBatch(4)}
+                  style={{
+                    background: selectedBatch === 4 ? '#f0fdf4' : '#f8fafc',
+                    border: selectedBatch === 4 ? '3px solid #10b981' : '1px solid #e2e8f0',
+                    transform: selectedBatch === 4 ? 'scale(1.02)' : 'none'
+                  }}
+                >
+                  <h3 style={{ color: '#166534' }}>📊 Previous (Batch 4)</h3>
+                  <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s4.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+                  <p className="admin-stat-sub">Revenue: ₱{s4.revenue.toLocaleString()} • {s4.count} Orders</p>
+                </div>
+
+                <div
+                  className={`admin-stat-card clickable ${selectedBatch === 0 ? 'active-batch-card' : ''}`}
+                  onClick={() => setSelectedBatch(0)}
+                  style={{
+                    background: selectedBatch === 0 ? '#fefce8' : '#fff',
+                    border: selectedBatch === 0 ? '3px solid #eab308' : '1px solid #e2e8f0'
+                  }}
+                >
+                  <h3 style={{ color: '#854d0e' }}>🏢 Master List (All)</h3>
+                  <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies)}</div>
+                  <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count)}</p>
+                </div>
+              </div>
+
+              {/* ─── LEVEL 1: TOP PRIORITY STATS (Dynamic to Selected Batch) ─── */}
+              <div style={{ marginBottom: '15px', color: '#64748b', fontSize: '0.85rem', fontWeight: 800 }}>
+                DETAILS FOR: {selectedBatch === 0 ? 'ALL BATCHES' : `BATCH ${selectedBatch}`}
+              </div>
               <div className="admin-stats-row">
                 <div className="admin-stat-card clickable" style={{ background: '#f5feff', borderColor: '#0ea5e9' }} onClick={() => setShowDeliveryList(true)}>
                   <h3 style={{ color: '#0369a1' }}>🚚 Delivery List</h3>
                   <div className="admin-stat-val" style={{ color: '#0369a1', fontSize: '1.4rem' }}>
-                    {orders.filter(o => o.delivery_mode === 'meetup').length} • {orders.filter(o => o.delivery_mode === 'maxim').length}
+                    {activeOrders.filter(o => o.delivery_mode === 'meetup').length} • {activeOrders.filter(o => o.delivery_mode === 'maxim').length}
                   </div>
                   <p className="admin-stat-sub">Meetup • Maxim (Tap to View)</p>
                 </div>
 
                 <div className="admin-stat-card clickable" style={{ background: '#fffbeb', borderColor: '#f59e0b' }} onClick={() => setShowProductionDetails(true)}>
-                  <h3 style={{ color: '#d97706' }}>🍪 Total Cookies</h3>
-                  <div className="admin-stat-val" style={{ color: '#d97706' }}>{totalCookiesVal}</div>
-                  <p className="admin-stat-sub">Across all pending orders</p>
+                  <h3 style={{ color: '#d97706' }}>🍪 Unfinished Cookies</h3>
+                  <div className="admin-stat-val" style={{ color: '#d97706' }}>{activeStats.cookies}</div>
+                  <p className="admin-stat-sub">Across pending {selectedBatch === 0 ? 'All' : `B${selectedBatch}`} orders</p>
                 </div>
 
                 <div className="admin-stat-card clickable" style={{ background: '#fef2f2', borderColor: '#ef4444' }} onClick={() => setShowToCollect(true)}>
                   <h3 style={{ color: '#dc2626' }}>💰 To be Received</h3>
                   <div className="admin-stat-val" style={{ color: '#dc2626' }}>
-                    ₱{Math.round(orders.reduce((acc, o) => {
+                    ₱{Math.round(activeOrders.reduce((acc, o) => {
                       if (o.is_paid) return acc;
                       return acc + (o.payment_mode === 'gcash' ? (o.total_price - o.downpayment_price) : o.total_price);
                     }, 0)).toLocaleString()}
@@ -1927,11 +1970,11 @@ Thank you for supporting Baked By BCD.`;
               {/* ─── LEVEL 2: SECONDARY HIGHLIGHTS ─── */}
               <div className="admin-highlight-section" style={{ marginTop: '20px' }}>
                 <div className="admin-stat-card admin-stat-card-sparkle">
-                  <h3>Overall Revenue</h3>
+                  <h3>Batch Revenue</h3>
                   <div className="admin-stat-val sparkle-text">
-                    ₱{Math.round(orders.reduce((acc, o) => acc + o.total_price, 0)).toLocaleString()}
+                    ₱{Math.round(activeOrders.reduce((acc, o) => acc + (o.total_price || 0), 0)).toLocaleString()}
                   </div>
-                  <p className="admin-stat-sub">Total gross revenue</p>
+                  <p className="admin-stat-sub">Total gross {selectedBatch === 0 ? 'overall' : `B${selectedBatch}`} revenue</p>
                 </div>
 
                 <div className="production-summary-card">
@@ -1943,7 +1986,7 @@ Thank you for supporting Baked By BCD.`;
                     <div className="prod-item" style={{ background: '#f0fdf4' }}>
                       <span className="prod-label">Paid Received</span>
                       <span className="prod-val" style={{ color: '#10b981', fontSize: '1.2rem' }}>
-                        ₱{Math.round(orders.reduce((acc, o) => {
+                        ₱{Math.round(activeOrders.reduce((acc, o) => {
                           if (o.is_paid) return acc + o.total_price;
                           if (o.payment_mode === 'gcash') return acc + o.downpayment_price;
                           return acc;
@@ -1951,7 +1994,7 @@ Thank you for supporting Baked By BCD.`;
                       </span>
                     </div>
                     <div className="prod-item">
-                      <span className="prod-label">Chewy Cookies Left</span>
+                      <span className="prod-label">Current Physical Stock</span>
                       <div className="admin-stock-control" style={{ margin: 0, padding: 0, background: 'transparent' }}>
                         <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock(stock - 1)} disabled={updatingStock}>−</button>
                         <span className="qty-val" style={{ fontSize: '1.1rem', margin: '0 8px' }}>{stock}</span>
@@ -1959,8 +2002,8 @@ Thank you for supporting Baked By BCD.`;
                       </div>
                     </div>
                     <div className="prod-item">
-                      <span className="prod-label">Total Orders</span>
-                      <span className="prod-val" style={{ fontSize: '1.2rem' }}>{orders.length}</span>
+                      <span className="prod-label">Batch Orders</span>
+                      <span className="prod-val" style={{ fontSize: '1.2rem' }}>{activeOrders.length}</span>
                     </div>
                   </div>
                 </div>
@@ -3659,7 +3702,6 @@ export default function App() {
               stock={stock}
               stockLoading={stockLoading}
               onOrderClick={() => setPage('order')}
-              onHistoryClick={() => setPage('history')}
               onAdminClick={() => setPage('admin-login')}
             />
           )}
