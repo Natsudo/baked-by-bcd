@@ -3331,7 +3331,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
                 <span className="countdown-label">Secs</span>
               </div>
             </div>
-            <div style={{ textAlign: 'center', color: '#3b82f6', fontWeight: 800, fontSize: '1.1rem', marginTop: '-15px', marginBottom: '20px', textShadow: '0 0 10px rgba(59, 130, 246, 0.5)', width: '100%' }}>
+            <div style={{ textAlign: 'center', color: '#3b82f6', fontWeight: 800, fontSize: '1.2rem', marginTop: '25px', marginBottom: '30px', textShadow: '0 0 10px rgba(59, 130, 246, 0.5)', width: '100%', letterSpacing: '0.5px' }}>
               Reserve early — boxes sell out fast.
             </div>
           </>
