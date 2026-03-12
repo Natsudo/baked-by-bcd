@@ -3283,16 +3283,30 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           <img src="/baked-by-logo.png" alt="Baked By Logo" className="maintenance-logo" />
         </div>
         <h1 className="maintenance-title">Something Sweet is Coming!</h1>
-        <div className="maintenance-warning gcash-warning" style={{ marginTop: '-15px', marginBottom: '35px', padding: '20px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '15px', color: '#fff', fontSize: '0.85rem', fontWeight: 600, lineHeight: '1.6', textAlign: 'left' }}>
-          <h3 style={{ color: '#ff7070', fontSize: '1.1rem', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>📝 Preorder Details</h3>
-          <ul style={{ paddingLeft: '20px', margin: 0, listStyleType: 'none' }}>
-            <li style={{ marginBottom: '8px' }}>• Limited boxes available</li>
-            <li style={{ marginBottom: '8px' }}>• Meetups only – Ayala Fiesta Market</li>
-            <li style={{ marginBottom: '8px' }}>• Meetup time: 12:00 PM – 2:00 PM</li>
-            <li style={{ marginBottom: '8px' }}>• Orders via website only. Orders via DMs will not be entertained.</li>
-            <li style={{ marginBottom: '8px' }}>• Full payment basis via GCASH / Bank Transfer only!</li>
+        <div className="maintenance-warning" style={{ 
+          marginTop: '0px', 
+          marginBottom: '35px', 
+          padding: '25px', 
+          background: 'rgba(255, 255, 255, 0.05)', 
+          border: '1px solid rgba(255, 255, 255, 0.1)', 
+          borderRadius: '24px', 
+          color: '#fff', 
+          fontSize: '0.9rem', 
+          fontWeight: 600, 
+          lineHeight: '1.7', 
+          textAlign: 'center',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}>
+          <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
+          <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetup time: 12:00 PM – 2:00 PM</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only (No DM orders)</span></li>
+            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment: GCASH / Bank Transfer</span></li>
           </ul>
-          <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#ffde59', textAlign: 'center', fontSize: '0.8rem' }}>
+          <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', color: '#93c5fd', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
             📍 Bacolod City orders only.
           </div>
         </div>
