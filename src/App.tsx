@@ -6,7 +6,7 @@ import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
 const MANUAL_LOCK = false;
-const TARGET_DATE = new Date('2026-03-13T19:00:00+08:00');
+const TARGET_DATE = new Date('2026-03-13T20:30:00+08:00');
 
 type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
 type PaymentMode = 'gcash' | 'cash' | '';
