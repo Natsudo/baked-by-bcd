@@ -144,6 +144,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
   const [boxLoading, setBoxLoading] = useState(true);
   const [paymentNumber, setPaymentNumber] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
 
   // Phone Masking Logic
@@ -367,7 +368,20 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     setIsSubmitting(true);
 
     try {
-      // 3. Update Existing HOLDING Reservation to real Order
+      // 1. Upload Receipt Screenshot to Supabase Storage
+      let screenshotPath = '';
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split('.').pop() || 'jpg';
+        const fileName = `${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(fileName, receiptFile);
+
+        if (uploadError) throw uploadError;
+        screenshotPath = uploadData?.path || fileName;
+      }
+
+      // 2. Update Existing HOLDING Reservation to real Order
       const { error: orderError } = await supabase
         .from('orders')
         .update({
@@ -380,6 +394,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           payment_mode: 'gcash',
           delivery_mode: 'meetup',
           gcash_number: paymentNumber,
+          gcash_screenshot_path: screenshotPath, // Important: save path for admin
           is_paid: false,
           special_instructions: '',
           created_at: new Date().toISOString()
@@ -501,14 +516,32 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+                      onChange={(e) => {
+                        const file = e.target.files ? e.target.files[0] : null;
+                        setReceiptFile(file);
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setReceiptPreview(reader.result as string);
+                          reader.readAsDataURL(file);
+                        } else {
+                          setReceiptPreview(null);
+                        }
+                      }}
                       style={{ display: 'none' }}
                     />
-                    <span style={{ fontSize: '1.5rem' }}>📷</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>
-                      {receiptFile ? receiptFile.name : 'Click to upload receipt screenshot'}
+                    {receiptPreview ? (
+                      <img 
+                        src={receiptPreview} 
+                        alt="Receipt Preview" 
+                        style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '10px', marginBottom: '10px' }} 
+                      />
+                    ) : (
+                      <span style={{ fontSize: '2rem' }}>📸</span>
+                    )}
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>
+                      {receiptFile ? 'Tap to change screenshot' : 'Tap to upload receipt screenshot'}
                     </span>
-                    {receiptFile && <span style={{ fontSize: '0.7rem', color: '#10b981' }}>✓ File Selected</span>}
+                    {receiptFile && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 800 }}>✓ {receiptFile.name}</span>}
                   </label>
                 </div>
               </div>

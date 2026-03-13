@@ -575,9 +575,9 @@
 /* ── QR & Payment — Narrow card specific ── */
 .qr-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 25px;
 }
 
 .qr-item {
@@ -608,11 +608,11 @@
 .receipt-upload-box {
   background: #f1f5f9;
   border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 16px;
+  padding: 30px 15px;
   margin-top: 10px;
   text-align: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .receipt-upload-box:hover {
