@@ -142,6 +142,9 @@ function OrderPage({ onBack }: { onBack: () => void }) {
   const [quantities, setQuantities] = useState({ Box4: 0, Box6: 0 });
   const [boxStocks, setBoxStocks] = useState({ Box4: 0, Box6: 0 });
   const [boxLoading, setBoxLoading] = useState(true);
+  const [paymentNumber, setPaymentNumber] = useState('');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -265,204 +268,9 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       return;
     }
     setErrors({});
-    await handleProceedToPayment();
+    setSubmitted(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const handleConfirmOrder = async () => {
-    setIsSubmitting(true);
-
-    try {
-      // Verify stock before inserting order
-      const { data: b4Check } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
-      const { data: b6Check } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
-
-      if ((b4Check && b4Check.stock_count < quantities.Box4) || (b6Check && b6Check.stock_count < quantities.Box6)) {
-        const confirmRefund = window.confirm(
-          "🚨 URGENT: Someone else just grabbed the last few slots milliseconds ago! \n\n" +
-          "Your order will be saved as 'Refund Needed'. \n\n" +
-          "Do you still want to submit your details so we can track your payment for a refund?"
-        );
-
-        if (!confirmRefund) {
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Update Existing HOLDING Reservation to Refund Needed
-        const { error: refundError } = await supabase
-          .from('orders')
-          .update({
-            full_name: fullName,
-            contact_number: contactNumber.replace(/\s/g, ''),
-            instagram: instagram,
-            status: 'Refund Needed',
-            is_paid: false, // Mark unpaid to clearly indicate action needed
-            gcash_name: '',
-            gcash_number: '',
-            gcash_screenshot_path: null,
-            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED.`,
-            created_at: new Date().toISOString() // refresh timestamp
-          })
-          .eq('id', holdingOrderId);
-
-        if (refundError) throw refundError;
-
-        setIsSubmitting(false);
-        setSubmitted(true);
-        setIsConfirmed(true);
-        return;
-      }
-
-      // 3. Update Existing HOLDING Reservation to real Order
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({
-          full_name: fullName,
-          contact_number: contactNumber.replace(/\s/g, ''),
-          instagram: instagram,
-          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
-          quantity: 1, // keeping count as 1 order
-          status: 'Pending',
-          payment_mode: 'gcash',
-          delivery_mode: 'meetup',
-          is_paid: false,
-          special_instructions: '',
-          created_at: new Date().toISOString() // refresh timestamp
-        })
-        .eq('id', holdingOrderId);
-
-      if (orderError) throw orderError;
-
-      // 4. Perma-deduct from stock count
-      if (quantities.Box4 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
-      if (quantities.Box6 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
-
-    } catch (e: any) {
-      console.error('Submission Exception:', e);
-      alert(`Error: ${e.message || 'Network error'}`);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setIsSubmitting(false);
-    setIsConfirmed(true);
-
-    // Trigger confetti upon successful valid submission
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#7aa0f0', '#ffb6b9', '#fdf8c3', '#e8d840']
-    });
-  };
-
-
-
-  /* ── SUCCESS STATE (INVOICE) ── */
-  if (submitted) {
-    if (isConfirmed) {
-
-      return (
-        <div className="order-page fade-in">
-          <div className="op-card" style={{ textAlign: 'center', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <img src="/baked-by-logo.png" alt="BAKED BY" style={{ width: '130px', marginBottom: '20px' }} />
-            <span style={{ fontSize: '3.5rem', marginBottom: '10px' }}>✅</span>
-            <h2 className="success-header" style={{ fontSize: '2.5rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>Order Submitted!</h2>
-            <p className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '20px', fontWeight: 600 }}>
-              Thank you for ordering with us! <br />We'll start baking soon!
-            </p>
-
-            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', marginBottom: '30px', border: '2px dashed #cbd5e1' }}>
-              <p style={{ color: '#1e3a8a', fontSize: '1rem', fontWeight: 800, marginBottom: '15px' }}>
-                PLEASE MESSAGE US TO CONFIRM! 📥
-              </p>
-              <a
-                href="https://ig.me/m/bakedby.bcd"
-                className="place-order-btn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-                  textDecoration: 'none',
-                  fontSize: '1rem',
-                  padding: '12px 25px'
-                }}
-              >
-                <span>Message @BAKEDBY.BCD</span>
-                <span style={{ fontSize: '1.2rem' }}>💬</span>
-              </a>
-            </div>
-
-            <button className="bg-btn-secondary" onClick={onBack} style={{ textDecoration: 'none', color: '#94a3b8' }}>
-              Return to Website
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="order-page fade-in">
-        <div className="op-card">
-          <div className="op-logo">
-            <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
-          </div>
-          <div className="success-state invoice-state">
-            <h1 className="success-title">Order Summary</h1>
-            <p className="success-msg">Please save or screenshot this for your records.</p>
-
-            <div className="invoice-details">
-              <div className="invoice-row">
-                <span className="inv-label">Name:</span>
-                <span className="inv-val">{fullName}</span>
-              </div>
-              <div className="invoice-row">
-                <span className="inv-label">Contact:</span>
-                <span className="inv-val">{contactNumber}</span>
-              </div>
-              {instagram && (
-                <div className="invoice-row">
-                  <span className="inv-label">Instagram:</span>
-                  <span className="inv-val">{instagram}</span>
-                </div>
-              )}
-
-              <div className="invoice-divider" />
-
-              <div className="invoice-row">
-                <span className="inv-label">Item:</span>
-                <span className="inv-val item-val">
-                  Dubai Chewy Chocolate<br />
-                  <small>
-                    {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
-                    {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
-                  </small>
-                </span>
-              </div>
-
-              <div className="invoice-row">
-                <span className="inv-label">Total Price:</span>
-                <span className="inv-val price-highlight">₱{totalPrice.toLocaleString()}</span>
-              </div>
-
-            </div>
-
-            <div className="invoice-footer">
-              <div className="form-submit-row" style={{ width: '100%' }}>
-                <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Back to Form</button>
-                <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
-                  {isSubmitting ? 'Confirming...' : ((boxStocks.Box4 === 0 && boxStocks.Box6 === 0) ? 'Confirm for Refund' : 'Confirm Order')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const handleQuantityChange = (boxType: 'Box4' | 'Box6', change: number) => {
     setQuantities(prev => {
@@ -538,13 +346,241 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
       setHoldingOrderId(holdOrder.id);
       setIsCheckingStock(false);
-      setSubmitted(true);
+      setIsPaying(true);
       setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
     } catch (err) {
       console.error(err);
       setIsCheckingStock(false);
     }
   };
+
+  const handleConfirmOrder = async () => {
+    if (!paymentNumber) {
+      alert("Please provide your GCash number for verification.");
+      return;
+    }
+    if (!receiptFile) {
+      alert("Please upload your payment receipt.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 3. Update Existing HOLDING Reservation to real Order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          full_name: fullName,
+          contact_number: contactNumber.replace(/\s/g, ''),
+          instagram: instagram,
+          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
+          quantity: 1, 
+          status: 'Pending',
+          payment_mode: 'gcash',
+          delivery_mode: 'meetup',
+          gcash_number: paymentNumber,
+          is_paid: false,
+          special_instructions: '',
+          created_at: new Date().toISOString()
+        })
+        .eq('id', holdingOrderId);
+
+      if (orderError) throw orderError;
+
+      // 4. Perma-deduct from stock count
+      if (quantities.Box4 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
+      if (quantities.Box6 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
+
+    } catch (e: any) {
+      console.error('Submission Exception:', e);
+      alert(`Error: ${e.message || 'Network error'}`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsSubmitting(false);
+    setIsConfirmed(true);
+
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#7aa0f0', '#ffb6b9', '#fdf8c3', '#e8d840']
+    });
+  };
+
+
+
+  /* ── SUCCESS STATE (INVOICE) ── */
+  if (submitted) {
+    if (isConfirmed) {
+
+      return (
+        <div className="order-page fade-in">
+          <div className="op-card" style={{ textAlign: 'center', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src="/baked-by-logo.png" alt="BAKED BY" style={{ width: '130px', marginBottom: '20px' }} />
+            <span style={{ fontSize: '3.5rem', marginBottom: '10px' }}>✅</span>
+            <h2 className="success-header" style={{ fontSize: '2.5rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>See you!</h2>
+            <div className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '20px', fontWeight: 600 }}>
+              <p style={{ margin: '5px 0' }}>Meet-up Location: Ayala Fiesta Mall Bacolod</p>
+              <p style={{ margin: '5px 0' }}>Meet-up Time: 12:00 PM – 2:00 PM</p>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', marginBottom: '30px', border: '2px dashed #cbd5e1' }}>
+              <p style={{ color: '#1e3a8a', fontSize: '1rem', fontWeight: 800, marginBottom: '15px' }}>
+                PLEASE MESSAGE US TO CONFIRM! 📥
+              </p>
+              <a
+                href="https://ig.me/m/bakedby.bcd"
+                className="place-order-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  textDecoration: 'none',
+                  fontSize: '1rem',
+                  padding: '12px 25px'
+                }}
+              >
+                <span>Message @BAKEDBY.BCD</span>
+                <span style={{ fontSize: '1.2rem' }}>💬</span>
+              </a>
+            </div>
+
+            <button className="bg-btn-secondary" onClick={onBack} style={{ textDecoration: 'none', color: '#94a3b8' }}>
+              Return to Website
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPaying) {
+      return (
+        <div className="order-page fade-in">
+          <div className="op-card">
+            <div className="op-logo">
+              <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
+            </div>
+            <div className="success-state invoice-state">
+              <h1 className="success-title">Payment</h1>
+              <p className="success-msg">Scan any QR below to pay ₱{totalPrice.toLocaleString()}.</p>
+
+              <div className="qr-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
+                <div className="qr-item">
+                  <img src="/assets/qrs/gcash_qr1.png" alt="GCash QR 1" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (LE**H)</p>
+                </div>
+                <div className="qr-item">
+                  <img src="/assets/qrs/gotyme_qr.png" alt="GoTyme QR" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GOTYME (LEIGH M.)</p>
+                </div>
+                <div className="qr-item">
+                  <img src="/assets/qrs/gcash_qr2.png" alt="GCash QR 2" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (MA***H)</p>
+                </div>
+              </div>
+
+              <div className="form-section" style={{ marginTop: '30px' }}>
+                <div className="input-group">
+                  <label>GCash Number (Used for payment)</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    placeholder="e.g. 0912 345 6789"
+                    value={paymentNumber}
+                    onChange={(e) => setPaymentNumber(e.target.value)}
+                  />
+                </div>
+                <div className="input-group" style={{ marginTop: '15px' }}>
+                  <label>Upload Payment Receipt</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+                    style={{ fontSize: '0.9rem', width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div className="invoice-footer" style={{ marginTop: '30px' }}>
+                <div className="form-submit-row" style={{ width: '100%' }}>
+                  <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setIsPaying(false)}>Back to Summary</button>
+                  <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
+                    {isSubmitting ? 'Processing...' : 'Complete Order'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="order-page fade-in">
+        <div className="op-card">
+          <div className="op-logo">
+            <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
+          </div>
+          <div className="success-state invoice-state">
+            <h1 className="success-title">Order Summary</h1>
+            <p className="success-msg">Please review your order details before paying.</p>
+
+            <div className="invoice-details">
+              <div className="invoice-row">
+                <span className="inv-label">Name:</span>
+                <span className="inv-val">{fullName}</span>
+              </div>
+              <div className="invoice-row">
+                <span className="inv-label">Contact:</span>
+                <span className="inv-val">{contactNumber}</span>
+              </div>
+              {instagram && (
+                <div className="invoice-row">
+                  <span className="inv-label">Instagram:</span>
+                  <span className="inv-val">{instagram}</span>
+                </div>
+              )}
+
+              <div className="invoice-divider" />
+
+              <div className="invoice-row">
+                <span className="inv-label">Item:</span>
+                <span className="inv-val item-val">
+                  Dubai Chewy Chocolate<br />
+                  <small>
+                    {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
+                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
+                    {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
+                  </small>
+                </span>
+              </div>
+
+              <div className="invoice-row">
+                <span className="inv-label">Total Price:</span>
+                <span className="inv-val price-highlight">₱{totalPrice.toLocaleString()}</span>
+              </div>
+
+            </div>
+
+            <div className="invoice-footer">
+              <div className="form-submit-row" style={{ width: '100%' }}>
+                <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Edit Order</button>
+                <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting || isCheckingStock} onClick={handleProceedToPayment}>
+                  {isCheckingStock ? 'Checking...' : 'Pay Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
 
   return (

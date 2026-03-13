@@ -572,30 +572,58 @@
 }
 
 
-.price-summary-box {
-  background: #f6f8ff;
-  border: 1.8px dashed #4a78e8;
-  border-radius: 8px;
-  padding: 9px 14px;
+/* ── QR & Payment — Narrow card specific ── */
+.qr-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.qr-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  width: fit-content;
-  min-width: 280px;
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #111;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.price-label {
-  color: #555;
-  font-weight: 700;
+.qr-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border-color: #3b82f6;
+}
+
+.qr-img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.receipt-upload-box {
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 10px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.receipt-upload-box:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+@media (max-width: 480px) {
+  .qr-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Payment Type Options */
