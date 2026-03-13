@@ -233,16 +233,6 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
 
 
-  // Auto-redirect to Instagram after 3.5 seconds once confirmed
-  useEffect(() => {
-    if (isConfirmed) {
-      const timer = setTimeout(() => {
-        window.location.href = "https://ig.me/m/bakedby.bcd";
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [isConfirmed]);
-
   // 10-minute payment timer
   useEffect(() => {
     let timer: any;
@@ -455,18 +445,49 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
       return (
         <div className="order-page fade-in">
-          <div className="op-card" style={{ textAlign: 'center', padding: '50px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <img src="/baked-by-logo.png" alt="BAKED BY" style={{ width: '130px', marginBottom: '20px' }} />
-            <span style={{ fontSize: '3.5rem', marginBottom: '10px' }}>✅</span>
-            <h2 className="success-header" style={{ fontSize: '2.5rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>See you!</h2>
-            <div className="success-msg" style={{ fontSize: '1.2rem', color: '#475569', lineHeight: '1.5', marginBottom: '20px', fontWeight: 600 }}>
-              <p style={{ margin: '5px 0' }}>Meet-up Location: Ayala Fiesta Mall Bacolod</p>
-              <p style={{ margin: '5px 0' }}>Meet-up Time: 12:00 PM – 2:00 PM</p>
+          <div className="op-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div className="op-logo">
+              <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" style={{ width: '100px' }} />
             </div>
 
-            <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', marginBottom: '30px', border: '2px dashed #cbd5e1' }}>
-              <p style={{ color: '#1e3a8a', fontSize: '1rem', fontWeight: 800, marginBottom: '15px' }}>
-                PLEASE MESSAGE US TO CONFIRM! 📥
+            <span style={{ fontSize: '3rem', marginBottom: '10px', display: 'block' }}>✅</span>
+            <h2 className="success-header" style={{ fontSize: '2.2rem', color: '#10b981', fontFamily: 'Patrick Hand', marginBottom: '10px' }}>See you!</h2>
+            
+            <div className="success-state invoice-state" style={{ marginTop: '20px', border: 'none', boxShadow: 'none' }}>
+              <p className="success-msg" style={{ fontSize: '1rem', color: '#475569', fontWeight: 600, marginBottom: '20px' }}>
+                Your order has been recorded. Please save a screenshot of this invoice!
+              </p>
+
+              <div className="invoice-details" style={{ textAlign: 'left', background: '#fff', border: '2px solid #eef2ff' }}>
+                <div className="invoice-row">
+                  <span className="inv-label">Customer:</span>
+                  <span className="inv-val">{fullName}</span>
+                </div>
+                <div className="invoice-row">
+                  <span className="inv-label">Items:</span>
+                  <span className="inv-val item-val">
+                    {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
+                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
+                    {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
+                  </span>
+                </div>
+                <div className="invoice-row">
+                  <span className="inv-label">Total Paid:</span>
+                  <span className="inv-val price-highlight">₱{totalPrice.toLocaleString()}</span>
+                </div>
+                <div className="invoice-divider" />
+                <div style={{ padding: '10px 0' }}>
+                  <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 Meet-up Location:</p>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>Ayala Fiesta Mall Bacolod</p>
+                  <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>🕒 Meet-up Time:</p>
+                  <p style={{ margin: '0', fontSize: '1rem', color: '#475569' }}>12:00 PM – 2:00 PM</p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '25px', borderRadius: '25px', marginTop: '30px', border: '2px dotted #3b82f6' }}>
+              <p style={{ color: '#1e3a8a', fontSize: '1.1rem', fontWeight: 900, marginBottom: '20px', lineHeight: '1.4' }}>
+                LAST STEP: DM US YOUR ORDER & PAYMENT RECEIPT TO CONFIRM! 📥
               </p>
               <a
                 href="https://ig.me/m/bakedby.bcd"
@@ -478,17 +499,17 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                   gap: '10px',
                   background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
                   textDecoration: 'none',
-                  fontSize: '1rem',
-                  padding: '12px 25px'
+                  fontSize: '1.1rem',
+                  padding: '14px 28px'
                 }}
               >
                 <span>Message @BAKEDBY.BCD</span>
-                <span style={{ fontSize: '1.2rem' }}>💬</span>
+                <span style={{ fontSize: '1.4rem' }}>💬</span>
               </a>
             </div>
 
-            <button className="bg-btn-secondary" onClick={onBack} style={{ textDecoration: 'none', color: '#94a3b8' }}>
-              Return to Website
+            <button className="bg-btn-secondary" onClick={onBack} style={{ marginTop: '20px', textDecoration: 'none', color: '#94a3b8', fontSize: '0.9rem' }}>
+              Back to Website
             </button>
           </div>
         </div>
