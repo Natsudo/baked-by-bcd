@@ -626,8 +626,8 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                     ) : (
                       <span style={{ fontSize: '2rem' }}>📸</span>
                     )}
-                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>
-                      {receiptFile ? 'Tap to change screenshot' : 'Tap to upload receipt screenshot'}
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: receiptFile ? '#1e293b' : '#dc2626' }}>
+                      {receiptFile ? '✅ Screenshot Attached' : 'Tap to upload receipt screenshot (REQUIRED) ‼️'}
                     </span>
                     {receiptFile && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 800 }}>✓ {receiptFile.name}</span>}
                   </label>
@@ -637,7 +637,16 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <div className="invoice-footer" style={{ marginTop: '30px' }}>
                 <div className="form-submit-row" style={{ width: '100%' }}>
                   <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setIsPaying(false)}>Back to Summary</button>
-                  <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
+                  <button 
+                    className="place-order-btn place-order-btn-sm" 
+                    disabled={isSubmitting || !receiptFile || !paymentNumber} 
+                    onClick={handleConfirmOrder}
+                    style={{ 
+                      opacity: (isSubmitting || !receiptFile || !paymentNumber) ? 0.6 : 1,
+                      cursor: (isSubmitting || !receiptFile || !paymentNumber) ? 'not-allowed' : 'pointer',
+                      background: (!receiptFile || !paymentNumber) ? '#94a3b8' : ''
+                    }}
+                  >
                     {isSubmitting ? 'Processing...' : 'Complete Order'}
                   </button>
                 </div>
