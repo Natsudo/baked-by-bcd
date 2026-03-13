@@ -372,7 +372,8 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       let screenshotPath = '';
       if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop() || 'jpg';
-        const fileName = `${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+        // Prefix with batch5/ for organization
+        const fileName = `batch5/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(fileName, receiptFile);
