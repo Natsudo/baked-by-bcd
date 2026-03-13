@@ -623,6 +623,10 @@
 @media (max-width: 480px) {
   .qr-container {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .receipt-upload-box {
+    padding: 40px 20px;
   }
 }
 

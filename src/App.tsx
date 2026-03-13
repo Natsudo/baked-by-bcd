@@ -2079,8 +2079,18 @@ Thank you for supporting Baked By BCD.`;
                                           }) : 'No data'}
                                         </div>
 
-                                        <div className="dc-screenshots">
-                                          {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
+                                        <div className="dc-screenshots" style={{ marginTop: '10px' }}>
+                                          {o.gcash_screenshot_path && (
+                                            <a 
+                                              href={getMediaUrl(o.gcash_screenshot_path) || '#'} 
+                                              target="_blank" 
+                                              rel="noreferrer" 
+                                              className="dc-link"
+                                              style={{ background: '#3b82f6', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                                            >
+                                              📸 View Receipt
+                                            </a>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -2226,9 +2236,29 @@ Thank you for supporting Baked By BCD.`;
                                           }) : 'No data'}
                                         </div>
 
-                                        <div className="dc-screenshots">
-                                          {o.gcash_screenshot_path && <a href={getMediaUrl(o.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link">Receipt</a>}
-                                          {o.maxim_screenshot_path && <a href={getMediaUrl(o.maxim_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="dc-link dc-link-pin">Pin Point</a>}
+                                        <div className="dc-screenshots" style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                                          {o.gcash_screenshot_path && (
+                                            <a 
+                                              href={getMediaUrl(o.gcash_screenshot_path) || '#'} 
+                                              target="_blank" 
+                                              rel="noreferrer" 
+                                              className="dc-link"
+                                              style={{ background: '#3b82f6', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                                            >
+                                              📸 Receipt
+                                            </a>
+                                          )}
+                                          {o.maxim_screenshot_path && (
+                                            <a 
+                                              href={getMediaUrl(o.maxim_screenshot_path) || '#'} 
+                                              target="_blank" 
+                                              rel="noreferrer" 
+                                              className="dc-link dc-link-pin"
+                                              style={{ background: '#f59e0b', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                                            >
+                                              📍 Pin
+                                            </a>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
