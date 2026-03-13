@@ -377,10 +377,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
   };
 
   const handleConfirmOrder = async () => {
-    if (!paymentNumber) {
-      alert("Please provide your GCash number for verification.");
-      return;
-    }
+    // paymentNumber is now optional (for bank transfers)
     if (!receiptFile) {
       alert("Please upload your payment receipt.");
       return;
@@ -589,7 +586,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
               <div className="form-section" style={{ marginTop: '30px' }}>
                 <div className="input-group">
-                  <label>GCash Number (Used for payment)</label>
+                  <label>GCash Number <small>(Optional if Bank Transfer)</small></label>
                   <input
                     className="form-input"
                     type="text"
@@ -639,12 +636,12 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                   <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setIsPaying(false)}>Back to Summary</button>
                   <button 
                     className="place-order-btn place-order-btn-sm" 
-                    disabled={isSubmitting || !receiptFile || !paymentNumber} 
+                    disabled={isSubmitting || !receiptFile} 
                     onClick={handleConfirmOrder}
                     style={{ 
-                      opacity: (isSubmitting || !receiptFile || !paymentNumber) ? 0.6 : 1,
-                      cursor: (isSubmitting || !receiptFile || !paymentNumber) ? 'not-allowed' : 'pointer',
-                      background: (!receiptFile || !paymentNumber) ? '#94a3b8' : ''
+                      opacity: (isSubmitting || !receiptFile) ? 0.6 : 1,
+                      cursor: (isSubmitting || !receiptFile) ? 'not-allowed' : 'pointer',
+                      background: (!receiptFile) ? '#94a3b8' : ''
                     }}
                   >
                     {isSubmitting ? 'Processing...' : 'Complete Order'}
