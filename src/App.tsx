@@ -9,13 +9,6 @@ const MANUAL_LOCK = false;
 const TARGET_DATE = new Date('2026-03-13T20:30:00+08:00');
 
 type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
-type PaymentMode = 'gcash' | 'cash' | '';
-type DeliveryMode = 'meetup' | 'maxim' | '';
-type MeetupLocation = 'rolling-hills' | 'lasalle' | '';
-type MeetupTime = '10am - 12pm' | '3pm - 4pm' | '';
-
-
-
 
 const FAQS = [
   { q: "How do I order?", a: "When preorders open, we post the order form link on our page and story. Slots are limited per batch and are available on a first come, first served basis. Once the form is closed, we no longer accept orders" },
@@ -144,10 +137,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
   const [holdingOrderId, setHoldingOrderId] = useState<string | null>(null);
-  const [quantities, setQuantities] = useState({ Box4: 0, Box6: 0, Box12: 0 });
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>('');
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('');
-  const [paymentOption, setPaymentOption] = useState<'down' | 'full'>('down');
+  const [quantities, setQuantities] = useState({ Box4: 0, Box6: 0 });
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -162,38 +152,12 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     setContactNumber(formatted);
   };
 
-
-  const [meetupLocation, setMeetupLocation] = useState<MeetupLocation>('');
-  const [meetupTime, setMeetupTime] = useState<MeetupTime>('');
-  const [maximAddress, setMaximAddress] = useState('');
-  const [maximDetails, setMaximDetails] = useState('');
-  const [maximScreenshot, setMaximScreenshot] = useState<File | null>(null);
-
-  const [gcashName, setGcashName] = useState('');
-  const [gcashNumber, setGcashNumber] = useState('');
-  const [gcashScreenshot, setGcashScreenshot] = useState<File | null>(null);
-  const [paymentSubMode, setPaymentSubMode] = useState<'gcash' | 'bank'>('gcash');
-
-  const handleGcashPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGcashNumber(formatPhoneNumber(e.target.value));
-  };
-  const [understood, setUnderstood] = useState(false);
-  const [specialInstructions, setSpecialInstructions] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
   const [localStock, setLocalStock] = useState<number | null>(currentStock);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const maximFileInputRef = useRef<HTMLInputElement>(null);
-  const paymentRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(3); // 3 for delivery, 4 for payment
-
-  // Track deliveryMode for the interval to avoid stale closures
-  const deliveryModeRef = useRef(deliveryMode);
-  useEffect(() => { deliveryModeRef.current = deliveryMode; }, [deliveryMode]);
-
   // ─── ACTIVE STOCK MONITORING ───
   useEffect(() => {
     const pollStock = async () => {
@@ -207,15 +171,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
         if (data) {
           setLocalStock(data.stock_count);
           if (data.stock_count === 0 && !submitted) {
-            // Check the dynamic ref, NOT the captured state
-            if (deliveryModeRef.current === '') {
-              alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
-              onBack();
-            } else {
-              setErrors(prev => ({ ...prev, global: "🚨 SOLD OUT ALERT: Slots just ran out! DO NOT send your payment. If you already sent money, please finish the form so we can refund you." }));
-              // Auto-scroll to the warning so they see it
-              paymentRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }
+            alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
+            onBack();
           }
         }
       } catch (e) {
@@ -276,13 +233,6 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   }, []);
 
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setGcashScreenshot(e.target.files[0]);
-  };
-
-  const handleMaximFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setMaximScreenshot(e.target.files[0]);
-  };
 
   // Auto-redirect to Instagram after 3.5 seconds once confirmed
   useEffect(() => {
@@ -294,34 +244,19 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     }
   }, [isConfirmed]);
 
-  const totalPrice = (quantities.Box4 * 285) + (quantities.Box6 * 425) + (quantities.Box12 * 845);
-  const downpaymentPrice = paymentOption === 'full' ? totalPrice : Math.round(totalPrice * 0.5);
+  const totalPrice = (quantities.Box4 * 285) + (quantities.Box6 * 425);
+  const downpaymentPrice = totalPrice;
 
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = 'Full Name is required.';
     if (!contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
     if (!instagram.trim()) errs.instagram = 'Instagram Handle is required.';
-    if (quantities.Box4 === 0 && quantities.Box6 === 0 && quantities.Box12 === 0) errs.quantity = 'Please select at least one box.';
-    if (!paymentMode) errs.paymentMode = 'Please select a payment method.';
-    if (!deliveryMode) errs.deliveryMode = 'Please select a delivery method.';
-    if (deliveryMode === 'meetup' && !meetupTime) errs.meetupTime = 'Please select a pick-up time.';
-    if (deliveryMode === 'maxim') {
-      if (!meetupLocation) errs.meetupLocation = 'Please select a pick-up location.';
-      if (!meetupTime) errs.meetupTime = 'Please select a delivery time.';
-      if (!maximAddress.trim()) errs.maximAddress = 'Delivery address is required.';
-      if (!maximScreenshot) errs.maximScreenshot = 'Please upload a pin point screenshot.';
-    }
-    if (paymentSubMode === 'gcash') {
-      if (!gcashName.trim()) errs.gcashName = 'GCash Sender Name is required.';
-      if (!gcashNumber.trim()) errs.gcashNumber = 'GCash Number is required.';
-    }
-    if (!gcashScreenshot && localStock !== 0) errs.gcashScreenshot = 'Please upload your receipt screenshot.';
-    if (!understood) errs.understood = 'Please tick the acknowledgement checkbox.';
+    if (quantities.Box4 === 0 && quantities.Box6 === 0) errs.quantity = 'Please select at least one box.';
     return errs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -336,34 +271,14 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       return;
     }
     setErrors({});
-    setSubmitted(true);
+    await handleProceedToPayment();
   };
 
   const handleConfirmOrder = async () => {
     setIsSubmitting(true);
 
     try {
-      let uploadedMaximScreenshotPath = null;
-      let uploadedGcashScreenshotPath = null;
-
-      // Make a unique ID for the order folder to avoid overlapping names
-      const folderId = Date.now().toString();
-
-      if (maximScreenshot) {
-        const { data, error } = await supabase.storage
-          .from('receipts')
-          .upload(`maxim/${folderId}_${maximScreenshot.name}`, maximScreenshot);
-        if (!error && data) uploadedMaximScreenshotPath = data.path;
-      }
-
-      if (gcashScreenshot) {
-        const { data, error } = await supabase.storage
-          .from('receipts')
-          .upload(`gcash/${folderId}_${gcashScreenshot.name}`, gcashScreenshot);
-        if (!error && data) uploadedGcashScreenshotPath = data.path;
-      }
-
-      const totalPiecesOrdered = (quantities.Box4 * 4) + (quantities.Box6 * 6) + (quantities.Box12 * 12);
+      const totalPiecesOrdered = (quantities.Box4 * 4) + (quantities.Box6 * 6);
 
       // Verify stock before inserting order
       const { data: stockCheckData } = await supabase
@@ -395,10 +310,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             instagram: instagram,
             status: 'Refund Needed',
             is_paid: false, // Mark unpaid to clearly indicate action needed
-            gcash_name: gcashName,
-            gcash_number: gcashNumber.replace(/\s/g, ''),
-            gcash_screenshot_path: uploadedGcashScreenshotPath,
-            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED. | ${specialInstructions}`,
+            gcash_name: '',
+            gcash_number: '',
+            gcash_screenshot_path: null,
+            special_instructions: `FAILED STOCK CHECK. REFUND REQUIRED.`,
             created_at: new Date().toISOString() // refresh timestamp
           })
           .eq('id', holdingOrderId);
@@ -418,20 +333,13 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           full_name: fullName,
           contact_number: contactNumber.replace(/\s/g, ''),
           instagram: instagram,
-          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Box12: ${quantities.Box12}`,
+          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
           quantity: 1, // keeping count as 1 order
           status: 'Pending',
-          payment_mode: paymentMode,
-          delivery_mode: deliveryMode,
-          meetup_location: meetupLocation,
-          meetup_time: meetupTime,
-          is_paid: paymentMode === 'cash' ? false : true,
-          gcash_name: gcashName,
-          gcash_number: gcashNumber.replace(/\s/g, ''),
-          gcash_screenshot_path: uploadedGcashScreenshotPath,
-          maxim_screenshot_path: uploadedMaximScreenshotPath,
-          maxim_address: maximAddress + (maximDetails ? ` (Additional: ${maximDetails})` : ''),
-          special_instructions: specialInstructions,
+          payment_mode: 'gcash',
+          delivery_mode: 'meetup',
+          is_paid: false,
+          special_instructions: '',
           created_at: new Date().toISOString() // refresh timestamp
         })
         .eq('id', holdingOrderId);
@@ -541,10 +449,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                   Dubai Chewy Chocolate<br />
                   <small>
                     {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                    {quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Box12 > 0) && <br />}
+                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
                     {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
-                    {quantities.Box6 > 0 && quantities.Box12 > 0 && <br />}
-                    {quantities.Box12 > 0 && `Box of 12 x ${quantities.Box12}`}
                   </small>
                 </span>
               </div>
@@ -554,75 +460,6 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
                 <span className="inv-val price-highlight">₱{totalPrice.toLocaleString()}</span>
               </div>
 
-              <div className="invoice-divider" />
-
-              <div className="invoice-row">
-                <span className="inv-label">Delivery:</span>
-                <span className="inv-val" style={{ textAlign: 'right' }}>
-                  {deliveryMode === 'meetup' ? 'Meet-up (La Salle Area Only)' : `Delivery via Maxim`}
-                </span>
-              </div>
-              {deliveryMode === 'meetup' && (
-                <>
-                  <div className="invoice-row">
-                    <span className="inv-label">Meet-up Time:</span>
-                    <span className="inv-val">{meetupTime}</span>
-                  </div>
-                  <div className="invoice-col" style={{ marginTop: '4px' }}>
-                    <span className="inv-val box-val" style={{ fontSize: '0.8rem', textAlign: 'center' }}>
-                      <strong>Meet Up Location:</strong> USLS Gate 6 Canteen
-                    </span>
-                  </div>
-                </>
-              )}
-              {deliveryMode === 'maxim' && (
-                <>
-                  <div className="invoice-row">
-                    <span className="inv-label">Maxim Pick-up:</span>
-                    <span className="inv-val">{meetupLocation === 'rolling-hills' ? 'Rolling Hills (Estefania)' : 'La Salle'}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">Delivery Time:</span>
-                    <span className="inv-val">{meetupTime}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">Address:</span>
-                    <span className="inv-val">{maximAddress}{maximDetails ? ` (Additional: ${maximDetails})` : ''}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">Pin Point:</span>
-                    <span className="inv-val">{maximScreenshot ? 'Uploaded' : 'No'}</span>
-                  </div>
-                </>
-              )}
-
-              <div className="invoice-row">
-                <span className="inv-label">Payment:</span>
-                <span className="inv-val" style={{ textTransform: 'capitalize' }}>{paymentMode}</span>
-              </div>
-
-              {paymentMode !== '' && (
-                <>
-                  <div className="invoice-row">
-                    <span className="inv-label">{paymentOption === 'full' ? 'Amount Settled:' : '50% Downpayment:'}</span>
-                    <span className="inv-val price-highlight">₱{downpaymentPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="invoice-row">
-                    <span className="inv-label">Receipt Sent:</span>
-                    <span className="inv-val">{gcashScreenshot ? 'Yes' : 'No'}</span>
-                  </div>
-                </>
-              )}
-
-              {specialInstructions && (
-                <>
-                  <div className="invoice-divider" />
-                  <div className="invoice-col">
-                    <span className="inv-label">Special Instructions:</span>
-                    <span className="inv-val box-val">{specialInstructions}</span>
-                  </div>
-                </>
-              )}
             </div>
 
             <div className="invoice-footer">
@@ -639,19 +476,18 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     );
   }
 
-  const handleQuantityChange = (boxType: 'Box4' | 'Box6' | 'Box12', change: number) => {
+  const handleQuantityChange = (boxType: 'Box4' | 'Box6', change: number) => {
     setQuantities(prev => {
       const newQty = Math.max(0, prev[boxType] + change);
       let max = 0;
       if (boxType === 'Box4') max = 2;
       if (boxType === 'Box6') max = 2;
-      if (boxType === 'Box12') max = 1;
       return { ...prev, [boxType]: Math.min(max, newQty) };
     });
   };
 
   const handleProceedToPayment = async () => {
-    const pieces = (quantities.Box4 * 4) + (quantities.Box6 * 6) + (quantities.Box12 * 12);
+    const pieces = (quantities.Box4 * 4) + (quantities.Box6 * 6);
 
     try {
       // 1. Check current physical and reserved stock
@@ -687,11 +523,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
           full_name: fullName || '(Holding)',
           contact_number: contactNumber.replace(/\s/g, '') || '00000000000',
           instagram: instagram || '_holding_',
-          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Box12: ${quantities.Box12}`,
+          quantity_type: `Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
           quantity: 1,
           status: 'Holding',
-          payment_mode: paymentMode || 'gcash',
-          delivery_mode: deliveryMode || 'meetup',
+          payment_mode: 'gcash',
+          delivery_mode: 'meetup',
           total_price: totalPrice,
           downpayment_price: downpaymentPrice,
           is_paid: false,
@@ -709,8 +545,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       setHoldingOrderId(holdOrder.id);
       setIsCheckingStock(false);
       setLocalStock(available - pieces);
-      setStep(4);
-      setTimeout(() => paymentRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setSubmitted(true);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
     } catch (err) {
       console.error(err);
       setIsCheckingStock(false);
@@ -736,10 +572,10 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
             <div className="op-product-sub">Batch 4 — Delivery Date: March 4, 2026 (Wednesday)</div>
             <div className="op-product-price-list">
-              ₱285 for Box of 4 • ₱425 for Box of 6 • ₱845 for Box of 12
+              ₱285 for Box of 4 • ₱425 for Box of 6
             </div>
             <div className="op-product-limit-note">
-              Limit: 2 boxes per customer (B4) • 2 boxes (B6) • 1 box (B12)
+              Limit: 2 boxes per customer (B4) • 2 boxes (B6)
             </div>
           </div>
         </div>
@@ -821,344 +657,23 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               </div>
             </div>
 
-            <div className="qty-row-item" style={{ marginTop: '10px' }}>
-              <div className="qty-info">
-                <span className="qty-label">Box of 12</span>
-                <span className="qty-sub">Max 1 box</span>
-              </div>
-              <div className="qty-stepper">
-                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box12', -1)}>−</button>
-                <span className="qty-val">{quantities.Box12}</span>
-                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box12', 1)}>+</button>
-              </div>
-            </div>
           </div>
 
-
-
-          {/* Service Mode — Smart Toggle */}
-          {totalPrice > 0 && (
-            <div className="form-section fade-in">
-              <div className="form-section-title" id="deliveryMode">
-                <span className="form-step-badge">3</span>
-                How should we get it to you?
-              </div>
-              {errors.deliveryMode && <span className="err-msg">{errors.deliveryMode}</span>}
-
-              <div className="service-mode-grid">
-                <div className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'cash' ? 'active' : ''}`}
-                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('cash'); setPaymentOption('down'); }}>
-                  <div className="svc-header">🤝 Meetup + Cash</div>
-                  <div className="svc-desc">Pay 50% DP (GCash) now, cash balance on meetup.</div>
-                </div>
-                <div className={`svc-opt ${deliveryMode === 'meetup' && paymentMode === 'gcash' ? 'active' : ''}`}
-                  onClick={() => { setDeliveryMode('meetup'); setPaymentMode('gcash'); setPaymentOption('full'); }}>
-                  <div className="svc-header">🤝 Meetup + GCash</div>
-                  <div className="svc-desc">Pay 100% via GCash upfront. Used for convenience!</div>
-                </div>
-                <div className={`svc-opt ${deliveryMode === 'maxim' ? 'active' : ''}`}
-                  onClick={() => { setDeliveryMode('maxim'); setPaymentMode('gcash'); }}>
-                  <div className="svc-header">🚚 Maxim Delivery</div>
-                  <div className="svc-desc">Buyer shoulders fee. GCash Payment only.</div>
-                </div>
-              </div>
-
-              {/* Meetup time sub-section */}
-              {deliveryMode === 'meetup' && (
-                <div className="sub-section fade-in" style={{ marginTop: '12px' }} id="meetupTime">
-                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Pick-up Time (USLS Gate 6 Canteen):</div>
-                  {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
-                  <div className="payment-option">
-                    <span className="payment-label">10am – 12pm</span>
-                    <input type="radio" name="meetupTime" checked={meetupTime === '10am - 12pm'} onChange={() => setMeetupTime('10am - 12pm')} className="radio-inp" />
-                  </div>
-                  <div className="payment-option" style={{ marginTop: '5px' }}>
-                    <span className="payment-label">3pm – 4pm</span>
-                    <input type="radio" name="meetupTime" checked={meetupTime === '3pm - 4pm'} onChange={() => setMeetupTime('3pm - 4pm')} className="radio-inp" />
-                  </div>
-                </div>
-              )}
-
-              {/* Maxim delivery sub-section */}
-              {deliveryMode === 'maxim' && (
-                <div className="sub-section fade-in" style={{ marginTop: '12px' }}>
-                  <div className="form-section-title" style={{ marginBottom: '7px' }}>Maxim Delivery Details:</div>
-                  {errors.meetupLocation && <span className="err-msg">{errors.meetupLocation}</span>}
-                  <select id="meetupLocation" className="form-input pill" value={meetupLocation} onChange={e => setMeetupLocation(e.target.value as MeetupLocation)} style={{ marginBottom: '8px' }}>
-                    <option value="">-- Choose Pickup Location --</option>
-                    <option value="rolling-hills">Rolling Hills (Estefania)</option>
-                    <option value="lasalle">La Salle Area</option>
-                  </select>
-                  {errors.meetupTime && <span className="err-msg">{errors.meetupTime}</span>}
-                  <select id="meetupTime" className="form-input pill" value={meetupTime} onChange={e => setMeetupTime(e.target.value as MeetupTime)} style={{ marginBottom: '8px' }}>
-                    <option value="">-- Choose Delivery Time --</option>
-                    <option value="10am - 12pm">10:00 AM – 12:00 PM</option>
-                    <option value="3pm - 4pm">3:00 PM – 4:00 PM</option>
-                  </select>
-                  {errors.maximAddress && <span className="err-msg">{errors.maximAddress}</span>}
-                  <input id="maximAddress" className="form-input pill" type="text" value={maximAddress} onChange={e => setMaximAddress(e.target.value)} placeholder="Complete Delivery Address" style={{ marginBottom: '8px' }} />
-                  <input className="form-input pill" type="text" value={maximDetails} onChange={e => setMaximDetails(e.target.value)} placeholder="Additional (Gate color, building, etc.) (Optional)" style={{ marginBottom: '8px' }} />
-                  <div id="maximScreenshot" className={`upload-box${errors.maximScreenshot ? ' err' : ''}`} onClick={() => maximFileInputRef.current?.click()}>
-                    {maximScreenshot ? <span className="upload-done">✅ {maximScreenshot.name}</span> : <span className="upload-hint">📎 Upload Pin Point Screenshot (Maxim App)</span>}
-                  </div>
-                  <input ref={maximFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleMaximFileChange} />
-                  {errors.maximScreenshot && <span className="err-msg">{errors.maximScreenshot}</span>}
-                </div>
-              )}
-
-              {deliveryMode !== '' && (
-                <>
-                  {/* Internal validation for Step 3 */}
-                  {((deliveryMode === 'meetup' && !!meetupTime) ||
-                    (deliveryMode === 'maxim' && !!meetupLocation && !!meetupTime && !!maximAddress.trim() && !!maximScreenshot)) ? (
-                    <button
-                      type="button"
-                      disabled={isCheckingStock}
-                      className="place-order-btn place-order-btn-sm fade-in"
-                      style={{
-                        marginTop: '20px',
-                        width: '100%',
-                        fontSize: '1rem',
-                        background: isCheckingStock ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        boxShadow: isCheckingStock ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.3)'
-                      }}
-                      onClick={handleProceedToPayment}
-                    >
-                      {isCheckingStock ? 'Checking Stock...' : 'Done with Step 3! Proceed to Payment →'}
-                    </button>
-                  ) : (
-                    <div className="scroll-indicator fade-in" style={{ opacity: 0.7 }}>
-                      <span>Please complete delivery details above...</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Payment Section */}
-          {step >= 4 && (
-            <div className="form-section fade-in payment-highlight-section" ref={paymentRef}>
-              {errors.global && (
-                <div style={{ background: '#fef2f2', color: '#ef4444', padding: '15px', borderRadius: '10px', border: '5px solid #ef4444', marginBottom: '15px', fontWeight: 900, fontSize: '1rem', textAlign: 'center', animation: 'pulse-red 2s infinite' }}>
-                  {errors.global}
-                </div>
-              )}
-              <div className="form-section-title" style={{ background: '#3b82f6', color: '#fff', margin: '-16px -16px 16px -16px', padding: '12px 16px', borderRadius: '10px 10px 0 0', border: 'none' }}>
-                <span className="form-step-badge" style={{ background: '#fff', color: '#3b82f6' }}>4</span>
-                Complete Your Payment:
-              </div>
-
-              <div className="payment-alert">
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>💎</span>
-                  <strong>ALMOST THERE!</strong>
-                </div>
-                Please fill up the payment details below to see the <strong>Review Order</strong> button. Your slot is only confirmed after we verify the receipt!
-              </div>
-
-              {localStock !== null && localStock > 0 && localStock < 10 && (
-                <div className="payment-alert bounce-soft" style={{ background: '#fef2f2', border: '1px solid #ef4444', color: '#b91c1c', marginTop: '10px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-                    <strong>LOW STOCK ALERT: Only {localStock} cookies left!</strong>
-                  </div>
-                  Pay and upload your receipt immediately to secure your slot before it's gone.
-                </div>
-              )}
-
-              <div className="price-summary-box" style={{ marginBottom: '14px' }}>
-                <div className="price-row">
-                  <span className="price-label">Order Total:</span>
-                  <span className="price-value">₱{totalPrice.toLocaleString()}</span>
-                </div>
-                {(paymentMode === 'gcash' || deliveryMode === 'maxim') && (
-                  <div className="payment-type-selector" style={{ margin: '8px 0' }}>
-                    <div className={`pay-opt ${paymentOption === 'down' ? 'active' : ''}`} onClick={() => setPaymentOption('down')}>
-                      <div className="pay-opt-circle"></div>
-                      <span className="pay-opt-title">Pay 50% DP</span>
-                    </div>
-                    <div className={`pay-opt ${paymentOption === 'full' ? 'active' : ''}`} onClick={() => setPaymentOption('full')}>
-                      <div className="pay-opt-circle"></div>
-                      <span className="pay-opt-title">Pay in Full</span>
-                    </div>
-                  </div>
-                )}
-                <div className="price-row price-row-main" style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '8px', marginTop: '4px' }}>
-                  <span className="price-label">{paymentOption === 'full' ? 'Amount to Pay Now:' : 'Minimum DP to Pay Now:'}</span>
-                  <span className="price-value">₱{downpaymentPrice.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="gcash-payment-card" style={{ background: '#eff6ff', borderRadius: '15px', padding: '14px', marginBottom: '12px' }}>
-                {/* Payment Sub-Mode Tabs */}
-                <div className="payment-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                  <button
-                    type="button"
-                    className={`payment-tab-btn ${paymentSubMode === 'gcash' ? 'active' : ''}`}
-                    onClick={() => setPaymentSubMode('gcash')}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: paymentSubMode === 'gcash' ? '#3b82f6' : '#e2e8f0',
-                      color: paymentSubMode === 'gcash' ? '#fff' : '#475569',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    GCash Payment
-                  </button>
-                  <button
-                    type="button"
-                    className={`payment-tab-btn ${paymentSubMode === 'bank' ? 'active' : ''}`}
-                    onClick={() => setPaymentSubMode('bank')}
-                    style={{
-                      flex: 1,
-                      padding: '10px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: paymentSubMode === 'bank' ? '#3b82f6' : '#e2e8f0',
-                      color: paymentSubMode === 'bank' ? '#fff' : '#475569',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    Gotyme/Bank Transfer
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div className="gcash-info">
-                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, marginBottom: '2px' }}>SEND GCASH TO:</div>
-                    <div style={{ fontSize: '1.05rem', color: '#1e40af', fontWeight: 900 }}>Maicah Faith M.</div>
-                    <div style={{ fontSize: '0.95rem', color: '#1e40af', fontWeight: 700 }}>0994 484 2605</div>
-                  </div>
-                  <button type="button" className="copy-btn" onClick={() => { navigator.clipboard.writeText('09944842605'); alert('GCash number copied! 📋'); }}
-                    style={{ padding: '8px 14px', background: '#3b82f6', color: '#fff', borderRadius: '10px', fontWeight: 800, border: 'none', cursor: 'pointer' }}>
-                    Copy
-                  </button>
-                </div>
-
-                <div className="gcash-section" style={{ marginTop: '10px', marginBottom: '15px', background: '#fff', padding: '10px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-
-                  {paymentSubMode === 'gcash' && (
-                    <>
-                      <div className="form-row" style={{ marginBottom: '8px' }}>
-                        <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashName">GCash Name:</label>
-                        <div className="form-field">
-                          <input id="gcashName" className={`form-input pill${errors.gcashName ? ' err' : ''}`} type="text" value={gcashName} onChange={e => setGcashName(e.target.value)} placeholder="Name on GCash account" style={{ fontSize: '0.9rem', padding: '8px 12px' }} />
-                          {errors.gcashName && <span className="err-msg">{errors.gcashName}</span>}
-                        </div>
-                      </div>
-                      <div className="form-row">
-                        <label className="form-label" style={{ fontSize: '0.8rem' }} htmlFor="gcashNumber">GCash Number:</label>
-                        <div className="form-field">
-                          <input
-                            id="gcashNumber"
-                            className={`form-input pill${errors.gcashNumber ? ' err' : ''}`}
-                            type="tel"
-                            value={gcashNumber}
-                            onChange={handleGcashPhoneChange}
-                            placeholder="09XX XXX XXXX"
-                            maxLength={13}
-                            style={{ fontSize: '0.9rem', padding: '8px 12px' }}
-                          />
-                          {errors.gcashNumber && <span className="err-msg">{errors.gcashNumber}</span>}
-                        </div>
-                      </div>
-
-                      <div className="gcash-launch-container" style={{ margin: '15px 0' }}>
-                        <a
-                          href={/android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera)
-                            ? "intent://#Intent;scheme=gcash;package=com.globe.gcash.android;S.browser_fallback_url=https%3A%2F%2Fwww.gcash.com;end;"
-                            : "gcash://"}
-                          className="launch-gcash-btn"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ width: '100%', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}
-                        >
-                          <span>Launch GCash App</span>
-                          <span>🚀</span>
-                        </a>
-
-                        {/Instagram|FBAN|FBAV/i.test(navigator.userAgent) && (
-                          <div className="ig-browser-tip" style={{
-                            marginTop: '12px',
-                            padding: '12px',
-                            background: '#fff7ed',
-                            border: '2px solid #ffedd5',
-                            borderRadius: '12px',
-                            fontSize: '0.75rem',
-                            color: '#9a3412',
-                            textAlign: 'center',
-                            lineHeight: '1.5'
-                          }}>
-                            <div style={{ fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-                              <span>⚠️</span> Instagram Limitation
-                            </div>
-                            If the app doesn't open, tap the <strong>three dots (⋮ / ...)</strong> at the top right and select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong>.
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', marginBottom: '10px', marginTop: paymentSubMode === 'bank' ? '5px' : '0' }}>
-                    1. Send <strong>₱{downpaymentPrice.toLocaleString()}</strong> via {paymentSubMode === 'gcash' ? 'GCash' : 'Gotyme/Bank'} to the number/QR above.<br />
-                    2. Screenshot the receipt and upload it below.
-                  </div>
-
-                  <div id="gcashScreenshot" className={`upload-box${errors.gcashScreenshot ? ' err' : ''}`} onClick={() => fileInputRef.current?.click()} style={{ background: '#fff' }}>
-                    {gcashScreenshot ? <span className="upload-done">✅ {gcashScreenshot.name}</span> : <span className="upload-hint">📎 Click to Upload Receipt</span>}
-                  </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-                  {errors.gcashScreenshot && <span className="err-msg">{errors.gcashScreenshot}</span>}
-
-                  <div className="gcash-qr-container" style={{ marginTop: '15px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: '#555' }}>...or scan our QR code:</p>
-                    <img src="/gcash-qr.jpg?v=2" alt="GCash QR Code" className="gcash-qr-image" style={{ maxWidth: '280px', width: '100%', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="checkbox-row" style={{ marginTop: '10px' }}>
-                <input type="checkbox" id="understood" checked={understood} onChange={e => setUnderstood(e.target.checked)} className="checkbox-inp" />
-                <label htmlFor="understood" className="checkbox-label">
-                  I understand that my slot is only confirmed after payment is sent. <strong>The downpayment is NON-REFUNDABLE.</strong>
-                </label>
-              </div>
-              {errors.understood && <span className="err-msg" style={{ marginLeft: '25px' }}>{errors.understood}</span>}
-            </div>
-          )}
-
-          {/* Notes + Submit (revealed after screenshot) */}
-          {gcashScreenshot && (
-            <div className="form-section fade-in" style={{ marginTop: '16px' }}>
-              <div className="form-section-title">
-                <span className="form-step-badge">5</span>
-                Finalize Order:
-              </div>
-              <label className="form-label" htmlFor="specialInstructions" style={{ marginBottom: '8px', display: 'block' }}>Special Instructions (Optional):</label>
-              <textarea
-                id="specialInstructions"
-                className="form-textarea"
-                value={specialInstructions}
-                onChange={e => setSpecialInstructions(e.target.value)}
-                rows={4}
-                placeholder="Any special notes for your order?"
-              />
-              <div className="form-submit-row" style={{ marginTop: '20px' }}>
-                <button type="button" className="place-order-btn place-order-btn-sm btn-secondary" onClick={onBack}>Back</button>
-                <button type="submit" className="place-order-btn place-order-btn-sm" disabled={false}>
-                  {localStock === 0 ? 'Submit for Refund' : 'Review Order'}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="form-submit-row" style={{ marginTop: '20px' }}>
+            <button
+              type="submit"
+              disabled={isCheckingStock}
+              className="place-order-btn fade-in pulse-button"
+              style={{
+                width: '100%',
+                fontSize: '1.1rem',
+                background: isCheckingStock ? '#94a3b8' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                boxShadow: isCheckingStock ? 'none' : '0 4px 15px rgba(16, 185, 129, 0.4)'
+              }}
+            >
+              <span style={{ fontSize: '1.3rem', marginRight: '6px' }}>👀</span> {isCheckingStock ? 'Checking...' : 'Review Order Details'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
