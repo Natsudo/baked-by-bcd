@@ -241,7 +241,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     }
   }, [isConfirmed]);
 
-  const totalPrice = (quantities.Box4 * 285) + (quantities.Box6 * 425);
+  const totalPrice = (quantities.Box4 * 350) + (quantities.Box6 * 525);
   const downpaymentPrice = totalPrice;
 
   const validate = () => {
@@ -607,8 +607,8 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
             <div className="op-product-sub">Batch 4 — Delivery Date: March 4, 2026 (Wednesday)</div>
-            <div className="op-product-price-list">
-              ₱285 for Box of 4 • ₱425 for Box of 6
+            <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '4px 10px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
+              ₱350 for Box of 4 • ₱525 for Box of 6
             </div>
             <div className="op-product-limit-note">
               Limit: 2 boxes per customer (B4) • 2 boxes (B6)
