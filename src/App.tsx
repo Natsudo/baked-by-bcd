@@ -146,6 +146,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -241,6 +242,26 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       return () => clearTimeout(timer);
     }
   }, [isConfirmed]);
+
+  // 10-minute payment timer
+  useEffect(() => {
+    let timer: any;
+    if (isPaying && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isPaying) {
+      alert("⚠️ Time's up! Your 10-minute payment window has expired and your reservation has been released.");
+      onBack();
+    }
+    return () => clearInterval(timer);
+  }, [isPaying, timeLeft, onBack]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const totalPrice = (quantities.Box4 * 350) + (quantities.Box6 * 525);
   const downpaymentPrice = totalPrice;
@@ -482,21 +503,29 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
             </div>
             <div className="success-state invoice-state">
+              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '12px', padding: '15px', marginBottom: '20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', marginBottom: '5px' }}>Payment Window Closes In</div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#dc2626', fontFamily: 'monospace' }}>{formatTime(timeLeft)}</div>
+                <p style={{ fontSize: '0.75rem', color: '#b91c1c', marginTop: '5px', fontWeight: 600 }}>
+                  ⚠️ If payment is not sent within 10 minutes, your order will be automatically removed to free up stock for others.
+                </p>
+              </div>
+
               <h1 className="success-title">Payment</h1>
               <p className="success-msg">Scan any QR below to pay ₱{totalPrice.toLocaleString()}.</p>
 
-              <div className="qr-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
+              <div className="qr-container">
                 <div className="qr-item">
-                  <img src="/assets/qrs/gcash_qr1.jpg" alt="GCash QR 1" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (LE**H)</p>
+                  <img src="/assets/qrs/gcash_qr1.jpg" alt="GCash QR 1" className="qr-img" style={{ border: '2px solid #3b82f6' }} />
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a' }}>GCASH (LE**H)</p>
                 </div>
                 <div className="qr-item">
-                  <img src="/assets/qrs/gotyme_qr.jpg" alt="GoTyme QR" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GOTYME (LEIGH M.)</p>
+                  <img src="/assets/qrs/gotyme_qr.jpg" alt="GoTyme QR" className="qr-img" style={{ border: '2px solid #10b981' }} />
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#065f46' }}>GOTYME (LEIGH M.)</p>
                 </div>
                 <div className="qr-item">
-                  <img src="/assets/qrs/gcash_qr2.jpg" alt="GCash QR 2" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-                  <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (MA***H)</p>
+                  <img src="/assets/qrs/gcash_qr2.jpg" alt="GCash QR 2" className="qr-img" style={{ border: '2px solid #3b82f6' }} />
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a' }}>GCASH (MA***H)</p>
                 </div>
               </div>
 
