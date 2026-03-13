@@ -540,7 +540,12 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               </div>
 
               <h1 className="success-title">Payment</h1>
-              <p className="success-msg">Scan any QR below to pay ₱{totalPrice.toLocaleString()}.</p>
+              <div style={{ background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '15px', padding: '20px', marginBottom: '25px', textAlign: 'center', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '5px' }}>Total Amount to Pay</div>
+                <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1d4ed8' }}>₱{totalPrice.toLocaleString()}</div>
+              </div>
+
+              <p className="success-msg" style={{ marginBottom: '15px' }}>Scan any QR below to pay the amount above.</p>
 
               <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '10px', padding: '12px', marginBottom: '20px', textAlign: 'center' }}>
                 <p style={{ fontSize: '0.85rem', color: '#92400e', fontWeight: 800, margin: 0 }}>
