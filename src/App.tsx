@@ -471,15 +471,15 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
               <div className="qr-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
                 <div className="qr-item">
-                  <img src="/assets/qrs/gcash_qr1.png" alt="GCash QR 1" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <img src="/assets/qrs/gcash_qr1.jpg" alt="GCash QR 1" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
                   <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (LE**H)</p>
                 </div>
                 <div className="qr-item">
-                  <img src="/assets/qrs/gotyme_qr.png" alt="GoTyme QR" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <img src="/assets/qrs/gotyme_qr.jpg" alt="GoTyme QR" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
                   <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GOTYME (LEIGH M.)</p>
                 </div>
                 <div className="qr-item">
-                  <img src="/assets/qrs/gcash_qr2.png" alt="GCash QR 2" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                  <img src="/assets/qrs/gcash_qr2.jpg" alt="GCash QR 2" style={{ width: '100%', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
                   <p style={{ fontSize: '0.7rem', fontWeight: 800, marginTop: '5px', textAlign: 'center' }}>GCASH (MA***H)</p>
                 </div>
               </div>
@@ -497,12 +497,19 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="input-group" style={{ marginTop: '15px' }}>
                   <label>Upload Payment Receipt</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
-                    style={{ fontSize: '0.9rem', width: '100%' }}
-                  />
+                  <label className="receipt-upload-box" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+                      style={{ display: 'none' }}
+                    />
+                    <span style={{ fontSize: '1.5rem' }}>📷</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>
+                      {receiptFile ? receiptFile.name : 'Click to upload receipt screenshot'}
+                    </span>
+                    {receiptFile && <span style={{ fontSize: '0.7rem', color: '#10b981' }}>✓ File Selected</span>}
+                  </label>
                 </div>
               </div>
 
