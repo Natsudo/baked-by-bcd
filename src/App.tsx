@@ -545,18 +545,45 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <h1 className="success-title">Payment</h1>
               <p className="success-msg">Scan any QR below to pay ₱{totalPrice.toLocaleString()}.</p>
 
+              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '10px', padding: '12px', marginBottom: '20px', textAlign: 'center' }}>
+                <p style={{ fontSize: '0.85rem', color: '#92400e', fontWeight: 800, margin: 0 }}>
+                  💡 Use the other QR Code / Mode of payment in case of sending problems.
+                </p>
+              </div>
+
               <div className="qr-container">
                 <div className="qr-item">
                   <img src="/assets/qrs/gcash_qr1.jpg" alt="GCash QR 1" className="qr-img" style={{ border: '2px solid #3b82f6' }} />
-                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a' }}>GCASH (LE**H)</p>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a', marginBottom: '4px' }}>GCASH (LE**H)</p>
+                  <div 
+                    onClick={() => { navigator.clipboard.writeText('09922538266'); alert('Number copied!'); }}
+                    style={{ background: '#eff6ff', border: '1px solid #3b82f6', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1d4ed8' }}>0992 253 8266</span>
+                    <span style={{ fontSize: '0.8rem' }}>📋</span>
+                  </div>
                 </div>
                 <div className="qr-item">
                   <img src="/assets/qrs/gotyme_qr.jpg" alt="GoTyme QR" className="qr-img" style={{ border: '2px solid #10b981' }} />
-                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#065f46' }}>GOTYME (LEIGH M.)</p>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#065f46', marginBottom: '4px' }}>GOTYME (LEIGH M.)</p>
+                  <div 
+                    onClick={() => { navigator.clipboard.writeText('09922538266'); alert('Number copied!'); }}
+                    style={{ background: '#f0fdf4', border: '1px solid #10b981', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#15803d' }}>0992 253 8266</span>
+                    <span style={{ fontSize: '0.8rem' }}>📋</span>
+                  </div>
                 </div>
                 <div className="qr-item">
                   <img src="/assets/qrs/gcash_qr2.jpg" alt="GCash QR 2" className="qr-img" style={{ border: '2px solid #3b82f6' }} />
-                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a' }}>GCASH (MA***H)</p>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 900, marginTop: '8px', textAlign: 'center', color: '#1e3a8a', marginBottom: '4px' }}>GCASH (MA***H)</p>
+                  <div 
+                    onClick={() => { navigator.clipboard.writeText('09944842605'); alert('Number copied!'); }}
+                    style={{ background: '#eff6ff', border: '1px solid #3b82f6', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1d4ed8' }}>0994 484 2605</span>
+                    <span style={{ fontSize: '0.8rem' }}>📋</span>
+                  </div>
                 </div>
               </div>
 
