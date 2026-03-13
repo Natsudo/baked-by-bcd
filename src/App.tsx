@@ -2816,10 +2816,9 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetup time: 12:00 PM – 2:00 PM</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups (La Salle Area) & Maxim Delivery</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only (No DM orders)</span></li>
-            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment: GCASH / Bank Transfer</span></li>
+            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment via GCash</span></li>
           </ul>
           <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', color: '#93c5fd', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
             📍 Bacolod City orders only.
