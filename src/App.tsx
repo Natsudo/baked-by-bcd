@@ -30,12 +30,13 @@ const FAQS = [
 ];
 
 /* ─── STOCK COUNTER COMPONENT ─── */
-function StockCounter({ stock, loading }: { stock: number | null, loading: boolean }) {
+function StockCounter({ b4, b6, loading }: { b4: number | null, b6: number | null, loading: boolean }) {
+  const isSoldOut = b4 === 0 && b6 === 0;
   return (
     <div className="stock-counter-banner sparkle-banner">
-      <span className="stock-dot" style={{ background: stock === 0 ? '#ef4444' : '#10b981' }}></span>
+      <span className="stock-dot" style={{ background: isSoldOut ? '#ef4444' : '#10b981' }}></span>
       <span className="stock-text sparkle-text-sm">
-        {loading ? 'Checking stock...' : stock !== null ? (stock === 0 ? 'SOLD OUT! Stay tuned for the next batch.' : `${stock} Chewy Cookies left in stock!`) : 'Chewy Cookies available!'}
+        {loading ? 'Checking slots...' : isSoldOut ? 'SOLD OUT! Stay tuned for the next batch.' : `Slots Available: ${b4 ?? 0} Box of 4 • ${b6 ?? 0} Box of 6`}
       </span>
     </div>
   );
@@ -44,7 +45,8 @@ function StockCounter({ stock, loading }: { stock: number | null, loading: boole
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrderClick: () => void, onAdminClick: () => void, stock: number | null, stockLoading: boolean }) {
+function HomePage({ onOrderClick, onAdminClick, b4, b6, loading }: { onOrderClick: () => void, onAdminClick: () => void, b4: number | null, b6: number | null, loading: boolean }) {
+  const isSoldOut = b4 === 0 && b6 === 0;
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -69,7 +71,7 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
 
   return (
     <div className="home-page">
-      <StockCounter stock={stock} loading={stockLoading} />
+      <StockCounter b4={b4} b6={b6} loading={loading} />
 
       {/* Full-width clouds banner — no wrapper, scales naturally */}
       <img src="/clouds.png" alt="" className="clouds-banner" />
@@ -92,11 +94,11 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
           </div>
 
           <button
-            className={`place-order-btn${stock === 0 ? ' sold-out' : ''}`}
-            onClick={stock === 0 ? undefined : onOrderClick}
-            disabled={stock === 0}
+            className={`place-order-btn${isSoldOut ? ' sold-out' : ''}`}
+            onClick={isSoldOut ? undefined : onOrderClick}
+            disabled={isSoldOut}
           >
-            {stock === 0 ? 'SOLD OUT!' : 'Place Order!'}
+            {isSoldOut ? 'SOLD OUT!' : 'Place Order!'}
           </button>
 
 
@@ -132,12 +134,14 @@ function HomePage({ onOrderClick, onAdminClick, stock, stockLoading }: { onOrder
 /* ═══════════════════════════════════════
    ORDER PAGE
 ═══════════════════════════════════════ */
-function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock: number | null }) {
+function OrderPage({ onBack }: { onBack: () => void }) {
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
   const [holdingOrderId, setHoldingOrderId] = useState<string | null>(null);
   const [quantities, setQuantities] = useState({ Box4: 0, Box6: 0 });
+  const [boxStocks, setBoxStocks] = useState({ Box4: 0, Box6: 0 });
+  const [boxLoading, setBoxLoading] = useState(true);
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -157,30 +161,31 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
-  const [localStock, setLocalStock] = useState<number | null>(currentStock);
   // ─── ACTIVE STOCK MONITORING ───
   useEffect(() => {
-    const pollStock = async () => {
+    const pollBoxStock = async () => {
       try {
-        const { data } = await supabase
-          .from('inventory')
-          .select('stock_count')
-          .eq('item_name', 'Chewy Cookie')
-          .single();
+        const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+        const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+        
+        const stocks = {
+          Box4: b4?.stock_count ?? 0,
+          Box6: b6?.stock_count ?? 0
+        };
+        setBoxStocks(stocks);
+        setBoxLoading(false);
 
-        if (data) {
-          setLocalStock(data.stock_count);
-          if (data.stock_count === 0 && !submitted) {
-            alert("🚨 UPDATE: We just sold out while you were here! \n\nRedirecting you back to the home page...");
-            onBack();
-          }
+        if (stocks.Box4 === 0 && stocks.Box6 === 0 && !submitted) {
+          alert("🚨 UPDATE: Everything just sold out while you were here! \n\nRedirecting you back to the home page...");
+          onBack();
         }
       } catch (e) {
         console.error("Poll error:", e);
       }
     };
 
-    const interval = setInterval(pollStock, 15000); // Poll every 15s
+    pollBoxStock();
+    const interval = setInterval(pollBoxStock, 15000); 
     return () => clearInterval(interval);
   }, [onBack, submitted]);
 
@@ -202,27 +207,16 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       if (expiredHolds && expiredHolds.length > 0) {
         console.log(`Cleaning up ${expiredHolds.length} expired holding orders.`);
         for (const hold of expiredHolds) {
-          let cookiesToReturn = 0;
           const typeVal = hold.quantity_type || '';
-          if (typeVal.includes('Box4:')) {
-            const parts = typeVal.split(', ');
-            const b4 = parseInt(parts[0].split(': ')[1]) || 0;
-            const b6 = parseInt(parts[1].split(': ')[1]) || 0;
-            const b12 = parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
-            cookiesToReturn = (b4 * 4) + (b6 * 6) + (b12 * 12);
-          }
-          if (cookiesToReturn > 0) {
-            await supabase.rpc('increment_stock', { p_amount: cookiesToReturn });
-          }
+          const parts = typeVal.split(', ');
+          const b4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+          const b6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+
+          if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4 });
+          if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6 });
+          
           await supabase.from('orders').delete().eq('id', hold.id);
         }
-        // Re-fetch stock after cleanup
-        const { data: newStockData } = await supabase
-          .from('inventory')
-          .select('stock_count')
-          .eq('item_name', 'Chewy Cookie')
-          .single();
-        if (newStockData) setLocalStock(newStockData.stock_count);
       }
     };
 
@@ -278,18 +272,11 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
     setIsSubmitting(true);
 
     try {
-      const totalPiecesOrdered = (quantities.Box4 * 4) + (quantities.Box6 * 6);
-
       // Verify stock before inserting order
-      const { data: stockCheckData } = await supabase
-        .from('inventory')
-        .select('stock_count')
-        .eq('item_name', 'Chewy Cookie')
-        .single();
+      const { data: b4Check } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+      const { data: b6Check } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
 
-      if (stockCheckData && stockCheckData.stock_count < totalPiecesOrdered) {
-        // INSTEAD OF BLOCKING, WE MARK AS REFUND NEEDED
-        // This ensures the customer doesn't lose their data and we know they paid.
+      if ((b4Check && b4Check.stock_count < quantities.Box4) || (b6Check && b6Check.stock_count < quantities.Box6)) {
         const confirmRefund = window.confirm(
           "🚨 URGENT: Someone else just grabbed the last few slots milliseconds ago! \n\n" +
           "Your order will be saved as 'Refund Needed'. \n\n" +
@@ -347,7 +334,8 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
       if (orderError) throw orderError;
 
       // 4. Perma-deduct from stock count
-      await supabase.rpc('decrement_stock', { p_amount: totalPiecesOrdered });
+      if (quantities.Box4 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
+      if (quantities.Box6 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
 
     } catch (e: any) {
       console.error('Submission Exception:', e);
@@ -466,7 +454,7 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
               <div className="form-submit-row" style={{ width: '100%' }}>
                 <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Back to Form</button>
                 <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting} onClick={handleConfirmOrder}>
-                  {isSubmitting ? 'Confirming...' : (localStock === 0 ? 'Confirm for Refund' : 'Confirm Order')}
+                  {isSubmitting ? 'Confirming...' : ((boxStocks.Box4 === 0 && boxStocks.Box6 === 0) ? 'Confirm for Refund' : 'Confirm Order')}
                 </button>
               </div>
             </div>
@@ -478,39 +466,45 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
   const handleQuantityChange = (boxType: 'Box4' | 'Box6', change: number) => {
     setQuantities(prev => {
-      const newQty = Math.max(0, prev[boxType] + change);
-      let max = 0;
-      if (boxType === 'Box4') max = 2;
-      if (boxType === 'Box6') max = 2;
+      const currentQty = prev[boxType];
+      const newQty = Math.max(0, currentQty + change);
+      
+      const available = boxStocks[boxType];
+      if (change > 0 && newQty > available) {
+        alert(`Sorry, only ${available} ${boxType === 'Box4' ? 'Box of 4' : 'Box of 6'} left!`);
+        return prev;
+      }
+
+      let max = 2; // User limit
       return { ...prev, [boxType]: Math.min(max, newQty) };
     });
   };
 
   const handleProceedToPayment = async () => {
-    const pieces = (quantities.Box4 * 4) + (quantities.Box6 * 6);
-
     try {
       // 1. Check current physical and reserved stock
-      const { data: inventory } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Chewy Cookie').single();
+      const { data: b4Inv } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+      const { data: b6Inv } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+
       const { data: activeHolds } = await supabase.from('orders')
         .select('quantity_type')
         .eq('status', 'Holding')
         .gt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
 
-      let reservedPieces = 0;
+      let res4 = 0, res6 = 0;
       activeHolds?.forEach(h => {
         const parts = h.quantity_type.split(', ');
-        parts.forEach((p: string) => {
-          const [type, count] = p.split(': ');
-          const mult = type === 'Box4' ? 4 : type === 'Box6' ? 6 : 12;
-          reservedPieces += (parseInt(count) || 0) * mult;
-        });
+        const b4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+        const b6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+        res4 += b4;
+        res6 += b6;
       });
 
-      const available = (inventory?.stock_count || 0) - reservedPieces;
+      const avail4 = (b4Inv?.stock_count || 0) - res4;
+      const avail6 = (b6Inv?.stock_count || 0) - res6;
 
-      if (available < pieces) {
-        alert(`So sorry! Others are currently paying for the last ${available} cookies. Your selection (${pieces}) exceeds available stock.`);
+      if (avail4 < quantities.Box4 || avail6 < quantities.Box6) {
+        alert("So sorry! Others are currently paying for the last few boxes. Please adjust your selection.");
         return;
       }
 
@@ -544,7 +538,6 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
 
       setHoldingOrderId(holdOrder.id);
       setIsCheckingStock(false);
-      setLocalStock(available - pieces);
       setSubmitted(true);
       setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
     } catch (err) {
@@ -636,7 +629,12 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             <div className="qty-row-item">
               <div className="qty-info">
                 <span className="qty-label">Box of 4</span>
-                <span className="qty-sub">Max 2 boxes</span>
+                <span className="qty-sub">
+                  Max 2 boxes • 
+                  <span style={{ color: boxStocks.Box4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '5px' }}>
+                    {boxLoading ? 'Checking...' : `${boxStocks.Box4} left`}
+                  </span>
+                </span>
               </div>
               <div className="qty-stepper">
                 <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box4', -1)}>−</button>
@@ -648,7 +646,12 @@ function OrderPage({ onBack, currentStock }: { onBack: () => void, currentStock:
             <div className="qty-row-item" style={{ marginTop: '10px' }}>
               <div className="qty-info">
                 <span className="qty-label">Box of 6</span>
-                <span className="qty-sub">Max 2 boxes</span>
+                <span className="qty-sub">
+                  Max 2 boxes • 
+                  <span style={{ color: boxStocks.Box6 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '5px' }}>
+                    {boxLoading ? 'Checking...' : `${boxStocks.Box6} left`}
+                  </span>
+                </span>
               </div>
               <div className="qty-stepper">
                 <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box6', -1)}>−</button>
@@ -734,7 +737,8 @@ function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => vo
 function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: () => void }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stock, setStock] = useState<number>(0);
+  const [b4Stock, setB4Stock] = useState<number>(0);
+  const [b6Stock, setB6Stock] = useState<number>(0);
   const [updatingStock, setUpdatingStock] = useState(false);
   const [showToCollect, setShowToCollect] = useState(false);
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
@@ -771,21 +775,22 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
   };
 
   const fetchStock = async () => {
-    const { data } = await supabase
-      .from('inventory')
-      .select('stock_count')
-      .eq('item_name', 'Chewy Cookie')
-      .single();
-    if (data) setStock(data.stock_count);
+    const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+    const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+    if (b4) setB4Stock(b4.stock_count);
+    if (b6) setB6Stock(b6.stock_count);
   };
 
-  const updateStock = async (newStock: number) => {
+  const updateStock = async (boxType: 'Box of 4' | 'Box of 6', newStock: number) => {
     setUpdatingStock(true);
     const { error } = await supabase
       .from('inventory')
       .update({ stock_count: newStock })
-      .eq('item_name', 'Chewy Cookie');
-    if (!error) setStock(newStock);
+      .eq('item_name', boxType);
+    if (!error) {
+      if (boxType === 'Box of 4') setB4Stock(newStock);
+      else setB6Stock(newStock);
+    }
     setUpdatingStock(false);
   };
 
@@ -814,31 +819,19 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
 
     try {
       // 1. Calculate cookies to return
-      let cookiesToReturn = 0;
       const typeVal = orderToDelete.quantity_type || '';
-      if (typeVal.includes('Box4:')) {
-        const parts = typeVal.split(', ');
-        const b4 = parseInt(parts[0].split(': ')[1]) || 0;
-        const b6 = parseInt(parts[1].split(': ')[1]) || 0;
-        const b12 = parts[2] ? parseInt(parts[2].split(': ')[1]) : 0;
-        cookiesToReturn = (b4 * 4) + (b6 * 6) + (b12 * 12);
-      } else {
-        const multiplier = orderToDelete.quantity_type === 'box-of-4' ? 4 : 6;
-        cookiesToReturn = multiplier * (orderToDelete.quantity || 1);
-      }
-
       // 2. Return to inventory
-      const { data: stockData } = await supabase
-        .from('inventory')
-        .select('stock_count')
-        .eq('item_name', 'Chewy Cookie')
-        .single();
+      const partsArr = typeVal.split(', ');
+      const b4Return = parseInt(partsArr[0]?.split(': ')[1]) || 0;
+      const b6Return = parseInt(partsArr[1]?.split(': ')[1]) || 0;
 
-      if (stockData) {
-        await supabase
-          .from('inventory')
-          .update({ stock_count: stockData.stock_count + cookiesToReturn })
-          .eq('item_name', 'Chewy Cookie');
+      if (b4Return > 0) {
+        const { data: b4Data } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+        if (b4Data) await supabase.from('inventory').update({ stock_count: b4Data.stock_count + b4Return }).eq('item_name', 'Box of 4');
+      }
+      if (b6Return > 0) {
+        const { data: b6Data } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+        if (b6Data) await supabase.from('inventory').update({ stock_count: b6Data.stock_count + b6Return }).eq('item_name', 'Box of 6');
       }
 
       // 3. Delete order
@@ -862,7 +855,7 @@ function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: ()
       fetchStock();
 
       setOrderToDelete(null);
-      alert(`Order deleted and ${cookiesToReturn} cookies returned to stock.`);
+      alert(`Order deleted and stock returned to inventory.`);
     } catch (err: any) {
       console.error('Delete error:', err);
       alert('Error deleting order: ' + err.message);
@@ -1509,11 +1502,19 @@ Thank you for supporting Baked By BCD.`;
                       </span>
                     </div>
                     <div className="prod-item">
-                      <span className="prod-label">Current Physical Stock</span>
+                      <span className="prod-label" style={{ fontSize: '0.7rem' }}>Box 4 Stock</span>
                       <div className="admin-stock-control" style={{ margin: 0, padding: 0, background: 'transparent' }}>
-                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock(stock - 1)} disabled={updatingStock}>−</button>
-                        <span className="qty-val" style={{ fontSize: '1.1rem', margin: '0 8px' }}>{stock}</span>
-                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock(stock + 1)} disabled={updatingStock}>+</button>
+                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock('Box of 4', b4Stock - 1)} disabled={updatingStock}>−</button>
+                        <span className="qty-val" style={{ fontSize: '1rem', margin: '0 4px' }}>{b4Stock}</span>
+                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock('Box of 4', b4Stock + 1)} disabled={updatingStock}>+</button>
+                      </div>
+                    </div>
+                    <div className="prod-item">
+                      <span className="prod-label" style={{ fontSize: '0.7rem' }}>Box 6 Stock</span>
+                      <div className="admin-stock-control" style={{ margin: 0, padding: 0, background: 'transparent' }}>
+                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock('Box of 6', b6Stock - 1)} disabled={updatingStock}>−</button>
+                        <span className="qty-val" style={{ fontSize: '1rem', margin: '0 4px' }}>{b6Stock}</span>
+                        <button className="qty-btn" style={{ padding: '2px 8px' }} onClick={() => updateStock('Box of 6', b6Stock + 1)} disabled={updatingStock}>+</button>
                       </div>
                     </div>
                     <div className="prod-item">
@@ -3143,19 +3144,17 @@ export default function App() {
   const [page, setPage] = useState<Page>('home');
   const [isLocked] = useState<boolean>(MANUAL_LOCK || new Date() < TARGET_DATE);
   const [bypassLocked, setBypassLocked] = useState(false);
-  const [stock, setStock] = useState<number | null>(null);
+  const [b4Stock, setB4Stock] = useState<number | null>(null);
+  const [b6Stock, setB6Stock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
 
   const fetchStock = async () => {
     try {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('stock_count')
-        .eq('item_name', 'Chewy Cookie')
-        .single();
-      if (!error && data) setStock(data.stock_count);
-      else if (error) console.error("Stock error:", error);
+      const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
+      const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+      if (b4) setB4Stock(b4.stock_count);
+      if (b6) setB6Stock(b6.stock_count);
     } finally {
       setStockLoading(false);
     }
@@ -3225,13 +3224,14 @@ export default function App() {
         <>
           {page === 'home' && (
             <HomePage
-              stock={stock}
-              stockLoading={stockLoading}
+              b4={b4Stock}
+              b6={b6Stock}
+              loading={stockLoading}
               onOrderClick={() => setPage('order')}
               onAdminClick={() => setPage('admin-login')}
             />
           )}
-          {page === 'order' && <OrderPage currentStock={stock} onBack={() => setPage('home')} />}
+          {page === 'order' && <OrderPage onBack={() => setPage('home')} />}
           {page === 'history' && <HistoryPage onBack={() => setPage('home')} />}
           {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
           {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}

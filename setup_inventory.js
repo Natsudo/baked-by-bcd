@@ -1,41 +1,40 @@
 
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '.env.local') });
+const supabaseUrl = 'YOUR_URL'; // I should get these from .env.local or process.env
+const supabaseKey = 'YOUR_KEY';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+// Actually, I can just read .env.local myself
+import fs from 'fs';
+const env = fs.readFileSync('.env.local', 'utf8');
+const urlMatch = env.match(/VITE_SUPABASE_URL=(.*)/);
+const keyMatch = env.match(/VITE_SUPABASE_ANON_KEY=(.*)/);
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error('Supabase URL or Key missing in .env.local');
-    process.exit(1);
-}
+const url = urlMatch ? urlMatch[1].trim() : '';
+const key = keyMatch ? keyMatch[1].trim() : '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(url, key);
 
 async function setupInventory() {
-    console.log('Setting up inventory...');
-    
-    const items = [
-        { item_name: 'Box of 4', stock_count: 80 },
-        { item_name: 'Box of 6', stock_count: 15 }
-    ];
+  console.log("Setting up inventory...");
+  
+  // Upsert 'Box of 4'
+  const { error: err4 } = await supabase
+    .from('inventory')
+    .upsert({ item_name: 'Box of 4', stock_count: 80 }, { onConflict: 'item_name' });
+  
+  if (err4) console.error("Error upserting Box of 4:", err4);
+  else console.log("Upserted Box of 4: 80");
 
-    for (const item of items) {
-        const { data, error } = await supabase
-            .from('inventory')
-            .upsert(item, { onConflict: 'item_name' });
+  // Upsert 'Box of 6'
+  const { error: err6 } = await supabase
+    .from('inventory')
+    .upsert({ item_name: 'Box of 6', stock_count: 15 }, { onConflict: 'item_name' });
 
-        if (error) {
-            console.error(`Error updating ${item.item_name}:`, error);
-        } else {
-            console.log(`Successfully set ${item.item_name} to ${item.stock_count}`);
-        }
-    }
+  if (err6) console.error("Error upserting Box of 6:", err6);
+  else console.log("Upserted Box of 6: 15");
+  
+  // Also keep 'Chewy Cookie' if needed for legacy, or just leave it.
 }
 
 setupInventory();
