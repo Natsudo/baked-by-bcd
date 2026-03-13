@@ -323,8 +323,18 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       const avail4 = (b4Inv?.stock_count || 0) - res4;
       const avail6 = (b6Inv?.stock_count || 0) - res6;
 
-      if (avail4 < quantities.Box4 || avail6 < quantities.Box6) {
-        alert("So sorry! Others are currently paying for the last few boxes. Please adjust your selection.");
+      const needs4 = quantities.Box4;
+      const needs6 = quantities.Box6;
+
+      if (avail4 < needs4 || avail6 < needs6) {
+        setIsCheckingStock(false);
+        if (avail4 <= 0 && avail6 <= 0) {
+          alert("🚨 SOLD OUT! \n\nSo sorry, but all remaining boxes were just reserved by other customers. Please stay tuned for the next batch!");
+          onBack();
+        } else {
+          alert(`🚨 NOT ENOUGH STOCK! \n\nOnly ${Math.max(0, avail4)} Box of 4 and ${Math.max(0, avail6)} Box of 6 are currently available. \n\nPlease adjust your order quantity.`);
+          setSubmitted(false); // Send back to step 2 selection
+        }
         return;
       }
 
