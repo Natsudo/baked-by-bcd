@@ -15,10 +15,9 @@ const FAQS = [
   { q: "Can I order for today or tomorrow?", a: "We only accept PREORDERS. Same day or next day orders are not available. Delivery dates for each batch are announced in our posts along with a notice or teaser before opening." },
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
-  { q: "Who is your courier? How much is the delivery fee and who shoulders it?", a: "Delivery fees for non meetup orders vary depending on your location. We use Maxim as our courier, pickup basis is either Lasalle or Rolling Hills. Maxim orders will be booked by us, and the delivery fee will be shouldered by the buyer." },
-  { q: "What are your payment methods?", a: "We accept cash and GCash. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City.\n• Via Maxim: Rolling Hills (Estefania) or La Salle area\n• Meetups: La Salle area only" },
-  { q: "What time are meetup orders?", a: "Available meetup time slots will be indicated in the preorder form. Kindly choose the time most convenient for you. Please be punctual when meeting up, as we are students and are only available at the selected time." },
+  { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is MEETUPS ONLY @ Ayala Fiesta Mall Bacolod." },
+  { q: "What time are meetup orders?", a: "Meetups are @ Ayala Fiesta Mall Bacolod from 12:00 PM – 2:00 PM. Please be punctual as we are students and are only available at the selected time." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
@@ -105,7 +104,7 @@ function HomePage({ onOrderClick, onAdminClick, b4, b6, loading }: { onOrderClic
 
           <p className="location-note">
             <strong>Batch 5 — Delivery Date: March 14 (Sat)</strong><br />
-            We only cater @ Bacolod City for now.<br />
+            📍 MEETUPS ONLY @ Ayala Fiesta Mall Bacolod<br />
             Thank you for your support!
           </p>
         </div>
@@ -738,8 +737,11 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
-            <div className="op-product-sub">Batch 4 — Delivery Date: March 4, 2026 (Wednesday)</div>
-            <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '4px 10px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
+            <div className="op-product-sub">Batch 5 — Delivery Date: March 14, 2026 (Saturday)</div>
+            <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
+              MEETUPS ONLY @ Ayala Fiesta Mall Bacolod
+            </div>
+            <div className="op-product-price-list" style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 900, background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #a7f3d0' }}>
               ₱350 for Box of 4 • ₱525 for Box of 6
             </div>
             <div className="op-product-limit-note">
