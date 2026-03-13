@@ -911,7 +911,7 @@ function AdminLogin({ onLogin, onBack }: { onLogin: () => void; onBack: () => vo
 /* ═══════════════════════════════════════
    ADMIN DASHBOARD
  ═══════════════════════════════════════ */
-function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: () => void }) {
+function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock }: { onLogout: () => void; onBack: () => void; isLocked: boolean; onToggleLock: () => void }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [b4Stock, setB4Stock] = useState<number>(0);
@@ -1518,6 +1518,34 @@ Thank you for supporting Baked By BCD.`;
           </div>
         </div>
       </nav>
+
+      {/* QUICK ACTIONS BAR */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '10px 20px', display: 'flex', gap: '15px', alignItems: 'center', position: 'sticky', top: '70px', zIndex: 90 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: isLocked ? '#fef2f2' : '#f0fdf4', padding: '8px 15px', borderRadius: '12px', border: `1px solid ${isLocked ? '#fee2e2' : '#dcfce7'}` }}>
+          <span style={{ fontSize: '1.2rem' }}>{isLocked ? '🔒' : '🔓'}</span>
+          <div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: isLocked ? '#991b1b' : '#166534', textTransform: 'uppercase' }}>Website Status</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 900, color: isLocked ? '#dc2626' : '#10b981' }}>{isLocked ? 'LOCKED (MAINTENANCE)' : 'LIVE (OPEN FOR ORDERS)'}</div>
+          </div>
+          <button 
+            onClick={onToggleLock}
+            style={{ 
+              marginLeft: '15px',
+              padding: '6px 12px', 
+              borderRadius: '8px', 
+              border: 'none', 
+              background: isLocked ? '#ef4444' : '#10b981', 
+              color: '#fff', 
+              fontSize: '0.75rem', 
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {isLocked ? 'UNLOCK NOW' : 'LOCK WEBSITE'}
+          </button>
+        </div>
+      </div>
 
       <div className="admin-content">
         {(() => {
@@ -3024,7 +3052,7 @@ function MaintenancePage({ onUnlock }: { onUnlock: (pass: string) => void }) {
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups (La Salle Area) & Maxim Delivery</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>MEETUPS ONLY @ Ayala Fiesta Mall Bacolod</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only (No DM orders)</span></li>
             <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment via GCash</span></li>
           </ul>
@@ -3349,7 +3377,7 @@ function HistoryPage({ onBack }: { onBack: () => void }) {
 ═══════════════════════════════════════ */
 export default function App() {
   const [page, setPage] = useState<Page>('home');
-  const [isLocked] = useState<boolean>(MANUAL_LOCK || new Date() < TARGET_DATE);
+  const [isLocked, setIsLocked] = useState<boolean>(MANUAL_LOCK || new Date() < TARGET_DATE);
   const [bypassLocked, setBypassLocked] = useState(false);
   const [b4Stock, setB4Stock] = useState<number | null>(null);
   const [b6Stock, setB6Stock] = useState<number | null>(null);
@@ -3362,8 +3390,28 @@ export default function App() {
       const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
       if (b4) setB4Stock(b4.stock_count);
       if (b6) setB6Stock(b6.stock_count);
+
+      // Also Fetch Site Lock Status
+      const { data: lock } = await supabase.from('inventory').select('stock_count').eq('item_name', 'SITE_LOCK').single();
+      if (lock) {
+        setIsLocked(lock.stock_count === 1);
+      }
     } finally {
       setStockLoading(false);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    const newStatus = !isLocked;
+    const { error } = await supabase
+      .from('inventory')
+      .upsert({ item_name: 'SITE_LOCK', stock_count: newStatus ? 1 : 0 }, { onConflict: 'item_name' });
+    
+    if (!error) {
+      setIsLocked(newStatus);
+      alert(`Website is now ${newStatus ? 'LOCKED' : 'LIVE'}!`);
+    } else {
+      alert("Error updating site status: " + error.message);
     }
   };
 
@@ -3441,7 +3489,14 @@ export default function App() {
           {page === 'order' && <OrderPage onBack={() => setPage('home')} />}
           {page === 'history' && <HistoryPage onBack={() => setPage('home')} />}
           {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
-          {page === 'admin-dashboard' && <AdminDashboard onLogout={() => setPage('admin-login')} onBack={() => setPage('home')} />}
+          {page === 'admin-dashboard' && (
+            <AdminDashboard 
+              onLogout={() => setPage('admin-login')} 
+              onBack={() => setPage('home')} 
+              isLocked={isLocked}
+              onToggleLock={handleToggleLock}
+            />
+          )}
         </>
       )}
     </>
