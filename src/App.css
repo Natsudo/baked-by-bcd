@@ -1958,7 +1958,6 @@ input:checked+.slider:before {
   border-top: 1px solid #e2e8f0;
 }
 
-/* Mobile Fixes */
 @media (max-width: 600px) {
   .admin-content {
     padding: 10px 8px;
@@ -2060,9 +2059,104 @@ input:checked+.slider:before {
     padding: 10px !important;
   }
 
+  /* Mobile Fixes */
   .delivery-section-box {
     padding: 12px !important;
   }
+
+  /* Recent Orders Mobile Card View */
+  .admin-mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 15px;
+  }
+
+  .admin-order-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .order-card-status-strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+  }
+
+  .order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .order-card-date {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .order-card-customer {
+    margin-bottom: 12px;
+  }
+
+  .order-card-details {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .order-card-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+
+  .order-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .admin-action-mini {
+    flex: 1;
+    min-width: 40px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  /* Utility */
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 601px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+.row-refund {
+  background-color: #fff1f2 !important;
+}
+.row-refund:hover {
+  background-color: #ffe4e6 !important;
 }
 
 .delivery-section-box {

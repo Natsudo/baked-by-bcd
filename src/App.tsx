@@ -2877,7 +2877,155 @@ Thank you for supporting Baked By BCD.`;
             </div>
           </div>
 
-          <div className="admin-table-scroll" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          {/* Mobile Order Cards (Hidden on Desktop) */}
+          <div className="admin-mobile-cards mobile-only">
+            {filteredOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>No matching orders found.</div>
+            ) : (
+              filteredOrders.map(order => (
+                <div key={order.id} className={`admin-order-card ${order.status === 'Refund Needed' ? 'row-refund' : ''}`}>
+                  <div className="order-card-header">
+                    <div className="order-card-date">
+                      <span style={{ fontWeight: 800, color: '#1e3a8a' }}>{new Date(order.created_at).toLocaleDateString()}</span>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <select
+                      className="status-select-table"
+                      value={order.status || 'Pending'}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value;
+                        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                        await supabase.from('orders').update({ status: newStatus }).eq('id', order.id);
+                      }}
+                      style={{ 
+                        padding: '4px 8px',
+                        background: order.status === 'Delivered' ? '#dcfce7' : order.status === 'Baking' ? '#fef3c7' : '#fff'
+                      }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Baking">Baking</option>
+                      <option value="Ready">Ready</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Refund Needed">Refund Needed</option>
+                      <option value="Refunded">Refunded ✅</option>
+                    </select>
+                  </div>
+
+                  <div className="order-card-customer">
+                    <div style={{ fontWeight: 900, fontSize: '1.1rem', color: '#1e3a8a' }}>{order.full_name}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '2px', fontWeight: 600 }}>
+                      IG: @{order.instagram || 'none'} • {order.contact_number}
+                    </div>
+                  </div>
+
+                  <div className="order-card-details">
+                    {(() => {
+                      const typeVal = order.quantity_type || '';
+                      let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
+                      if (typeVal.includes('Box3:')) {
+                        const parts = typeVal.split(', ');
+                        b3 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                        b4 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                        b6 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                        b12 = parseInt(parts[3]?.split(': ')[1]) || 0;
+                      } else if (typeVal.includes('Box4:')) {
+                        const parts = typeVal.split(', ');
+                        b4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                        b6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                        b12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                      }
+                      const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12);
+                      return (
+                        <div style={{ fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+                            {b3 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B3 x {b3}</span>}
+                            {b4 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B4 x {b4}</span>}
+                            {b6 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B6 x {b6}</span>}
+                            {b12 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B12 x {b12}</span>}
+                          </div>
+                          <div style={{ color: '#6366f1', fontWeight: 900, fontSize: '0.8rem' }}>↳ {total} cookies total</div>
+                        </div>
+                      );
+                    })()}
+                    {order.special_instructions && (
+                      <div 
+                        onClick={() => setSelectedNote(order.special_instructions)}
+                        style={{ marginTop: '8px', padding: '8px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7', fontSize: '0.75rem', color: '#92400e', cursor: 'pointer' }}
+                      >
+                        📝 <strong>Note:</strong> {order.special_instructions.substring(0, 50)}{order.special_instructions.length > 50 ? '...' : ''}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="order-card-info-grid">
+                    <div>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Delivery</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#334155' }}>
+                        {order.delivery_mode === 'meetup' ? '🤝 Meetup' : '🚚 Maxim'}
+                        <div style={{ color: '#64748b', fontWeight: 600 }}>{order.meetup_time}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 900, color: order.is_paid ? '#10b981' : '#ef4444' }}>
+                        {order.is_paid ? 'PAID FULL' : `BAL: ₱${(order.total_price - order.downpayment_price).toLocaleString()}`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="order-card-actions">
+                    <button
+                      className="admin-action-mini"
+                      onClick={() => {
+                        const typeVal = order.quantity_type || '';
+                        let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0;
+                        if (typeVal.includes('Box3:')) {
+                           const parts = typeVal.split(', ');
+                           _box3 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                           _box4 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                           _box6 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                           _box12 = parseInt(parts[3]?.split(': ')[1]) || 0;
+                        } else if (typeVal.includes('Box4:')) {
+                           const parts = typeVal.split(', ');
+                           _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
+                           _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
+                           _box12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                        }
+                        setEditingOrder({ ...order, _box3, _box4, _box6, _box12 });
+                      }}
+                    >✏️</button>
+                    <button className="admin-action-mini" onClick={() => handleConfirmAndDM(order)}>💬</button>
+                    {order.delivery_mode === 'maxim' && (
+                       <button className="admin-action-mini" onClick={() => handleCopyMaximInfo(order)}>🚚</button>
+                    )}
+                    {order.gcash_screenshot_path && (
+                       <a href={getMediaUrl(order.gcash_screenshot_path) || '#'} target="_blank" rel="noreferrer" className="admin-action-mini">📸</a>
+                    )}
+                    <button className="admin-action-mini del" onClick={() => setOrderToDelete(order)}>🗑️</button>
+                    
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                       <span style={{ fontSize: '0.65rem', fontWeight: 900, color: order.is_paid ? '#10b981' : '#94a3b8' }}>{order.is_paid ? 'PAID' : 'UNPAID'}</span>
+                       <label className="switch" style={{ transform: 'scale(0.85)' }}>
+                          <input
+                             type="checkbox"
+                             checked={!!order.is_paid}
+                             onChange={async () => {
+                                const newPaid = !order.is_paid;
+                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, is_paid: newPaid } : o));
+                                await supabase.from('orders').update({ is_paid: newPaid }).eq('id', order.id);
+                             }}
+                          />
+                          <span className="slider round"></span>
+                       </label>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (Hidden on Mobile) */}
+          <div className="admin-table-scroll desktop-only" style={{ borderRadius: '12px', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
             <table className="admin-table">
               <thead>
                 <tr>
