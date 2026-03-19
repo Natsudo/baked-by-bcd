@@ -16,8 +16,8 @@ const FAQS = [
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 LaSalle meetups only at Gate 6 Canteen." },
-  { q: "What time are meetup orders?", a: "Meetups are @ LaSalle Gate 6 Canteen from 2:00 PM – 3:00 PM. Please be punctual as we are students and are only available at the selected time." },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only – Ayala Fiesta Market." },
+  { q: "What time are meetup orders?", a: "Meetups are @ Ayala Fiesta Market from 12:00 PM – 2:00 PM. Please be punctual as we are only available at the selected time." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
@@ -103,11 +103,11 @@ function HomePage({ onOrderClick, onAdminClick, b3, b4, b6, loading }: { onOrder
 
 
           <div className="location-note" style={{ fontSize: '0.9rem', lineHeight: '1.6', marginTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <span>LaSalle meetups only at Gate 6 Canteen</span></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes only (first come, first served)</span></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only on a FULL PAYMENT basis</span></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Payment via GCash or bank transfer</span></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>✔️</span> <span>Orders are confirmed once payment is received</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <span>Meetups only – Ayala Fiesta Market</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes available</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Full payment basis</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</span></div>
           </div>
         </div>
       </div>
@@ -463,9 +463,9 @@ function OrderPage({ onBack }: { onBack: () => void }) {
                 <div className="invoice-divider" />
                 <div style={{ padding: '10px 0' }}>
                   <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 Meet-up Location:</p>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>LaSalle Gate 6 Canteen | Meetup Date: March 17, Tuesday</p>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>Ayala Fiesta Market | Pickup window: March 21, Saturday</p>
                   <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>🕒 Meet-up Time:</p>
-                  <p style={{ margin: '0', fontSize: '1rem', color: '#475569' }}>2:00 PM – 3:00 PM</p>
+                  <p style={{ margin: '0', fontSize: '1rem', color: '#475569' }}>12:00 PM – 2:00 PM</p>
                 </div>
               </div>
             </div>
@@ -718,9 +718,9 @@ function OrderPage({ onBack }: { onBack: () => void }) {
           <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
-            <div className="op-product-sub">Batch 6 — Delivery Date: Tuesday 2:00 PM to 3:00 PM</div>
+            <div className="op-product-sub">Batch 7 — Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</div>
             <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
-              📍 LaSalle meetups only at Gate 6 Canteen | Meetup Date: March 17, Tuesday
+              📍 Meetups only – Ayala Fiesta Market | Pickup window: March 21, Saturday 12:00 PM – 2:00 PM
             </div>
             <div className="op-product-price-list" style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 900, background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #a7f3d0' }}>
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
@@ -926,7 +926,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<number>(6); // Default to current batch
+  const [selectedBatch, setSelectedBatch] = useState<number>(7); // Default to current batch
 
   // Release Schedule State
   const [newTargetDate, setNewTargetDate] = useState(targetDate.toISOString().slice(0, 16));
@@ -950,15 +950,20 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   }, [targetDate]);
 
   // --- CALCULATIONS (Batching & Stats) ---
-  const { activeOrders, holdingOrders, activeStats, s4, s5, s6, recentNotes } = useMemo(() => {
+  const { activeOrders, holdingOrders, activeStats, s4, s5, s6, s7, recentNotes } = useMemo(() => {
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
+    const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
     const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff5);
     const batch5Orders = orders.filter(o => {
       const t = new Date(o.created_at).getTime();
       return t >= cutoff5 && t < cutoff6;
     });
-    const batch6Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff6);
+    const batch6Orders = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= cutoff6 && t < cutoff7;
+    });
+    const batch7Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff7);
 
     const getStats = (list: any[]) => {
       let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
@@ -980,8 +985,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const s4Comp = getStats(batch4Orders);
     const s5Comp = getStats(batch5Orders);
     const s6Comp = getStats(batch6Orders);
+    const s7Comp = getStats(batch7Orders);
 
-    const activeList = selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : (selectedBatch === 4 ? batch4Orders : orders));
+    const activeList = selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders));
     const stats = getStats(activeList.filter(o => !(o.status === 'Delivered' && o.is_paid)));
     const holding = activeList.filter(o => o.status === 'Holding');
 
@@ -1003,6 +1009,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       s4: s4Comp,
       s5: s5Comp,
       s6: s6Comp,
+      s7: s7Comp,
       recentNotes: notes
     };
   }, [orders, selectedBatch]);
@@ -1561,12 +1568,14 @@ Thank you for supporting Baked By BCD.`;
     const matchesDelivery = filterDelivery === 'all' || o.delivery_mode === filterDelivery;
     const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
 
-    // --- Virtual Batching (Batch 4 vs Batch 5 vs Batch 6) ---
+    // --- Virtual Batching ---
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
+    const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
     const orderTime = new Date(o.created_at).getTime();
     let batchNumber = 4;
-    if (orderTime >= cutoff6) batchNumber = 6;
+    if (orderTime >= cutoff7) batchNumber = 7;
+    else if (orderTime >= cutoff6) batchNumber = 6;
     else if (orderTime >= cutoff5) batchNumber = 5;
     const matchesBatch = selectedBatch === 0 || selectedBatch === batchNumber;
 
@@ -1692,19 +1701,33 @@ Thank you for supporting Baked By BCD.`;
         <>
           <div className="admin-stats-row" style={{ marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
             <div
-              className={`admin-stat-card clickable ${selectedBatch === 6 ? 'active-batch-card' : ''}`}
-              onClick={() => setSelectedBatch(6)}
+              className={`admin-stat-card clickable ${selectedBatch === 7 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(7)}
               style={{
-                background: selectedBatch === 6 ? '#eff6ff' : '#fff',
-                border: selectedBatch === 6 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
-                transform: selectedBatch === 6 ? 'scale(1.02)' : 'none'
+                background: selectedBatch === 7 ? '#eff6ff' : '#fff',
+                border: selectedBatch === 7 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                transform: selectedBatch === 7 ? 'scale(1.02)' : 'none'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 6)</h3>
-                {selectedBatch === 6 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
+                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 7)</h3>
+                {selectedBatch === 7 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
               </div>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s6.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s7.revenue.toLocaleString()} • {s7.count} Orders</p>
+            </div>
+
+            <div
+              className={`admin-stat-card clickable ${selectedBatch === 6 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(6)}
+              style={{
+                background: selectedBatch === 6 ? '#f0fdf4' : '#fff',
+                border: selectedBatch === 6 ? '3px solid #10b981' : '1px solid #e2e8f0',
+                transform: selectedBatch === 6 ? 'scale(1.02)' : 'none'
+              }}
+            >
+              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 6)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s6.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s6.revenue.toLocaleString()} • {s6.count} Orders</p>
             </div>
 
@@ -1712,13 +1735,13 @@ Thank you for supporting Baked By BCD.`;
               className={`admin-stat-card clickable ${selectedBatch === 5 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(5)}
               style={{
-                background: selectedBatch === 5 ? '#f0fdf4' : '#f8fafc',
-                border: selectedBatch === 5 ? '3px solid #10b981' : '1px solid #e2e8f0',
+                background: selectedBatch === 5 ? '#f8fafc' : '#fff',
+                border: selectedBatch === 5 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
                 transform: selectedBatch === 5 ? 'scale(1.02)' : 'none'
               }}
             >
-              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 5)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s5.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <h3 style={{ color: '#4b5563' }}>📊 Previous (Batch 5)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#4b5563' }}>{s5.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s5.revenue.toLocaleString()} • {s5.count} Orders</p>
             </div>
 
@@ -1731,8 +1754,8 @@ Thank you for supporting Baked By BCD.`;
               }}
             >
               <h3 style={{ color: '#854d0e' }}>🏢 Master List (All)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies)}</div>
-              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count)}</p>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies + s7.cookies)}</div>
+              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count + s7.count)}</p>
             </div>
           </div>
 
@@ -3287,11 +3310,11 @@ function MaintenancePage({ onUnlock, targetDate }: { onUnlock: (pass: string) =>
         }}>
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>📍</span> <span>LaSalle meetups only at Gate 6 Canteen</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>📦</span> <span>Limited boxes only (first come, first served)</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>📝</span> <span>Orders via website only on a FULL PAYMENT basis</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>💳</span> <span>Payment via GCash or bank transfer</span></li>
-            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>✔️</span> <span>Orders are confirmed once payment is received</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
+            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</span></li>
           </ul>
           <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', color: '#93c5fd', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
             📍 Bacolod City orders only.
