@@ -26,16 +26,17 @@ async function setupBatch7() {
     console.log('Setting up Batch 7 inventory...');
 
     const items = [
-        { name: 'Box of 3', stock: 20 },
-        { name: 'Box of 4', stock: 10 },
-        { name: 'Box of 6', stock: 4 }
+        { name: 'Box of 3', stock: 40 },
+        { name: 'Box of 4', stock: 30 },
+        { name: 'Box of 6', stock: 10 }
     ];
 
     for (const item of items) {
         // Upsert item
         const { data, error } = await supabase
             .from('inventory')
-            .upsert({ item_name: item.name, stock_count: item.stock }, { onConflict: 'item_name' });
+            .update({ stock_count: item.stock })
+            .eq('item_name', item.name);
 
         if (error) {
             console.error(`Error updating ${item.name}:`, error);

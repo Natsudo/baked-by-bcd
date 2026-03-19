@@ -31,11 +31,12 @@ const FAQS = [
 /* ─── STOCK COUNTER COMPONENT ─── */
 function StockCounter({ b3, b4, b6, loading }: { b3: number | null, b4: number | null, b6: number | null, loading: boolean }) {
   const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0;
+  const totalPcs = (b3 ?? 0) * 3 + (b4 ?? 0) * 4 + (b6 ?? 0) * 6;
   return (
     <div className="stock-counter-banner sparkle-banner">
       <span className="stock-dot" style={{ background: isSoldOut ? '#ef4444' : '#10b981' }}></span>
       <span className="stock-text sparkle-text-sm">
-        {loading ? 'Checking slots...' : isSoldOut ? 'SOLD OUT! Stay tuned for the next batch.' : `Slots Available: ${b3 ?? 0} Box of 3 • ${b4 ?? 0} Box of 4 • ${b6 ?? 0} Box of 6`}
+        {loading ? 'Checking slots...' : isSoldOut ? 'SOLD OUT! Stay tuned for the next batch.' : `Slots Available: ${totalPcs} pieces available`}
       </span>
     </div>
   );
@@ -44,7 +45,7 @@ function StockCounter({ b3, b4, b6, loading }: { b3: number | null, b4: number |
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick, b3, b4, b6, loading }: { onOrderClick: () => void, onAdminClick: () => void, b3: number | null, b4: number | null, b6: number | null, loading: boolean }) {
+function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, loading }: { onOrderClick: () => void, onAdminClick: () => void, onViewHistory: () => void, b3: number | null, b4: number | null, b6: number | null, loading: boolean }) {
   const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0;
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
@@ -112,6 +113,18 @@ function HomePage({ onOrderClick, onAdminClick, b3, b4, b6, loading }: { onOrder
         </div>
       </div>
 
+      <div style={{ textAlign: 'center', marginBottom: '25px', padding: '15px', background: '#f8fafc', borderRadius: '15px', border: '1px dashed #cbd5e1' }}>
+        <p style={{ color: '#475569', fontSize: '0.9rem', margin: 0 }}>
+          Paid but didn't finish the form?{' '}
+          <button
+            onClick={() => onViewHistory()}
+            style={{ background: 'none', border: 'none', color: '#1e3a8a', cursor: 'pointer', fontWeight: 800, textDecoration: 'underline', padding: 0 }}
+          >
+            Recover your order here
+          </button>
+        </p>
+      </div>
+
       <div className="notepad-faq-container">
         <h2 className="faq-title">FAQs</h2>
         <div className="faq-list">
@@ -135,7 +148,7 @@ function HomePage({ onOrderClick, onAdminClick, b3, b4, b6, loading }: { onOrder
 /* ═══════════════════════════════════════
    ORDER PAGE
 ═══════════════════════════════════════ */
-function OrderPage({ onBack }: { onBack: () => void }) {
+function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrder?: any }) {
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -148,6 +161,29 @@ function OrderPage({ onBack }: { onBack: () => void }) {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+
+  useEffect(() => {
+    if (recoveryOrder) {
+      setFullName(recoveryOrder.full_name);
+      setContactNumber(recoveryOrder.contact_number);
+      setInstagram(recoveryOrder.instagram || '');
+      setHoldingOrderId(recoveryOrder.id);
+
+      const typeVal = recoveryOrder.quantity_type || '';
+      const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
+      const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
+      const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+
+      setQuantities({ Box3: b3, Box4: b4, Box6: b6 });
+      setSubmitted(true); // Skip to step 2 (Payment)
+      
+      // Calculate remaining time
+      const created = new Date(recoveryOrder.created_at).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - created) / 1000);
+      setTimeLeft(Math.max(0, 600 - elapsed));
+    }
+  }, [recoveryOrder]);
 
   // Phone Masking Logic
   const formatPhoneNumber = (val: string) => {
@@ -162,14 +198,30 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     setContactNumber(formatted);
   };
 
+  // ─── PERSISTENCE: Save to LocalStorage as user types ───
+  useEffect(() => {
+    if (fullName) localStorage.setItem('baked_draft_fullName', fullName);
+    if (contactNumber) localStorage.setItem('baked_draft_contactNumber', contactNumber);
+    if (instagram) localStorage.setItem('baked_draft_instagram', instagram);
+  }, [fullName, contactNumber, instagram]);
+
+  useEffect(() => {
+    if (holdingOrderId) {
+      localStorage.setItem('baked_draft_holdingOrderId', holdingOrderId);
+    } else {
+      localStorage.removeItem('baked_draft_holdingOrderId');
+    }
+  }, [holdingOrderId]);
+
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
   // ─── ACTIVE STOCK MONITORING ───
+  // ─── ACTIVE STOCK MONITORING (Real-time & Polling Backup) ───
   useEffect(() => {
-    const pollBoxStock = async () => {
+    const fetchBoxStock = async () => {
       try {
         const { data: b3 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 3').single();
         const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
@@ -192,9 +244,18 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       }
     };
 
-    pollBoxStock();
-    const interval = setInterval(pollBoxStock, 15000);
-    return () => clearInterval(interval);
+    fetchBoxStock();
+    const poller = setInterval(fetchBoxStock, 60000); // 1-min backstop
+
+    // Real-time Sub
+    const sub = supabase.channel('order-page-inventory')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'inventory' }, fetchBoxStock)
+      .subscribe();
+
+    return () => {
+      clearInterval(poller);
+      sub.unsubscribe();
+    };
   }, [onBack, submitted]);
 
   // Janitor effect for expired holding orders
@@ -234,6 +295,41 @@ function OrderPage({ onBack }: { onBack: () => void }) {
     const interval = setInterval(cleanupHoldingOrders, 30 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // ─── PRO-ACTIVE STOCK RELEASE ───
+  const releaseReservation = async () => {
+    if (!holdingOrderId) return;
+    try {
+      // Re-add stock
+      if (quantities.Box3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: quantities.Box3 });
+      if (quantities.Box4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
+      if (quantities.Box6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
+      
+      // Delete holding record
+      await supabase.from('orders').delete().eq('id', holdingOrderId);
+      setHoldingOrderId(null);
+      localStorage.removeItem('baked_draft_holdingOrderId');
+    } catch (e) {
+      console.error("Pro-active release failed:", e);
+    }
+  };
+
+  const handleExitOrder = async () => {
+    if (holdingOrderId && !isConfirmed) {
+      await releaseReservation();
+    }
+    onBack();
+  };
+
+  const handleEditOrder = async () => {
+    if (holdingOrderId) {
+      setIsCheckingStock(true);
+      await releaseReservation();
+      setIsCheckingStock(false);
+    }
+    setSubmitted(false);
+    setIsPaying(false);
+  };
 
 
 
@@ -284,8 +380,44 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       return;
     }
     setErrors({});
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Suggestion 2: Create Record/Reserve stock EARLY (on Review Order)
+    try {
+      setIsCheckingStock(true);
+      const { data: rpcData, error: rpcError } = await supabase.rpc('reserve_stock_and_create_order', {
+        p_full_name: fullName,
+        p_contact_number: contactNumber.replace(/\s/g, ''),
+        p_instagram: instagram,
+        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
+        p_total_price: totalPrice,
+        p_downpayment_price: downpaymentPrice,
+        p_needs3: quantities.Box3,
+        p_needs4: quantities.Box4,
+        p_needs6: quantities.Box6
+      });
+
+      if (rpcError) throw rpcError;
+
+      if (!rpcData.success) {
+        setIsCheckingStock(false);
+        if (rpcData.avail3 <= 0 && rpcData.avail4 <= 0 && rpcData.avail6 <= 0) {
+          alert("🚨 SOLD OUT! \n\nAll remaining boxes were just reserved. Please stay tuned for the next batch!");
+          onBack();
+        } else {
+          alert(`🚨 NOT ENOUGH STOCK! \n\nOnly ${Math.max(0, rpcData.avail3)} Box of 3, ${Math.max(0, rpcData.avail4)} Box of 4, and ${Math.max(0, rpcData.avail6)} Box of 6 are currently available.\n\nPlease adjust your order quantity.`);
+        }
+        return;
+      }
+
+      setHoldingOrderId(rpcData.order_id);
+      setIsCheckingStock(false);
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      console.error(err);
+      alert(`Could not reserve slot: ${err.message || 'Unknown error'}`);
+      setIsCheckingStock(false);
+    }
   };
 
   const handleQuantityChange = (boxType: 'Box3' | 'Box4' | 'Box6', change: number) => {
@@ -299,56 +431,13 @@ function OrderPage({ onBack }: { onBack: () => void }) {
         return prev;
       }
 
-      let max = 2; // User limit
-      return { ...prev, [boxType]: Math.min(max, newQty) };
+      return { ...prev, [boxType]: newQty };
     });
   };
 
   const handleProceedToPayment = async () => {
-    try {
-      setIsCheckingStock(true);
-
-      // 1. Call RPC for ATOMIC reservation (prevents race conditions)
-      // This function checks stock including current reservations and creates the 'Holding' order in one shot.
-      const { data: rpcData, error: rpcError } = await supabase.rpc('reserve_stock_and_create_order', {
-        p_full_name: fullName,
-        p_contact_number: contactNumber.replace(/\s/g, ''),
-        p_instagram: instagram,
-        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
-        p_total_price: totalPrice,
-        p_downpayment_price: downpaymentPrice,
-        p_needs3: quantities.Box3,
-        p_needs4: quantities.Box4,
-        p_needs6: quantities.Box6
-      });
-
-      if (rpcError) {
-        console.error('Reservation error:', rpcError);
-        alert(`Could not reserve slot: ${rpcError.message}`);
-        setIsCheckingStock(false);
-        return;
-      }
-
-      if (!rpcData.success) {
-        setIsCheckingStock(false);
-        if (rpcData.avail3 <= 0 && rpcData.avail4 <= 0 && rpcData.avail6 <= 0) {
-          alert("🚨 SOLD OUT! \n\nAll remaining boxes were just reserved. Please stay tuned for the next batch!");
-          onBack();
-        } else {
-          alert(`🚨 NOT ENOUGH STOCK! \n\nOnly ${Math.max(0, rpcData.avail3)} Box of 3, ${Math.max(0, rpcData.avail4)} Box of 4, and ${Math.max(0, rpcData.avail6)} Box of 6 are currently available.\n\nPlease adjust your order quantity.`);
-          setSubmitted(false);
-        }
-        return;
-      }
-
-      setHoldingOrderId(rpcData.order_id);
-      setIsCheckingStock(false);
-      setIsPaying(true);
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
-    } catch (err) {
-      console.error(err);
-      setIsCheckingStock(false);
-    }
+    setIsPaying(true);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
   };
 
   const handleConfirmOrder = async () => {
@@ -397,10 +486,6 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
       if (orderError) throw orderError;
 
-      // 4. Perma-deduct from stock count
-      if (quantities.Box3 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 3', p_amount: quantities.Box3 });
-      if (quantities.Box4 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
-      if (quantities.Box6 > 0) await supabase.rpc('decrement_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
 
     } catch (e: any) {
       console.error('Submission Exception:', e);
@@ -616,7 +701,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
               <div className="invoice-footer" style={{ marginTop: '30px' }}>
                 <div className="form-submit-row" style={{ width: '100%' }}>
-                  <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setIsPaying(false)}>Back to Summary</button>
+                  <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={handleEditOrder}>Back to Details</button>
                   <button
                     className="place-order-btn place-order-btn-sm"
                     disabled={isSubmitting || !receiptFile}
@@ -688,7 +773,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
 
             <div className="invoice-footer">
               <div className="form-submit-row" style={{ width: '100%' }}>
-                <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={() => setSubmitted(false)}>Edit Order</button>
+                <button className="place-order-btn place-order-btn-sm btn-secondary" disabled={isSubmitting} onClick={handleEditOrder}>Edit Order</button>
                 <button className="place-order-btn place-order-btn-sm" disabled={isSubmitting || isCheckingStock} onClick={handleProceedToPayment}>
                   {isCheckingStock ? 'Checking...' : 'Pay Order'}
                 </button>
@@ -708,6 +793,18 @@ function OrderPage({ onBack }: { onBack: () => void }) {
       {/* Narrow white card centered over the background */}
       <div className="op-card">
 
+        {/* Top level back button (Internal to Card) */}
+        {!isConfirmed && (
+          <button
+            type="button"
+            className="op-back-btn"
+            onClick={handleExitOrder}
+            style={{ position: 'absolute', top: '15px', left: '15px', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', zIndex: 10, color: '#94a3b8' }}
+          >
+            ← Back
+          </button>
+        )}
+
         {/* Mini BAKED BY logo */}
         <div className="op-logo">
           <img src="/baked-by-logo.png" alt="BAKED BY" className="op-logo-img" />
@@ -726,7 +823,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
             </div>
             <div className="op-product-limit-note">
-              Limit: 2 boxes per customer (B3/B4/B6)
+              First come, first served.
             </div>
           </div>
         </div>
@@ -788,8 +885,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <div className="qty-info">
                 <span className="qty-label">Box of 3</span>
                 <span className="qty-sub">
-                  Max 2 boxes •
-                  <span style={{ color: boxStocks.Box3 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '5px' }}>
+                  <span style={{ color: boxStocks.Box3 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
                     {boxLoading ? 'Checking...' : `${boxStocks.Box3} left`}
                   </span>
                 </span>
@@ -805,8 +901,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <div className="qty-info">
                 <span className="qty-label">Box of 4</span>
                 <span className="qty-sub">
-                  Max 2 boxes •
-                  <span style={{ color: boxStocks.Box4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '5px' }}>
+                  <span style={{ color: boxStocks.Box4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
                     {boxLoading ? 'Checking...' : `${boxStocks.Box4} left`}
                   </span>
                 </span>
@@ -822,8 +917,7 @@ function OrderPage({ onBack }: { onBack: () => void }) {
               <div className="qty-info">
                 <span className="qty-label">Box of 6</span>
                 <span className="qty-sub">
-                  Max 2 boxes •
-                  <span style={{ color: boxStocks.Box6 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '5px' }}>
+                  <span style={{ color: boxStocks.Box6 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
                     {boxLoading ? 'Checking...' : `${boxStocks.Box6} left`}
                   </span>
                 </span>
@@ -926,6 +1020,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [editingOrder, setEditingOrder] = useState<any | null>(null);
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<number>(7); // Default to current batch
 
   // Release Schedule State
@@ -950,7 +1045,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   }, [targetDate]);
 
   // --- CALCULATIONS (Batching & Stats) ---
-  const { activeOrders, holdingOrders, activeStats, s4, s5, s6, s7, recentNotes } = useMemo(() => {
+  const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, recentNotes } = useMemo(() => {
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
     const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
@@ -990,11 +1085,12 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const activeList = selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders));
     const stats = getStats(activeList.filter(o => !(o.status === 'Delivered' && o.is_paid)));
     const holding = activeList.filter(o => o.status === 'Holding');
+    const expired = activeList.filter(o => o.status === 'Expired');
 
     let notes: { name: string, note: string }[] = [];
     activeList.forEach(o => {
       if (o.status === 'Delivered' && o.is_paid) return;
-      if (o.status === 'Holding') return;
+      if (o.status === 'Holding' || o.status === 'Expired') return;
       if (o.special_instructions && o.special_instructions.trim()) {
         if (!notes.some(rn => rn.note === o.special_instructions)) {
           notes.push({ name: o.full_name, note: o.special_instructions });
@@ -1003,8 +1099,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     });
 
     return {
-      activeOrders: activeList,
+      activeOrders: activeList.filter(o => o.status !== 'Expired'),
       holdingOrders: holding,
+      expiredOrders: expired,
       activeStats: stats,
       s4: s4Comp,
       s5: s5Comp,
@@ -1045,6 +1142,36 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       else setB6Stock(newStock);
     }
     setUpdatingStock(false);
+  };
+
+  const handleRestoreOrder = async (order: any) => {
+    const confirmation = window.confirm(`Restore this order for ${order.full_name}? \n\nThis will automatically REDUCE current stock levels to accommodate the boxes.`);
+    if (!confirmation) return;
+    
+    try {
+      setUpdatingStock(true);
+      const typeVal = order.quantity_type || '';
+      const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
+      const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
+      const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+
+      // Decrement using RPC (negative amount)
+      if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: -b3 });
+      if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: -b4 });
+      if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: -b6 });
+
+      const { error } = await supabase.from('orders').update({ status: 'Pending' }).eq('id', order.id);
+      if (error) throw error;
+
+      alert("Order successfully restored to Pending! Stock has been deducted.");
+      fetchOrders();
+      fetchStock();
+    } catch (e: any) {
+      console.error(e);
+      alert("Error restoring order: " + e.message);
+    } finally {
+      setUpdatingStock(false);
+    }
   };
 
   const handleMarkAsRefunded = async (orderId: string) => {
@@ -1794,6 +1921,12 @@ Thank you for supporting Baked By BCD.`;
               <div className="admin-stat-val" style={{ color: '#475569' }}>{holdingOrders.length}</div>
               <p className="admin-stat-sub">Active 10-min holds</p>
             </div>
+
+            <div className="admin-stat-card clickable" style={{ background: '#fff1f2', borderColor: '#fda4af' }} onClick={() => setShowExpiredModal(true)}>
+              <h3 style={{ color: '#be123c' }}>📉 Incomplete</h3>
+              <div className="admin-stat-val" style={{ color: '#be123c' }}>{expiredOrders.length}</div>
+              <p className="admin-stat-sub">Expired Holds (Tap to View)</p>
+            </div>
           </div>
 
           {/* ─── LEVEL 2: SECONDARY HIGHLIGHTS ─── */}
@@ -2082,6 +2215,64 @@ Thank you for supporting Baked By BCD.`;
               </div>
               <div className="admin-modal-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
                 <button className="place-order-btn place-order-btn-sm" onClick={() => setShowHoldingModal(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showExpiredModal && (
+          <div className="admin-modal-overlay" onClick={() => setShowExpiredModal(false)}>
+            <div className="admin-modal" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+              <div className="admin-modal-header">
+                <h2>Incomplete/Expired Orders</h2>
+                <button className="close-btn" onClick={() => setShowExpiredModal(false)}>&times;</button>
+              </div>
+              <div className="admin-modal-content">
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>
+                  These orders timed out. Customer details are preserved here in case they already sent their payment.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {expiredOrders.length === 0 ? (
+                    <p style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No expired orders in this batch. 🍃</p>
+                  ) : (
+                    expiredOrders.map((order: any) => (
+                      <div key={order.id} style={{
+                        background: '#fff1f2',
+                        padding: '15px',
+                        borderRadius: '12px',
+                        border: '1px solid #fda4af',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontWeight: 800, color: '#9f1239', fontSize: '1rem' }}>{order.full_name}</span>
+                            <span style={{ fontSize: '0.8rem', color: '#be123c' }}>IG: @{order.instagram || 'none'} • {order.contact_number}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#e11d48', fontWeight: 600 }}>Expired: {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                         </div>
+                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                               <div style={{ fontWeight: 800, color: '#be123c', fontSize: '0.75rem', marginBottom: '4px' }}>{order.quantity_type}</div>
+                               <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#e11d48' }}>₱{order.total_price.toLocaleString()}</div>
+                            </div>
+                            <button 
+                              className="place-order-btn place-order-btn-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRestoreOrder(order);
+                              }}
+                              style={{ background: '#e11d48', border: 'none', padding: '6px 10px', fontSize: '0.7rem' }}
+                            >
+                              Restore & Confirm
+                            </button>
+                         </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div className="admin-modal-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button className="place-order-btn place-order-btn-sm btn-secondary" onClick={() => setShowExpiredModal(false)}>Close</button>
               </div>
             </div>
           </div>
@@ -3454,7 +3645,7 @@ function BrowserGuard() {
    HISTORY PAGE
    Allow users to view their past orders by phone number
 ═══════════════════════════════════════ */
-function HistoryPage({ onBack }: { onBack: () => void }) {
+function HistoryPage({ onBack, onRecover }: { onBack: () => void, onRecover: (order: any) => void }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
@@ -3592,6 +3783,29 @@ function HistoryPage({ onBack }: { onBack: () => void }) {
                       </span>
                     </div>
 
+                    {order.status === 'Holding' && (
+                      <button
+                        onClick={() => {
+                          onRecover(order);
+                        }}
+                        style={{
+                          marginBottom: '15px',
+                          display: 'block',
+                          width: '100%',
+                          background: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          padding: '12px',
+                          borderRadius: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                        }}
+                      >
+                        Finish & Upload Receipt →
+                      </button>
+                    )}
+
                     <div style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '10px', lineHeight: '1.4' }}>
                       <div style={{ display: 'flex', gap: '5px', alignItems: 'flex-start' }}>
                         <span style={{ fontWeight: 600 }}>Items:</span>
@@ -3645,6 +3859,7 @@ export default function App() {
   const [b6Stock, setB6Stock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
+  const [recoveryOrder, setRecoveryOrder] = useState<any>(null);
 
   const fetchStock = async () => {
     try {
@@ -3700,18 +3915,61 @@ export default function App() {
   };
 
   useEffect(() => {
-    // ─── JANITOR: Clean Expired Holds & Poll Stock ───
+    // ─── JANITOR: Clean Expired Holds & Poll Stock (Real-time Sync Attached) ───
     const janitor = async () => {
-      // 1. Delete Holding orders older than 10 mins
+      // 1. Mark Holding orders older than 10 mins as Expired & Return Stock
       const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      await supabase.from('orders').delete().eq('status', 'Holding').lt('created_at', tenMinsAgo);
+      const { data: expired } = await supabase.from('orders').select('*').eq('status', 'Holding').lt('created_at', tenMinsAgo);
+      if (expired && expired.length > 0) {
+        for (const hold of expired) {
+          // Return stock
+          const typeVal = hold.quantity_type || '';
+          const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
+          const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
+          const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+          
+          if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: b3 });
+          if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4 });
+          if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6 });
+          
+          // Update status to Expired
+          await supabase.from('orders').update({ status: 'Expired' }).eq('id', hold.id);
+        }
+      }
 
       // 2. Refresh Stock
       fetchStock();
     };
 
     janitor();
-    const interval = setInterval(janitor, 30000); // Run every 30s
+    const poller = setInterval(janitor, 60000); // Backstop polling every 60s
+
+    const inventorySub = supabase
+      .channel('app-inventory-sync')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'inventory' }, (payload) => {
+        const { item_name, stock_count } = payload.new as any;
+        if (item_name === 'Box of 3') setB3Stock(stock_count);
+        if (item_name === 'Box of 4') setB4Stock(stock_count);
+        if (item_name === 'Box of 6') setB6Stock(stock_count);
+      })
+      .subscribe();
+
+    // ─── RESUME DRAFT SESSION ───
+    const draftId = localStorage.getItem('baked_draft_holdingOrderId');
+    const resumeDraft = async () => {
+      if (!draftId) return;
+      const { data: order } = await supabase.from('orders').select('*').eq('id', draftId).eq('status', 'Holding').single();
+      if (order) {
+        const created = new Date(order.created_at).getTime();
+        const now = Date.now();
+        if (now - created < 10 * 60 * 1000) {
+          setRecoveryOrder(order);
+          setPage('order');
+          alert("Resuming your unfinished order! 🍪");
+        }
+      }
+    };
+    resumeDraft();
 
     // Instagram / FB Browser Detection
     const isInApp = /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
@@ -3735,10 +3993,12 @@ export default function App() {
         setPage('admin-login');
       }
     };
+
     window.addEventListener('keydown', handleKeydown);
     return () => {
       window.removeEventListener('keydown', handleKeydown);
-      clearInterval(interval);
+      clearInterval(poller);
+      inventorySub.unsubscribe();
     };
   }, [page]);
 
@@ -3769,10 +4029,27 @@ export default function App() {
               loading={stockLoading}
               onOrderClick={() => setPage('order')}
               onAdminClick={() => setPage('admin-login')}
+              onViewHistory={() => setPage('history')}
             />
           )}
-          {page === 'order' && <OrderPage onBack={() => setPage('home')} />}
-          {page === 'history' && <HistoryPage onBack={() => setPage('home')} />}
+          {page === 'order' && (
+            <OrderPage
+              onBack={() => {
+                setPage('home');
+                setRecoveryOrder(null);
+              }}
+              recoveryOrder={recoveryOrder}
+            />
+          )}
+          {page === 'history' && (
+            <HistoryPage
+              onBack={() => setPage('home')}
+              onRecover={(order) => {
+                setRecoveryOrder(order);
+                setPage('order');
+              }}
+            />
+          )}
           {page === 'admin-login' && <AdminLogin onLogin={() => setPage('admin-dashboard')} onBack={() => setPage('home')} />}
           {page === 'admin-dashboard' && (
             <AdminDashboard
