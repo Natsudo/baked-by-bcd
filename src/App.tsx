@@ -812,9 +812,9 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
           <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
-            <div className="op-product-sub">Batch 7 — Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</div>
+            <div className="op-product-sub">Batch 8</div>
             <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
-              📍 Meetups only – Ayala Fiesta Market | Pickup window: March 21, Saturday 12:00 PM – 2:00 PM
+              📍 Meetups only on USLS Gate 6 Canteen
             </div>
             <div className="op-product-price-list" style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 900, background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #a7f3d0' }}>
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
@@ -1018,7 +1018,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
   const [showExpiredModal, setShowExpiredModal] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<number>(7); // Default to current batch
+  const [selectedBatch, setSelectedBatch] = useState<number>(8); // Default to current batch
 
   // Release Schedule State
   const [newTargetDate, setNewTargetDate] = useState(targetDate.toISOString().slice(0, 16));
@@ -1046,6 +1046,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
     const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
+    const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
     const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff5);
     const batch5Orders = orders.filter(o => {
       const t = new Date(o.created_at).getTime();
@@ -1055,7 +1056,11 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       const t = new Date(o.created_at).getTime();
       return t >= cutoff6 && t < cutoff7;
     });
-    const batch7Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff7);
+    const batch7Orders = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= cutoff7 && t < cutoff8;
+    });
+    const batch8Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff8);
 
     const getStats = (list: any[]) => {
       let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
@@ -1078,8 +1083,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const s5Comp = getStats(batch5Orders);
     const s6Comp = getStats(batch6Orders);
     const s7Comp = getStats(batch7Orders);
+    const s8Comp = getStats(batch8Orders);
 
-    const activeList = selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders));
+    const activeList = selectedBatch === 8 ? batch8Orders : (selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders)));
     const stats = getStats(activeList.filter(o => !(o.status === 'Delivered' && o.is_paid)));
     const holding = activeList.filter(o => o.status === 'Holding');
     const expired = activeList.filter(o => o.status === 'Expired');
@@ -1598,7 +1604,7 @@ Thank you for supporting Baked By BCD.`;
 
   const handleCopyMaximInfo = (o: any) => {
     // Add City for better geolocation in the Maxim App
-    const fromClean = (o.meetup_location === 'rolling-hills' ? 'Rolling Hills' : 'La Salle Gate 6') + ', Bacolod';
+    const fromClean = 'USLS Gate 6 Canteen, Bacolod';
     const toClean = (o.maxim_address || '') + ', Bacolod';
 
     const text = `FROM: ${fromClean}\nTO: ${toClean}\nCUSTOMER: ${o.full_name}`;
@@ -1825,34 +1831,34 @@ Thank you for supporting Baked By BCD.`;
         <>
           <div className="admin-stats-row" style={{ marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
             <div
-              className={`admin-stat-card clickable ${selectedBatch === 7 ? 'active-batch-card' : ''}`}
-              onClick={() => setSelectedBatch(7)}
+              className={`admin-stat-card clickable ${selectedBatch === 8 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(8)}
               style={{
-                background: selectedBatch === 7 ? '#eff6ff' : '#fff',
-                border: selectedBatch === 7 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
-                transform: selectedBatch === 7 ? 'scale(1.02)' : 'none'
+                background: selectedBatch === 8 ? '#eff6ff' : '#fff',
+                border: selectedBatch === 8 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                transform: selectedBatch === 8 ? 'scale(1.02)' : 'none'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 7)</h3>
-                {selectedBatch === 7 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
+                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 8)</h3>
+                {selectedBatch === 8 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
               </div>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
-              <p className="admin-stat-sub">Revenue: ₱{s7.revenue.toLocaleString()} • {s7.count} Orders</p>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s8.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s8.revenue.toLocaleString()} • {s8.count} Orders</p>
             </div>
 
             <div
-              className={`admin-stat-card clickable ${selectedBatch === 6 ? 'active-batch-card' : ''}`}
-              onClick={() => setSelectedBatch(6)}
+              className={`admin-stat-card clickable ${selectedBatch === 7 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(7)}
               style={{
-                background: selectedBatch === 6 ? '#f0fdf4' : '#fff',
-                border: selectedBatch === 6 ? '3px solid #10b981' : '1px solid #e2e8f0',
-                transform: selectedBatch === 6 ? 'scale(1.02)' : 'none'
+                background: selectedBatch === 7 ? '#f0fdf4' : '#fff',
+                border: selectedBatch === 7 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
+                transform: selectedBatch === 7 ? 'scale(1.02)' : 'none'
               }}
             >
-              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 6)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s6.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
-              <p className="admin-stat-sub">Revenue: ₱{s6.revenue.toLocaleString()} • {s6.count} Orders</p>
+              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 7)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s7.revenue.toLocaleString()} • {s7.count} Orders</p>
             </div>
 
             <div
@@ -1878,8 +1884,8 @@ Thank you for supporting Baked By BCD.`;
               }}
             >
               <h3 style={{ color: '#854d0e' }}>🏢 Master List (All)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies + s7.cookies)}</div>
-              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count + s7.count)}</p>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies + s7.cookies + s8.cookies)}</div>
+              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count + s7.count + s8.count)}</p>
             </div>
           </div>
 
