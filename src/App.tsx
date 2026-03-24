@@ -6,7 +6,7 @@ import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
 const MANUAL_LOCK_DEFAULT = false;
-const FALLBACK_TARGET_DATE = new Date('2026-03-13T20:30:00+08:00');
+const FALLBACK_TARGET_DATE = new Date('2026-03-27T20:30:00+08:00');
 
 type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
 
@@ -16,8 +16,8 @@ const FAQS = [
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only – Ayala Fiesta Market." },
-  { q: "What time are meetup orders?", a: "Meetups are @ Ayala Fiesta Market from 12:00 PM – 2:00 PM. Please be punctual as we are only available at the selected time." },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only on USLS Gate 6 Canteen." },
+  { q: "What time are meetup orders?", a: "Meetups are on USLS Gate 6 Canteen. Please message us regarding the schedule as we are only available at selected times." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
@@ -104,11 +104,10 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, loadi
 
 
           <div className="location-note" style={{ fontSize: '0.9rem', lineHeight: '1.6', marginTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <span>Meetups only – Ayala Fiesta Market</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <span>Meetups only on USLS Gate 6 Canteen</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes available</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Full payment basis</span></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</span></div>
           </div>
         </div>
       </div>
@@ -455,7 +454,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop() || 'jpg';
         // Prefix with batch5/ for organization
-        const fileName = `batch6/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+        const fileName = `batch8/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(fileName, receiptFile);
@@ -548,9 +547,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                 <div className="invoice-divider" />
                 <div style={{ padding: '10px 0' }}>
                   <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 Meet-up Location:</p>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>Ayala Fiesta Market | Pickup window: March 21, Saturday</p>
-                  <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>🕒 Meet-up Time:</p>
-                  <p style={{ margin: '0', fontSize: '1rem', color: '#475569' }}>12:00 PM – 2:00 PM</p>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>USLS Gate 6 Canteen</p>
                 </div>
               </div>
             </div>
@@ -3502,10 +3499,9 @@ function MaintenancePage({ onUnlock, targetDate }: { onUnlock: (pass: string) =>
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – USLS Gate 6 Canteen</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
-            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Pickup window: March 21, Saturday 12:00 PM – 2:00 PM</span></li>
+            <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
           </ul>
           <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', color: '#93c5fd', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
             📍 Bacolod City orders only.
