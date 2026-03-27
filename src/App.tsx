@@ -22,7 +22,7 @@ const FAQS = [
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
   { q: "Do you offer boxes of 12 or 24?", a: "We currently offer boxes of 4 and 6 only. Box of 12 options will be available soon, so stay tuned for announcements." },
-  { q: "How much are your products?", a: "• Box of 3 - ₱265\n• Box of 4 - ₱350\n• Box of 6 - ₱525\n\nOur full price list is also pinned on our page, so kindly follow us to check for updates." },
+  { q: "How much are your products?", a: "• Box of 3 - ₱265\n• Box of 4 - ₱350\n• Box of 6 - ₱525\n• Biscoff Box of 4 - ₱330\n\nOur full price list is also pinned on our page, so kindly follow us to check for updates." },
   { q: "Can I change my order after submitting the form?", a: "Order information such as address or meetup details may still be updated if needed by messaging us through our Instagram handle @BAKEDBY.BCD. However, the quantity ordered cannot be changed since slots are limited." },
   { q: "Why are slots limited?", a: "We are a small student-run business and bake per batch to ensure quality and freshness. Slots are limited to maintain product quality." },
   { q: "Can I cancel my order?", a: "Cancellations are not allowed once payment is made. The 50% downpayment is strictly non-refundable as ingredients and slots are already allocated." }
@@ -359,7 +359,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525) + (quantities.Biscoff4 * 320);
+  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525) + (quantities.Biscoff4 * 330);
   const downpaymentPrice = totalPrice;
 
   const validate = () => {
@@ -847,7 +847,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
             </div>
             <div className="op-product-price-list" style={{ color: '#d97706', fontSize: '0.9rem', fontWeight: 900, background: '#fffbeb', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #fde68a' }}>
-              ₱320 for Biscoff Box of 4
+              ₱330 for Biscoff Box of 4
             </div>
             <div className="op-product-limit-note">
               First come, first served.
@@ -965,7 +965,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                   <span style={{ fontSize: '0.7rem', background: '#fde68a', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>NEW</span>
                 </div>
                 <span className="qty-sub">
-                  <span className="qty-price" style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Box of 4 • ₱320</span>
+                  <span className="qty-price" style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Box of 4 • ₱330</span>
                   <br />
                   <span style={{ color: boxStocks.Biscoff4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
                     {boxLoading ? 'Checking...' : `${boxStocks.Biscoff4} left`}
