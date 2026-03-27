@@ -28,7 +28,8 @@ async function setupBatch8() {
     const items = [
         { name: 'Box of 3', stock: 40 },
         { name: 'Box of 4', stock: 30 },
-        { name: 'Box of 6', stock: 10 }
+        { name: 'Box of 6', stock: 10 },
+        { name: 'Biscoff Box of 4', stock: 40 }
     ];
 
     for (const item of items) {

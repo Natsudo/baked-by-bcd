@@ -16,8 +16,8 @@ const FAQS = [
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only on USLS Gate 6 Canteen." },
-  { q: "What time are meetup orders?", a: "Meetups are on USLS Gate 6 Canteen. Please message us regarding the schedule as we are only available at selected times." },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only on Ayala Fiesta Market." },
+  { q: "What time are meetup orders?", a: "Meetups are on Ayala Fiesta Market. Please message us regarding the schedule as we are only available at selected times." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
@@ -29,9 +29,9 @@ const FAQS = [
 ];
 
 /* ─── STOCK COUNTER COMPONENT ─── */
-function StockCounter({ b3, b4, b6, loading }: { b3: number | null, b4: number | null, b6: number | null, loading: boolean }) {
-  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0;
-  const totalPcs = (b3 ?? 0) * 3 + (b4 ?? 0) * 4 + (b6 ?? 0) * 6;
+function StockCounter({ b3, b4, b6, biscoff4, loading }: { b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, loading: boolean }) {
+  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0;
+  const totalPcs = (b3 ?? 0) * 3 + (b4 ?? 0) * 4 + (b6 ?? 0) * 6 + (biscoff4 ?? 0) * 4;
   return (
     <div className="stock-counter-banner sparkle-banner">
       <span className="stock-dot" style={{ background: isSoldOut ? '#ef4444' : '#10b981' }}></span>
@@ -45,8 +45,8 @@ function StockCounter({ b3, b4, b6, loading }: { b3: number | null, b4: number |
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, loading }: { onOrderClick: () => void, onAdminClick: () => void, onViewHistory: () => void, b3: number | null, b4: number | null, b6: number | null, loading: boolean }) {
-  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0;
+function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, biscoff4, loading }: { onOrderClick: () => void, onAdminClick: () => void, onViewHistory: () => void, b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, loading: boolean }) {
+  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0;
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -71,7 +71,7 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, loadi
 
   return (
     <div className="home-page">
-      <StockCounter b3={b3} b4={b4} b6={b6} loading={loading} />
+      <StockCounter b3={b3} b4={b4} b6={b6} biscoff4={biscoff4} loading={loading} />
 
       {/* Full-width clouds banner — no wrapper, scales naturally */}
       <img src="/clouds.png" alt="" className="clouds-banner" />
@@ -104,7 +104,8 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, loadi
 
 
           <div className="location-note" style={{ fontSize: '0.9rem', lineHeight: '1.6', marginTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <span>Meetups only on USLS Gate 6 Canteen</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <strong>Meetups only on Ayala Fiesta Market</strong></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>12pm to 2pm, March 28, Saturday</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes available</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Full payment basis</span></div>
@@ -152,8 +153,8 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
   const [holdingOrderId, setHoldingOrderId] = useState<string | null>(null);
-  const [quantities, setQuantities] = useState({ Box3: 0, Box4: 0, Box6: 0 });
-  const [boxStocks, setBoxStocks] = useState({ Box3: 0, Box4: 0, Box6: 0 });
+  const [quantities, setQuantities] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0 });
+  const [boxStocks, setBoxStocks] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0 });
   const [boxLoading, setBoxLoading] = useState(true);
   const [paymentNumber, setPaymentNumber] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -172,8 +173,9 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
       const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
       const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+      const biscoff4 = (typeVal.match(/Biscoff4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Biscoff4:\s(\d+)/)![1]) : 0;
 
-      setQuantities({ Box3: b3, Box4: b4, Box6: b6 });
+      setQuantities({ Box3: b3, Box4: b4, Box6: b6, Biscoff4: biscoff4 });
       setSubmitted(true); // Skip to step 2 (Payment)
       
       // Calculate remaining time
@@ -225,16 +227,18 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
         const { data: b3 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 3').single();
         const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
         const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+        const { data: biscoff4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
 
         const stocks = {
           Box3: b3?.stock_count ?? 0,
           Box4: b4?.stock_count ?? 0,
-          Box6: b6?.stock_count ?? 0
+          Box6: b6?.stock_count ?? 0,
+          Biscoff4: biscoff4?.stock_count ?? 0
         };
         setBoxStocks(stocks);
         setBoxLoading(false);
 
-        if (stocks.Box3 === 0 && stocks.Box4 === 0 && stocks.Box6 === 0 && !submitted) {
+        if (stocks.Box3 === 0 && stocks.Box4 === 0 && stocks.Box6 === 0 && stocks.Biscoff4 === 0 && !submitted) {
           alert("🚨 UPDATE: Everything just sold out while you were here! \n\nRedirecting you back to the home page...");
           onBack();
         }
@@ -279,10 +283,12 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
           const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
           const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
           const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+          const biscoff4 = (typeVal.match(/Biscoff4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Biscoff4:\s(\d+)/)![1]) : 0;
 
           if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: b3 });
           if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4 });
           if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6 });
+          if (biscoff4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: biscoff4 });
 
           await supabase.from('orders').delete().eq('id', hold.id);
         }
@@ -303,6 +309,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       if (quantities.Box3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: quantities.Box3 });
       if (quantities.Box4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
       if (quantities.Box6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
+      if (quantities.Biscoff4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: quantities.Biscoff4 });
       
       // Delete holding record
       await supabase.from('orders').delete().eq('id', holdingOrderId);
@@ -352,7 +359,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525);
+  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525) + (quantities.Biscoff4 * 320);
   const downpaymentPrice = totalPrice;
 
   const validate = () => {
@@ -360,7 +367,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     if (!fullName.trim()) errs.fullName = 'Full Name is required.';
     if (!contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
     if (!instagram.trim()) errs.instagram = 'Instagram Handle is required.';
-    if (quantities.Box3 === 0 && quantities.Box4 === 0 && quantities.Box6 === 0) errs.quantity = 'Please select at least one box.';
+    if (quantities.Box3 === 0 && quantities.Box4 === 0 && quantities.Box6 === 0 && quantities.Biscoff4 === 0) errs.quantity = 'Please select at least one box.';
     return errs;
   };
 
@@ -387,13 +394,22 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
         p_full_name: fullName,
         p_contact_number: contactNumber.replace(/\s/g, ''),
         p_instagram: instagram,
-        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
+        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}`,
         p_total_price: totalPrice,
         p_downpayment_price: downpaymentPrice,
         p_needs3: quantities.Box3,
         p_needs4: quantities.Box4,
         p_needs6: quantities.Box6
       });
+
+      // Special handling for Biscoff since RPC may not support it yet
+      if (rpcData?.success && quantities.Biscoff4 > 0) {
+        const { error: biscoffError } = await supabase.rpc('increment_box_stock', {
+          p_item: 'Biscoff Box of 4',
+          p_amount: -quantities.Biscoff4
+        });
+        if (biscoffError) console.error("Error deducting Biscoff stock:", biscoffError);
+      }
 
       if (rpcError) throw rpcError;
 
@@ -419,14 +435,14 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     }
   };
 
-  const handleQuantityChange = (boxType: 'Box3' | 'Box4' | 'Box6', change: number) => {
+  const handleQuantityChange = (boxType: 'Box3' | 'Box4' | 'Box6' | 'Biscoff4', change: number) => {
     setQuantities(prev => {
       const currentQty = prev[boxType];
       const newQty = Math.max(0, currentQty + change);
 
       const available = boxStocks[boxType];
       if (change > 0 && newQty > available) {
-        alert(`Sorry, only ${available} ${boxType === 'Box3' ? 'Box of 3' : boxType === 'Box4' ? 'Box of 4' : 'Box of 6'} left!`);
+        alert(`Sorry, only ${available} ${boxType === 'Box3' ? 'Box of 3' : boxType === 'Box4' ? 'Box of 4' : boxType === 'Box6' ? 'Box of 6' : 'Biscoff Box of 4'} left!`);
         return prev;
       }
 
@@ -453,8 +469,8 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       let screenshotPath = '';
       if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop() || 'jpg';
-        // Prefix with batch5/ for organization
-        const fileName = `batch8/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+        // Prefix with batch9/ for organization
+        const fileName = `batch9/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(fileName, receiptFile);
@@ -470,7 +486,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
           full_name: fullName,
           contact_number: contactNumber.replace(/\s/g, ''),
           instagram: instagram,
-          quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}`,
+          quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}`,
           quantity: 1,
           status: 'Pending',
           payment_mode: 'gcash',
@@ -534,10 +550,12 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                   <span className="inv-label">Items:</span>
                   <span className="inv-val item-val">
                     {quantities.Box3 > 0 && `Box of 3 x ${quantities.Box3}`}
-                    {quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0) && <br />}
+                    {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
                     {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
+                    {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
                     {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
+                    {(quantities.Box6 > 0 && quantities.Biscoff4 > 0) && <br />}
+                    {quantities.Biscoff4 > 0 && `Biscoff Box of 4 x ${quantities.Biscoff4}`}
                   </span>
                 </div>
                 <div className="invoice-row">
@@ -547,7 +565,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                 <div className="invoice-divider" />
                 <div style={{ padding: '10px 0' }}>
                   <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 Meet-up Location:</p>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>USLS Gate 6 Canteen</p>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>Ayala Fiesta Market (12pm-2pm, March 28)</p>
                 </div>
               </div>
             </div>
@@ -750,14 +768,23 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
               <div className="invoice-row">
                 <span className="inv-label">Item:</span>
                 <span className="inv-val item-val">
-                  Dubai Chewy Chocolate<br />
-                  <small>
-                    {quantities.Box3 > 0 && `Box of 3 x ${quantities.Box3}`}
-                    {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0)) && <br />}
-                    {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                    {quantities.Box4 > 0 && quantities.Box6 > 0 && <br />}
-                    {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
-                  </small>
+                    Dubai Chewy Chocolate<br />
+                    <small>
+                      {quantities.Box3 > 0 && `Box of 3 x ${quantities.Box3}`}
+                      {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                      {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
+                      {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                      {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
+                    </small>
+                    {quantities.Biscoff4 > 0 && (
+                      <>
+                        <br />
+                        Biscoff Chewy Cookie<br />
+                        <small>
+                          Biscoff Box of 4 x {quantities.Biscoff4}
+                        </small>
+                      </>
+                    )}
                 </span>
               </div>
 
@@ -812,12 +839,15 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
           <img src="/cookie-icon.png" alt="cookie" className="op-cookie-icon" />
           <div>
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
-            <div className="op-product-sub">Batch 8</div>
+            <div className="op-product-sub">Batch 9</div>
             <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
-              📍 Meetups only on USLS Gate 6 Canteen
+              📍 Meetups only on Ayala Fiesta Market
             </div>
             <div className="op-product-price-list" style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 900, background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #a7f3d0' }}>
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
+            </div>
+            <div className="op-product-price-list" style={{ color: '#d97706', fontSize: '0.9rem', fontWeight: 900, background: '#fffbeb', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #fde68a' }}>
+              ₱320 for Biscoff Box of 4
             </div>
             <div className="op-product-limit-note">
               First come, first served.
@@ -878,6 +908,8 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
             </div>
             {errors.quantity && <span className="err-msg">{errors.quantity}</span>}
             
+            <div style={{ color: '#7ca95c', fontWeight: 900, fontSize: '1.2rem', marginTop: '10px', marginBottom: '10px', fontFamily: 'Patrick Hand, cursive' }}>Dubai Chewy Cookie</div>
+
             <div className="qty-row-item">
               <div className="qty-info">
                 <span className="qty-label">Box of 3</span>
@@ -923,6 +955,27 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                 <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box6', -1)}>−</button>
                 <span className="qty-val">{quantities.Box6}</span>
                 <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Box6', 1)}>+</button>
+              </div>
+            </div>
+
+            <div className="qty-row-item" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed #e2e8f0' }}>
+              <div className="qty-info">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="qty-label">Biscoff Chewy Cookie</span>
+                  <span style={{ fontSize: '0.7rem', background: '#fde68a', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>NEW</span>
+                </div>
+                <span className="qty-sub">
+                  <span className="qty-price" style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Box of 4 • ₱320</span>
+                  <br />
+                  <span style={{ color: boxStocks.Biscoff4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
+                    {boxLoading ? 'Checking...' : `${boxStocks.Biscoff4} left`}
+                  </span>
+                </span>
+              </div>
+              <div className="qty-stepper">
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Biscoff4', -1)} style={{ borderColor: '#fde68a', color: '#111' }}>−</button>
+                <span className="qty-val">{quantities.Biscoff4}</span>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Biscoff4', 1)} style={{ borderColor: '#fde68a', color: '#111' }}>+</button>
               </div>
             </div>
 
@@ -1006,6 +1059,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [b3Stock, setB3Stock] = useState<number>(0);
   const [b4Stock, setB4Stock] = useState<number>(0);
   const [b6Stock, setB6Stock] = useState<number>(0);
+  const [biscoff4Stock, setBiscoff4Stock] = useState<number>(0);
   const [updatingStock, setUpdatingStock] = useState(false);
   const [showToCollect, setShowToCollect] = useState(false);
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
@@ -1018,7 +1072,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
   const [showExpiredModal, setShowExpiredModal] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<number>(8); // Default to current batch
+  const [selectedBatch, setSelectedBatch] = useState<number>(9); // Default to current batch
 
   // Release Schedule State
   const [newTargetDate, setNewTargetDate] = useState(targetDate.toISOString().slice(0, 16));
@@ -1042,11 +1096,12 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   }, [targetDate]);
 
   // --- CALCULATIONS (Batching & Stats) ---
-  const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, recentNotes } = useMemo(() => {
+  const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, s8, s9, recentNotes } = useMemo(() => {
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
     const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
     const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
+    const cutoff9 = new Date('2026-03-27T12:00:00+08:00').getTime();
     const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff5);
     const batch5Orders = orders.filter(o => {
       const t = new Date(o.created_at).getTime();
@@ -1060,23 +1115,33 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       const t = new Date(o.created_at).getTime();
       return t >= cutoff7 && t < cutoff8;
     });
-    const batch8Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff8);
+    const batch8Orders = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= cutoff8 && t < cutoff9;
+    });
+    const batch9Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff9);
 
     const getStats = (list: any[]) => {
-      let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
+      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
       let rev = 0;
       list.forEach(o => {
         const typeVal = o.quantity_type || '';
-        if (typeVal.includes('Box3:')) {
-          const parts = typeVal.split(', ');
-          b3 += parseInt(parts[0]?.split(': ')[1]) || 0;
-          b4 += parseInt(parts[1]?.split(': ')[1]) || 0;
-          b6 += parseInt(parts[2]?.split(': ')[1]) || 0;
-          b12 += parts[3] ? parseInt(parts[3]?.split(': ')[1]) : 0;
+        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+          const b3Match = typeVal.match(/Box3:\s(\d+)/);
+          const b4Match = typeVal.match(/Box4:\s(\d+)/);
+          const b6Match = typeVal.match(/Box6:\s(\d+)/);
+          const b12Match = typeVal.match(/Box12:\s(\d+)/);
+          const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+          b3 += b3Match ? parseInt(b3Match[1]) : 0;
+          b4 += b4Match ? parseInt(b4Match[1]) : 0;
+          b6 += b6Match ? parseInt(b6Match[1]) : 0;
+          b12 += b12Match ? parseInt(b12Match[1]) : 0;
+          biscoff4 += biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
         }
         rev += o.total_price || 0;
       });
-      return { b3, b4, b6, b12, cookies: (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12), revenue: rev, count: list.length };
+      return { b3, b4, b6, b12, biscoff4, cookies: (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4), revenue: rev, count: list.length };
     };
 
     const s4Comp = getStats(batch4Orders);
@@ -1084,8 +1149,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const s6Comp = getStats(batch6Orders);
     const s7Comp = getStats(batch7Orders);
     const s8Comp = getStats(batch8Orders);
+    const s9Comp = getStats(batch9Orders);
 
-    const activeList = selectedBatch === 8 ? batch8Orders : (selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders)));
+    const activeList = selectedBatch === 9 ? batch9Orders : (selectedBatch === 8 ? batch8Orders : (selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders))));
     const stats = getStats(activeList.filter(o => !(o.status === 'Delivered' && o.is_paid)));
     const holding = activeList.filter(o => o.status === 'Holding');
     const expired = activeList.filter(o => o.status === 'Expired');
@@ -1110,6 +1176,8 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       s5: s5Comp,
       s6: s6Comp,
       s7: s7Comp,
+      s8: s8Comp,
+      s9: s9Comp,
       recentNotes: notes
     };
   }, [orders, selectedBatch]);
@@ -1128,12 +1196,14 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const { data: b3 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 3').single();
     const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
     const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+    const { data: biscoff4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
     if (b3) setB3Stock(b3.stock_count);
     if (b4) setB4Stock(b4.stock_count);
     if (b6) setB6Stock(b6.stock_count);
+    if (biscoff4) setBiscoff4Stock(biscoff4.stock_count);
   };
 
-  const updateStock = async (boxType: 'Box of 3' | 'Box of 4' | 'Box of 6', newStock: number) => {
+  const updateStock = async (boxType: 'Box of 3' | 'Box of 4' | 'Box of 6' | 'Biscoff Box of 4', newStock: number) => {
     setUpdatingStock(true);
     const { error } = await supabase
       .from('inventory')
@@ -1142,7 +1212,8 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     if (!error) {
       if (boxType === 'Box of 3') setB3Stock(newStock);
       else if (boxType === 'Box of 4') setB4Stock(newStock);
-      else setB6Stock(newStock);
+      else if (boxType === 'Box of 6') setB6Stock(newStock);
+      else setBiscoff4Stock(newStock);
     }
     setUpdatingStock(false);
   };
@@ -1154,14 +1225,24 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     try {
       setUpdatingStock(true);
       const typeVal = order.quantity_type || '';
-      const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
-      const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
-      const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+      const b3Match = typeVal.match(/Box3:\s(\d+)/);
+      const b4Match = typeVal.match(/Box4:\s(\d+)/);
+      const b6Match = typeVal.match(/Box6:\s(\d+)/);
+      const b12Match = typeVal.match(/Box12:\s(\d+)/);
+      const biscoff4Match = typeVal.match(/Biscoff4:\s(\d+)/);
+
+      const b3 = b3Match ? parseInt(b3Match[1]) : 0;
+      const b4 = b4Match ? parseInt(b4Match[1]) : 0;
+      const b6 = b6Match ? parseInt(b6Match[1]) : 0;
+      const b12 = b12Match ? parseInt(b12Match[1]) : 0;
+      const biscoff4 = biscoff4Match ? parseInt(biscoff4Match[1]) : 0;
 
       // Decrement using RPC (negative amount)
       if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: -b3 });
       if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: -b4 });
       if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: -b6 });
+      if (b12 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 12', p_amount: -b12 });
+      if (biscoff4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: -biscoff4 });
 
       const { error } = await supabase.from('orders').update({ status: 'Pending' }).eq('id', order.id);
       if (error) throw error;
@@ -1223,24 +1304,23 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     try {
       // 1. Calculate cookies to return
       const typeVal = orderToDelete.quantity_type || '';
-      // 2. Return to inventory
-      const partsArr = typeVal.split(', ');
-      const b3Return = parseInt(partsArr[0]?.split(': ')[1]) || 0;
-      const b4Return = parseInt(partsArr[1]?.split(': ')[1]) || 0;
-      const b6Return = parseInt(partsArr[2]?.split(': ')[1]) || 0;
+      const b3Match = typeVal.match(/Box3:\s(\d+)/);
+      const b4Match = typeVal.match(/Box4:\s(\d+)/);
+      const b6Match = typeVal.match(/Box6:\s(\d+)/);
+      const b12Match = typeVal.match(/Box12:\s(\d+)/);
+      const biscoff4Match = typeVal.match(/Biscoff4:\s(\d+)/);
 
-      if (b3Return > 0) {
-        const { data: b3Data } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 3').single();
-        if (b3Data) await supabase.from('inventory').update({ stock_count: b3Data.stock_count + b3Return }).eq('item_name', 'Box of 3');
-      }
-      if (b4Return > 0) {
-        const { data: b4Data } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
-        if (b4Data) await supabase.from('inventory').update({ stock_count: b4Data.stock_count + b4Return }).eq('item_name', 'Box of 4');
-      }
-      if (b6Return > 0) {
-        const { data: b6Data } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
-        if (b6Data) await supabase.from('inventory').update({ stock_count: b6Data.stock_count + b6Return }).eq('item_name', 'Box of 6');
-      }
+      const b3Return = b3Match ? parseInt(b3Match[1]) : 0;
+      const b4Return = b4Match ? parseInt(b4Match[1]) : 0;
+      const b6Return = b6Match ? parseInt(b6Match[1]) : 0;
+      const b12Return = b12Match ? parseInt(b12Match[1]) : 0;
+      const biscoff4Return = biscoff4Match ? parseInt(biscoff4Match[1]) : 0;
+
+      if (b3Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: b3Return });
+      if (b4Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4Return });
+      if (b6Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6Return });
+      if (b12Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 12', p_amount: b12Return });
+      if (biscoff4Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: biscoff4Return });
 
       // 3. Delete order
       const { error: deleteError, count } = await supabase
@@ -1284,9 +1364,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
           const type = p[0];
           const count = parseInt(p[1]) || 0;
           if (count > 0) {
-            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
+            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
             parts.push(`${count}x ${label}`);
-            const multiplier = type === 'Box3' ? 3 : type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : 0;
+            const multiplier = type === 'Box3' ? 3 : type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : type === 'Biscoff4' ? 4 : 0;
             totalPieces += (count * multiplier);
           }
         });
@@ -1496,7 +1576,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
           const parts = item.split(': ');
           const type = parts[0];
           const count = parts[1];
-          const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
+          const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
           return `${count}x ${label}`;
         }).join(', ');
 
@@ -1560,10 +1640,10 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
         const parts = item.split(': ');
         const type = parts[0];
         const count = parseInt(parts[1]);
-        if (count > 0) {
-          const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
-          orderList += `\n• ${label} x ${count}`;
-        }
+          if (count > 0) {
+            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
+            orderList += `\n• ${label} x ${count}`;
+          }
       });
     }
 
@@ -1573,7 +1653,7 @@ Great news — we’ve successfully received your ${payLabel} of ₱${amt.toLoca
 
 Your order is now officially CONFIRMED:${orderList}
 
-We’re so excited for you to enjoy your Dubai Chewy cookies! 🤍
+We’re so excited for you to enjoy your cookies! 🤍
 
 Thank you for supporting Baked By BCD.`;
 
@@ -1651,7 +1731,8 @@ Thank you for supporting Baked By BCD.`;
       const b4 = editingOrder._box4 ?? 0;
       const b6 = editingOrder._box6 ?? 0;
       const b12 = editingOrder._box12 ?? 0;
-      const quantityType = `Box3: ${b3}, Box4: ${b4}, Box6: ${b6}, Box12: ${b12}`;
+      const biscoff4 = editingOrder._biscoff4 ?? 0;
+      const quantityType = `Box3: ${b3}, Box4: ${b4}, Box6: ${b6}, Box12: ${b12}, Biscoff4: ${biscoff4}`;
 
       const updates: any = {
         full_name: editingOrder.full_name,
@@ -1702,9 +1783,13 @@ Thank you for supporting Baked By BCD.`;
     const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
     const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
+    const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
+    const cutoff9 = new Date('2026-03-27T12:00:00+08:00').getTime();
     const orderTime = new Date(o.created_at).getTime();
     let batchNumber = 4;
-    if (orderTime >= cutoff7) batchNumber = 7;
+    if (orderTime >= cutoff9) batchNumber = 9;
+    else if (orderTime >= cutoff8) batchNumber = 8;
+    else if (orderTime >= cutoff7) batchNumber = 7;
     else if (orderTime >= cutoff6) batchNumber = 6;
     else if (orderTime >= cutoff5) batchNumber = 5;
     const matchesBatch = selectedBatch === 0 || selectedBatch === batchNumber;
@@ -1830,37 +1915,55 @@ Thank you for supporting Baked By BCD.`;
       <div className="admin-content">
         <>
           <div className="admin-stats-row" style={{ marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            {/* Batch 9 Card */}
+            <div
+              className={`admin-stat-card clickable ${selectedBatch === 9 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(9)}
+              style={{
+                background: selectedBatch === 9 ? '#eff6ff' : '#fff',
+                border: selectedBatch === 9 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                transform: selectedBatch === 9 ? 'scale(1.02)' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 9)</h3>
+                {selectedBatch === 9 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
+              </div>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s9.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s9.revenue.toLocaleString()} • {s9.count} Orders</p>
+            </div>
+
+            {/* Batch 8 Card */}
             <div
               className={`admin-stat-card clickable ${selectedBatch === 8 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(8)}
               style={{
-                background: selectedBatch === 8 ? '#eff6ff' : '#fff',
-                border: selectedBatch === 8 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                background: selectedBatch === 8 ? '#f0fdf4' : '#fff',
+                border: selectedBatch === 8 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
                 transform: selectedBatch === 8 ? 'scale(1.02)' : 'none'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 8)</h3>
-                {selectedBatch === 8 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
-              </div>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s8.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 8)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s8.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s8.revenue.toLocaleString()} • {s8.count} Orders</p>
             </div>
 
+            {/* Batch 7 Card */}
             <div
               className={`admin-stat-card clickable ${selectedBatch === 7 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(7)}
               style={{
-                background: selectedBatch === 7 ? '#f0fdf4' : '#fff',
+                background: selectedBatch === 7 ? '#fef3c7' : '#fff',
                 border: selectedBatch === 7 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
                 transform: selectedBatch === 7 ? 'scale(1.02)' : 'none'
               }}
             >
-              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 7)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <h3 style={{ color: '#92400e' }}>📊 Previous (Batch 7)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#92400e' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s7.revenue.toLocaleString()} • {s7.count} Orders</p>
             </div>
 
+            {/* Batch 5 Card (Keep for reference) */}
             <div
               className={`admin-stat-card clickable ${selectedBatch === 5 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(5)}
@@ -1980,6 +2083,13 @@ Thank you for supporting Baked By BCD.`;
                       <div className="stock-adj">
                         <button onClick={() => updateStock('Box of 6', b6Stock + 1)} disabled={updatingStock}>+</button>
                         <button onClick={() => updateStock('Box of 6', Math.max(0, b6Stock - 1))} disabled={updatingStock}>-</button>
+                      </div>
+                    </div>
+                    <div className="mini-stock-badge" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+                      <span style={{ color: '#92400e' }}>Biscoff4:</span> <strong style={{ color: '#92400e' }}>{biscoff4Stock}</strong>
+                      <div className="stock-adj">
+                        <button onClick={() => updateStock('Biscoff Box of 4', biscoff4Stock + 1)} disabled={updatingStock} style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>+</button>
+                        <button onClick={() => updateStock('Biscoff Box of 4', Math.max(0, biscoff4Stock - 1))} disabled={updatingStock} style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>-</button>
                       </div>
                     </div>
                   </div>
@@ -2306,6 +2416,10 @@ Thank you for supporting Baked By BCD.`;
                     <div className="prod-badge-label">BOX OF 12</div>
                     <div className="prod-badge-val">{activeStats.b12}</div>
                   </div>
+                  <div className="prod-badge-item" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
+                    <div className="prod-badge-label" style={{ color: '#92400e' }}>BISCOFF B4</div>
+                    <div className="prod-badge-val" style={{ color: '#92400e' }}>{activeStats.biscoff4}</div>
+                  </div>
                 </div>
                 <div style={{ background: '#f5f3ff', padding: '20px', borderRadius: '16px', border: '1px solid #ddd6fe', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#5b21b6', marginBottom: '5px' }}>TOTAL COOKIES TO BAKE</div>
@@ -2455,15 +2569,21 @@ Thank you for supporting Baked By BCD.`;
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               const typeVal = o.quantity_type || '';
-                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0;
-                                              if (typeVal.includes('Box3:')) {
-                                                const parts = typeVal.split(', ');
-                                                _box3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                                                _box4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                                                _box6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                                                _box12 = parts[3] ? parseInt(parts[3]?.split(': ')[1]) : 0;
+                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0;
+                                              if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                                                const b3Match = typeVal.match(/Box3:\s(\d+)/);
+                                                const b4Match = typeVal.match(/Box4:\s(\d+)/);
+                                                const b6Match = typeVal.match(/Box6:\s(\d+)/);
+                                                const b12Match = typeVal.match(/Box12:\s(\d+)/);
+                                                const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+                                                _box3 = b3Match ? parseInt(b3Match[1]) : 0;
+                                                _box4 = b4Match ? parseInt(b4Match[1]) : 0;
+                                                _box6 = b6Match ? parseInt(b6Match[1]) : 0;
+                                                _box12 = b12Match ? parseInt(b12Match[1]) : 0;
+                                                _biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
                                               }
-                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12 });
+                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12, _biscoff4 });
                                             }}
                                             className="dc-link"
                                             style={{ background: '#64748b', border: 'none', cursor: 'pointer' }}
@@ -2545,7 +2665,7 @@ Thank you for supporting Baked By BCD.`;
                                             const type = bits[0];
                                             const count = bits[1];
                                             if (count === '0') return null;
-                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type;
+                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
                                             return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
                                           }) : 'No data'}
                                         </div>
@@ -2618,15 +2738,21 @@ Thank you for supporting Baked By BCD.`;
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               const typeVal = o.quantity_type || '';
-                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0;
-                                              if (typeVal.includes('Box3:')) {
-                                                const parts = typeVal.split(', ');
-                                                _box3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                                                _box4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                                                _box6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                                                _box12 = parts[3] ? parseInt(parts[3]?.split(': ')[1]) : 0;
+                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0;
+                                              if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                                                const b3Match = typeVal.match(/Box3:\s(\d+)/);
+                                                const b4Match = typeVal.match(/Box4:\s(\d+)/);
+                                                const b6Match = typeVal.match(/Box6:\s(\d+)/);
+                                                const b12Match = typeVal.match(/Box12:\s(\d+)/);
+                                                const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+                                                _box3 = b3Match ? parseInt(b3Match[1]) : 0;
+                                                _box4 = b4Match ? parseInt(b4Match[1]) : 0;
+                                                _box6 = b6Match ? parseInt(b6Match[1]) : 0;
+                                                _box12 = b12Match ? parseInt(b12Match[1]) : 0;
+                                                _biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
                                               }
-                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12 });
+                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12, _biscoff4 });
                                             }}
                                             className="dc-link"
                                             style={{ background: '#64748b', border: 'none', cursor: 'pointer' }}
@@ -2703,7 +2829,7 @@ Thank you for supporting Baked By BCD.`;
                                             const type = bits[0];
                                             const count = bits[1];
                                             if (count === '0') return null;
-                                            const label = type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : 'Box of 12';
+                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
                                             return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
                                           }) : 'No data'}
                                         </div>
@@ -3009,6 +3135,17 @@ Thank you for supporting Baked By BCD.`;
                           style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
                         />
                       </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Biscoff4</span>
+                        <input
+                          className="form-input pill"
+                          type="number"
+                          min="0"
+                          value={editingOrder._biscoff4 ?? 0}
+                          onChange={e => setEditingOrder({ ...editingOrder, _biscoff4: parseInt(e.target.value) || 0 })}
+                          style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -3138,20 +3275,21 @@ Thank you for supporting Baked By BCD.`;
                   <div className="order-card-details">
                     {(() => {
                       const typeVal = order.quantity_type || '';
-                      let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
-                      if (typeVal.includes('Box3:')) {
-                        const parts = typeVal.split(', ');
-                        b3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                        b4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                        b6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                        b12 = parseInt(parts[3]?.split(': ')[1]) || 0;
-                      } else if (typeVal.includes('Box4:')) {
-                        const parts = typeVal.split(', ');
-                        b4 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                        b6 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                        b12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
+                      if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                        const b3Match = typeVal.match(/Box3:\s(\d+)/);
+                        const b4Match = typeVal.match(/Box4:\s(\d+)/);
+                        const b6Match = typeVal.match(/Box6:\s(\d+)/);
+                        const b12Match = typeVal.match(/Box12:\s(\d+)/);
+                        const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+                        b3 = b3Match ? parseInt(b3Match[1]) : 0;
+                        b4 = b4Match ? parseInt(b4Match[1]) : 0;
+                        b6 = b6Match ? parseInt(b6Match[1]) : 0;
+                        b12 = b12Match ? parseInt(b12Match[1]) : 0;
+                        biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
                       }
-                      const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12);
+                      const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4);
                       return (
                         <div style={{ fontSize: '0.85rem' }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
@@ -3159,6 +3297,7 @@ Thank you for supporting Baked By BCD.`;
                             {b4 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B4 x {b4}</span>}
                             {b6 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B6 x {b6}</span>}
                             {b12 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B12 x {b12}</span>}
+                            {biscoff4 > 0 && <span style={{ background: '#fffbeb', color: '#92400e', padding: '2px 8px', borderRadius: '6px', fontWeight: 800, border: '1px solid #fde68a' }}>Biscoff4 x {biscoff4}</span>}
                           </div>
                           <div style={{ color: '#6366f1', fontWeight: 900, fontSize: '0.8rem' }}>↳ {total} cookies total</div>
                         </div>
@@ -3195,20 +3334,21 @@ Thank you for supporting Baked By BCD.`;
                       className="admin-action-mini"
                       onClick={() => {
                         const typeVal = order.quantity_type || '';
-                        let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0;
-                        if (typeVal.includes('Box3:')) {
-                           const parts = typeVal.split(', ');
-                           _box3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                           _box4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                           _box6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                           _box12 = parseInt(parts[3]?.split(': ')[1]) || 0;
-                        } else if (typeVal.includes('Box4:')) {
-                           const parts = typeVal.split(', ');
-                           _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                           _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                           _box12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                        let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0;
+                        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                           const b3Match = typeVal.match(/Box3:\s(\d+)/);
+                           const b4Match = typeVal.match(/Box4:\s(\d+)/);
+                           const b6Match = typeVal.match(/Box6:\s(\d+)/);
+                           const b12Match = typeVal.match(/Box12:\s(\d+)/);
+                           const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+                           _box3 = b3Match ? parseInt(b3Match[1]) : 0;
+                           _box4 = b4Match ? parseInt(b4Match[1]) : 0;
+                           _box6 = b6Match ? parseInt(b6Match[1]) : 0;
+                           _box12 = b12Match ? parseInt(b12Match[1]) : 0;
+                           _biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
                         }
-                        setEditingOrder({ ...order, _box3, _box4, _box6, _box12 });
+                        setEditingOrder({ ...order, _box3, _box4, _box6, _box12, _biscoff4 });
                       }}
                     >✏️</button>
                     <button className="admin-action-mini" onClick={() => handleConfirmAndDM(order)}>💬</button>
@@ -3276,22 +3416,23 @@ Thank you for supporting Baked By BCD.`;
                       <td>
                         {(() => {
                           const typeVal = order.quantity_type || '';
-                          let b3 = 0, b4 = 0, b6 = 0, b12 = 0;
-                          if (typeVal.includes('Box3:')) {
-                            const parts = typeVal.split(', ');
-                            b3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                            b4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                            b6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                            b12 = parseInt(parts[3]?.split(': ')[1]) || 0;
-                          } else if (typeVal.includes('Box4:')) {
-                            const parts = typeVal.split(', ');
-                            b4 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                            b6 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                            b12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                          let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
+                          if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                            const b3Match = typeVal.match(/Box3:\s(\d+)/);
+                            const b4Match = typeVal.match(/Box4:\s(\d+)/);
+                            const b6Match = typeVal.match(/Box6:\s(\d+)/);
+                            const b12Match = typeVal.match(/Box12:\s(\d+)/);
+                            const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+
+                            b3 = b3Match ? parseInt(b3Match[1]) : 0;
+                            b4 = b4Match ? parseInt(b4Match[1]) : 0;
+                            b6 = b6Match ? parseInt(b6Match[1]) : 0;
+                            b12 = b12Match ? parseInt(b12Match[1]) : 0;
+                            biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
                           }
-                          const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12);
+                          const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4);
                           // Legacy Fallback
-                          if (!typeVal.includes('Box')) {
+                          if (!typeVal.includes('Box') && !typeVal.includes('Biscoff')) {
                             const mult = order.quantity_type === 'box-of-4' ? 4 : (order.quantity_type === 'box-of-6' ? 6 : 12);
                             return (
                               <div style={{ fontSize: '0.85rem' }}>
@@ -3306,6 +3447,7 @@ Thank you for supporting Baked By BCD.`;
                               {b4 > 0 && <div>Box 4 x {b4}</div>}
                               {b6 > 0 && <div>Box 6 x {b6}</div>}
                               {b12 > 0 && <div>Box 12 x {b12}</div>}
+                              {biscoff4 > 0 && <div style={{ color: '#92400e', fontWeight: 700 }}>Biscoff4 x {biscoff4}</div>}
                               <div style={{ color: '#6366f1', fontWeight: 800 }}>↳ {total} cookies</div>
                             </div>
                           );
@@ -3505,7 +3647,7 @@ function MaintenancePage({ onUnlock, targetDate }: { onUnlock: (pass: string) =>
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – USLS Gate 6 Canteen</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market (12pm-2pm, March 28)</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only</span></li>
             <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
           </ul>
@@ -3859,6 +4001,7 @@ export default function App() {
   const [b3Stock, setB3Stock] = useState<number | null>(null);
   const [b4Stock, setB4Stock] = useState<number | null>(null);
   const [b6Stock, setB6Stock] = useState<number | null>(null);
+  const [biscoffStock, setBiscoffStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
   const [recoveryOrder, setRecoveryOrder] = useState<any>(null);
@@ -3868,9 +4011,11 @@ export default function App() {
       const { data: b3 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 3').single();
       const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
       const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
+      const { data: biscoff } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
       if (b3) setB3Stock(b3.stock_count);
       if (b4) setB4Stock(b4.stock_count);
       if (b6) setB6Stock(b6.stock_count);
+      if (biscoff) setBiscoffStock(biscoff.stock_count);
 
       // Also Fetch Site Lock Status
       const { data: lock } = await supabase.from('inventory').select('stock_count').eq('item_name', 'SITE_LOCK').single();
@@ -3929,10 +4074,12 @@ export default function App() {
           const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
           const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
           const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+          const biscoff = (typeVal.match(/Biscoff4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Biscoff4:\s(\d+)/)![1]) : 0;
           
           if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: b3 });
           if (b4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4 });
           if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6 });
+          if (biscoff > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: biscoff });
           
           // Update status to Expired
           await supabase.from('orders').update({ status: 'Expired' }).eq('id', hold.id);
@@ -3953,6 +4100,7 @@ export default function App() {
         if (item_name === 'Box of 3') setB3Stock(stock_count);
         if (item_name === 'Box of 4') setB4Stock(stock_count);
         if (item_name === 'Box of 6') setB6Stock(stock_count);
+        if (item_name === 'Biscoff Box of 4') setBiscoffStock(stock_count);
       })
       .subscribe();
 
@@ -4028,6 +4176,7 @@ export default function App() {
               b3={b3Stock}
               b4={b4Stock}
               b6={b6Stock}
+              biscoff4={biscoffStock}
               loading={stockLoading}
               onOrderClick={() => setPage('order')}
               onAdminClick={() => setPage('admin-login')}
