@@ -429,12 +429,12 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       if (rpcError) throw rpcError;
 
       // Update delivery mode and address since RPC might not handle them
-      if (rpcData.new_order_id) {
+      if (rpcData?.order_id) {
         await supabase.from('orders').update({
           delivery_mode: deliveryMode,
           maxim_address: deliveryMode === 'maxim' ? maximAddress : null,
           meetup_location: deliveryMode === 'meetup' ? 'lasalle' : 'alijis'
-        }).eq('id', rpcData.new_order_id);
+        }).eq('id', rpcData.order_id);
       }
 
       if (!rpcData.success) {
@@ -1876,6 +1876,8 @@ Thank you for supporting Baked By BCD.`;
         contact_number: editingOrder.contact_number,
         special_instructions: editingOrder.special_instructions || '',
         meetup_time: editingOrder.meetup_time,
+        meetup_location: editingOrder.meetup_location,
+        delivery_mode: editingOrder.delivery_mode,
         quantity_type: quantityType,
         total_price: Number(editingOrder.total_price) || 0,
         downpayment_price: Number(editingOrder.downpayment_price) || 0,
@@ -3164,6 +3166,27 @@ Thank you for supporting Baked By BCD.`;
                       onChange={e => setEditingOrder({ ...editingOrder, full_name: e.target.value })}
                       style={{ fontSize: '0.9rem', padding: '8px 12px' }}
                     />
+                  </div>
+
+                  {/* Delivery Mode Toggle (FIX for orders erroneously appearing as meetup) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Delivery Mode</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        className={`place-order-btn pill ${editingOrder.delivery_mode === 'meetup' ? '' : 'btn-secondary'}`}
+                        style={{ flex: 1, fontSize: '0.8rem', padding: '10px', height: '38px', minHeight: '38px' }}
+                        onClick={() => setEditingOrder({ ...editingOrder, delivery_mode: 'meetup' })}
+                      >
+                        🤝 Meetup
+                      </button>
+                      <button 
+                        className={`place-order-btn pill ${editingOrder.delivery_mode === 'maxim' ? '' : 'btn-secondary'}`}
+                        style={{ flex: 1, fontSize: '0.8rem', padding: '10px', height: '38px', minHeight: '38px' }}
+                        onClick={() => setEditingOrder({ ...editingOrder, delivery_mode: 'maxim' })}
+                      >
+                        🚚 Maxim
+                      </button>
+                    </div>
                   </div>
 
                   {/* Instagram & Contact */}
