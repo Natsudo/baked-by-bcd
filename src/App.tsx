@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { supabase } from './supabaseClient';
 import * as XLSX from 'xlsx-js-style';
@@ -16,22 +16,22 @@ const FAQS = [
   { q: "Are you still available? Do you accept orders?", a: "If slots are posted on our page as SOLD OUT or the forms are closed, we no longer accept orders for that batch. Please follow our page and check our posts or bio for updates on preorder availability and the next preorder schedule." },
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
-  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 Meetups only on Ayala Fiesta Market." },
-  { q: "What time are meetup orders?", a: "Meetups are on Ayala Fiesta Market. Please message us regarding the schedule as we are only available at selected times." },
+  { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 meetups at lasalle gate 6." },
+  { q: "What time are meetup orders?", a: "meetups at lasalle gate 6 - 9am-10am, March 31 tuesday. Please message us regarding the schedule as we are only available at selected times." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
   { q: "Do you offer boxes of 12 or 24?", a: "We currently offer boxes of 4 and 6 only. Box of 12 options will be available soon, so stay tuned for announcements." },
-  { q: "How much are your products?", a: "• Box of 3 - ₱265\n• Box of 4 - ₱350\n• Box of 6 - ₱525\n• Biscoff Box of 4 - ₱330\n\nOur full price list is also pinned on our page, so kindly follow us to check for updates." },
+  { q: "How much are your products?", a: "• Box of 3 - ₱265\n• Box of 4 - ₱350\n• Box of 6 - ₱525\n• Biscoff Box of 4 - ₱330\n• Biscoff & Pistacio Mixed Box of 4 - ₱342\n\nOur full price list is also pinned on our page, so kindly follow us to check for updates." },
   { q: "Can I change my order after submitting the form?", a: "Order information such as address or meetup details may still be updated if needed by messaging us through our Instagram handle @BAKEDBY.BCD. However, the quantity ordered cannot be changed since slots are limited." },
   { q: "Why are slots limited?", a: "We are a small student-run business and bake per batch to ensure quality and freshness. Slots are limited to maintain product quality." },
   { q: "Can I cancel my order?", a: "Cancellations are not allowed once payment is made. The 50% downpayment is strictly non-refundable as ingredients and slots are already allocated." }
 ];
 
 /* ─── STOCK COUNTER COMPONENT ─── */
-function StockCounter({ b3, b4, b6, biscoff4, loading }: { b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, loading: boolean }) {
-  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0;
-  const totalPcs = (b3 ?? 0) * 3 + (b4 ?? 0) * 4 + (b6 ?? 0) * 6 + (biscoff4 ?? 0) * 4;
+function StockCounter({ b3, b4, b6, biscoff4, mixed4, loading }: { b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, mixed4: number | null, loading: boolean }) {
+  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0 && mixed4 === 0;
+  const totalPcs = (b3 ?? 0) * 3 + (b4 ?? 0) * 4 + (b6 ?? 0) * 6 + (biscoff4 ?? 0) * 4 + (mixed4 ?? 0) * 4;
   return (
     <div className="stock-counter-banner sparkle-banner">
       <span className="stock-dot" style={{ background: isSoldOut ? '#ef4444' : '#10b981' }}></span>
@@ -45,8 +45,8 @@ function StockCounter({ b3, b4, b6, biscoff4, loading }: { b3: number | null, b4
 /* ═══════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════ */
-function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, biscoff4, loading }: { onOrderClick: () => void, onAdminClick: () => void, onViewHistory: () => void, b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, loading: boolean }) {
-  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0;
+function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, biscoff4, mixed4, loading }: { onOrderClick: () => void, onAdminClick: () => void, onViewHistory: () => void, b3: number | null, b4: number | null, b6: number | null, biscoff4: number | null, mixed4: number | null, loading: boolean }) {
+  const isSoldOut = b3 === 0 && b4 === 0 && b6 === 0 && biscoff4 === 0 && mixed4 === 0;
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const tapCount = useRef(0);
   const resetTimer = useRef<number | null>(null);
@@ -71,7 +71,7 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, bisco
 
   return (
     <div className="home-page">
-      <StockCounter b3={b3} b4={b4} b6={b6} biscoff4={biscoff4} loading={loading} />
+      <StockCounter b3={b3} b4={b4} b6={b6} biscoff4={biscoff4} mixed4={mixed4} loading={loading} />
 
       {/* Full-width clouds banner — no wrapper, scales naturally */}
       <img src="/clouds.png" alt="" className="clouds-banner" />
@@ -104,8 +104,8 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, bisco
 
 
           <div className="location-note" style={{ fontSize: '0.9rem', lineHeight: '1.6', marginTop: '15px' }}>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <strong>Meetups only on Ayala Fiesta Market</strong></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>12pm to 2pm, March 28, Saturday</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <strong>meetups at lasalle gate 6</strong></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>9am-10am, March 31 tuesday</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes available</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Full payment basis</span></div>
@@ -153,13 +153,15 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
   const [contactNumber, setContactNumber] = useState('');
   const [instagram, setInstagram] = useState('');
   const [holdingOrderId, setHoldingOrderId] = useState<string | null>(null);
-  const [quantities, setQuantities] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0 });
-  const [boxStocks, setBoxStocks] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0 });
+  const [quantities, setQuantities] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0, Mixed4: 0 });
+  const [boxStocks, setBoxStocks] = useState({ Box3: 0, Box4: 0, Box6: 0, Biscoff4: 0, Mixed4: 0 });
   const [boxLoading, setBoxLoading] = useState(true);
   const [paymentNumber, setPaymentNumber] = useState('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState<'meetup' | 'maxim'>('meetup');
+  const [maximAddress, setMaximAddress] = useState('');
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
 
   useEffect(() => {
@@ -168,14 +170,17 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       setContactNumber(recoveryOrder.contact_number);
       setInstagram(recoveryOrder.instagram || '');
       setHoldingOrderId(recoveryOrder.id);
+      setDeliveryMode(recoveryOrder.delivery_mode || 'meetup');
+      setMaximAddress(recoveryOrder.maxim_address || '');
 
       const typeVal = recoveryOrder.quantity_type || '';
       const b3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
       const b4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
       const b6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
       const biscoff4 = (typeVal.match(/Biscoff4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Biscoff4:\s(\d+)/)![1]) : 0;
+      const mixed4 = (typeVal.match(/Mixed4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Mixed4:\s(\d+)/)![1]) : 0;
 
-      setQuantities({ Box3: b3, Box4: b4, Box6: b6, Biscoff4: biscoff4 });
+      setQuantities({ Box3: b3, Box4: b4, Box6: b6, Biscoff4: biscoff4, Mixed4: mixed4 });
       setSubmitted(true); // Skip to step 2 (Payment)
       
       // Calculate remaining time
@@ -219,7 +224,6 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
-  // ─── ACTIVE STOCK MONITORING ───
   // ─── ACTIVE STOCK MONITORING (Real-time & Polling Backup) ───
   useEffect(() => {
     const fetchBoxStock = async () => {
@@ -228,17 +232,19 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
         const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
         const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
         const { data: biscoff4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
+        const { data: mixed4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff and Pistacio Mixed').single();
 
         const stocks = {
           Box3: b3?.stock_count ?? 0,
           Box4: b4?.stock_count ?? 0,
           Box6: b6?.stock_count ?? 0,
-          Biscoff4: biscoff4?.stock_count ?? 0
+          Biscoff4: biscoff4?.stock_count ?? 0,
+          Mixed4: mixed4?.stock_count ?? 0
         };
         setBoxStocks(stocks);
         setBoxLoading(false);
 
-        if (stocks.Box3 === 0 && stocks.Box4 === 0 && stocks.Box6 === 0 && stocks.Biscoff4 === 0 && !submitted) {
+        if (stocks.Box3 === 0 && stocks.Box4 === 0 && stocks.Box6 === 0 && stocks.Biscoff4 === 0 && stocks.Mixed4 === 0 && !submitted) {
           alert("🚨 UPDATE: Everything just sold out while you were here! \n\nRedirecting you back to the home page...");
           onBack();
         }
@@ -310,6 +316,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       if (quantities.Box4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: quantities.Box4 });
       if (quantities.Box6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: quantities.Box6 });
       if (quantities.Biscoff4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: quantities.Biscoff4 });
+      if (quantities.Mixed4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff and Pistacio Mixed', p_amount: quantities.Mixed4 });
       
       // Delete holding record
       await supabase.from('orders').delete().eq('id', holdingOrderId);
@@ -359,7 +366,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525) + (quantities.Biscoff4 * 330);
+  const totalPrice = (quantities.Box3 * 265) + (quantities.Box4 * 350) + (quantities.Box6 * 525) + (quantities.Biscoff4 * 330) + (quantities.Mixed4 * 342);
   const downpaymentPrice = totalPrice;
 
   const validate = () => {
@@ -367,7 +374,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     if (!fullName.trim()) errs.fullName = 'Full Name is required.';
     if (!contactNumber.trim()) errs.contactNumber = 'Contact Number is required.';
     if (!instagram.trim()) errs.instagram = 'Instagram Handle is required.';
-    if (quantities.Box3 === 0 && quantities.Box4 === 0 && quantities.Box6 === 0 && quantities.Biscoff4 === 0) errs.quantity = 'Please select at least one box.';
+    if (quantities.Box3 === 0 && quantities.Box4 === 0 && quantities.Box6 === 0 && quantities.Biscoff4 === 0 && quantities.Mixed4 === 0) errs.quantity = 'Please select at least one box.';
     return errs;
   };
 
@@ -394,7 +401,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
         p_full_name: fullName,
         p_contact_number: contactNumber.replace(/\s/g, ''),
         p_instagram: instagram,
-        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}`,
+        p_quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}, Mixed4: ${quantities.Mixed4}`,
         p_total_price: totalPrice,
         p_downpayment_price: downpaymentPrice,
         p_needs3: quantities.Box3,
@@ -411,7 +418,24 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
         if (biscoffError) console.error("Error deducting Biscoff stock:", biscoffError);
       }
 
+      if (quantities.Mixed4 > 0) {
+        const { error: mixedError } = await supabase.rpc('increment_box_stock', {
+          p_item: 'Biscoff and Pistacio Mixed',
+          p_amount: -quantities.Mixed4
+        });
+        if (mixedError) console.error("Error deducting Mixed stock:", mixedError);
+      }
+
       if (rpcError) throw rpcError;
+
+      // Update delivery mode and address since RPC might not handle them
+      if (rpcData.new_order_id) {
+        await supabase.from('orders').update({
+          delivery_mode: deliveryMode,
+          maxim_address: deliveryMode === 'maxim' ? maximAddress : null,
+          meetup_location: deliveryMode === 'meetup' ? 'lasalle' : 'alijis'
+        }).eq('id', rpcData.new_order_id);
+      }
 
       if (!rpcData.success) {
         setIsCheckingStock(false);
@@ -435,14 +459,15 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
     }
   };
 
-  const handleQuantityChange = (boxType: 'Box3' | 'Box4' | 'Box6' | 'Biscoff4', change: number) => {
+  const handleQuantityChange = (boxType: 'Box3' | 'Box4' | 'Box6' | 'Biscoff4' | 'Mixed4', change: number) => {
     setQuantities(prev => {
       const currentQty = prev[boxType];
       const newQty = Math.max(0, currentQty + change);
 
       const available = boxStocks[boxType];
       if (change > 0 && newQty > available) {
-        alert(`Sorry, only ${available} ${boxType === 'Box3' ? 'Box of 3' : boxType === 'Box4' ? 'Box of 4' : boxType === 'Box6' ? 'Box of 6' : 'Biscoff Box of 4'} left!`);
+        const label = boxType === 'Box3' ? 'Box of 3' : boxType === 'Box4' ? 'Box of 4' : boxType === 'Box6' ? 'Box of 6' : boxType === 'Biscoff4' ? 'Biscoff Box of 4' : 'Biscoff and Pistacio Mixed Box of 4';
+        alert(`Sorry, only ${available} ${label} left!`);
         return prev;
       }
 
@@ -486,7 +511,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
           full_name: fullName,
           contact_number: contactNumber.replace(/\s/g, ''),
           instagram: instagram,
-          quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}`,
+          quantity_type: `Box3: ${quantities.Box3}, Box4: ${quantities.Box4}, Box6: ${quantities.Box6}, Biscoff4: ${quantities.Biscoff4}, Mixed4: ${quantities.Mixed4}`,
           quantity: 1,
           status: 'Pending',
           payment_mode: 'gcash',
@@ -550,12 +575,14 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                   <span className="inv-label">Items:</span>
                   <span className="inv-val item-val">
                     {quantities.Box3 > 0 && `Box of 3 x ${quantities.Box3}`}
-                    {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                    {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0 || quantities.Mixed4 > 0)) && <br />}
                     {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                    {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                    {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0 || quantities.Mixed4 > 0)) && <br />}
                     {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
-                    {(quantities.Box6 > 0 && quantities.Biscoff4 > 0) && <br />}
+                    {(quantities.Box6 > 0 && (quantities.Biscoff4 > 0 || quantities.Mixed4 > 0)) && <br />}
                     {quantities.Biscoff4 > 0 && `Biscoff Box of 4 x ${quantities.Biscoff4}`}
+                    {(quantities.Biscoff4 > 0 && quantities.Mixed4 > 0) && <br />}
+                    {quantities.Mixed4 > 0 && `Biscoff & Pistacio Mixed Box of 4 x ${quantities.Mixed4}`}
                   </span>
                 </div>
                 <div className="invoice-row">
@@ -564,11 +591,29 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                 </div>
                 <div className="invoice-divider" />
                 <div style={{ padding: '10px 0' }}>
-                  <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 Meet-up Location:</p>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>Ayala Fiesta Market (12pm-2pm, March 28)</p>
+                  <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#142376', fontWeight: 800 }}>📍 {deliveryMode === 'maxim' ? 'Maxim Delivery (Self-Book):' : 'Meet-up Location:'}</p>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#475569' }}>
+                    {deliveryMode === 'maxim' ? (
+                      <>
+                        <strong style={{ color: '#92400e' }}>📍 Maxim pickup: Terra Nova Subdivision Swimming Pool</strong><br />
+                        <span style={{ fontSize: '0.9rem' }}>📞 Rider Contact: (0995) 500 4044</span><br />
+                        <span style={{ fontSize: '0.9rem' }}>🕒 Time: Book any time 12:00 PM - 3:00 PM (March 31, Tuesday)</span>
+                        <div style={{ marginTop: '12px' }}>
+                          <img 
+                            src="/assets/maxim-location.jpg" 
+                            alt="Maxim Pickup Pin" 
+                            style={{ width: '100%', borderRadius: '12px', border: '1px solid #eef2ff' }} 
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      'meetups at lasalle gate 6 - 9am-10am, March 31 tuesday'
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
+
 
             <div style={{ background: '#f8fafc', padding: '25px', borderRadius: '25px', marginTop: '30px', border: '2px dotted #3b82f6' }}>
               <p style={{ color: '#1e3a8a', fontSize: '1.1rem', fontWeight: 900, marginBottom: '20px', lineHeight: '1.4' }}>
@@ -771,17 +816,19 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                     Dubai Chewy Chocolate<br />
                     <small>
                       {quantities.Box3 > 0 && `Box of 3 x ${quantities.Box3}`}
-                      {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                      {(quantities.Box3 > 0 && (quantities.Box4 > 0 || quantities.Box6 > 0 || quantities.Biscoff4 > 0 || quantities.Mixed4 > 0)) && <br />}
                       {quantities.Box4 > 0 && `Box of 4 x ${quantities.Box4}`}
-                      {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0)) && <br />}
+                      {(quantities.Box4 > 0 && (quantities.Box6 > 0 || quantities.Biscoff4 > 0 || quantities.Mixed4 > 0)) && <br />}
                       {quantities.Box6 > 0 && `Box of 6 x ${quantities.Box6}`}
                     </small>
-                    {quantities.Biscoff4 > 0 && (
+                    {(quantities.Biscoff4 > 0 || quantities.Mixed4 > 0) && (
                       <>
                         <br />
-                        Biscoff Chewy Cookie<br />
+                        Other Variants<br />
                         <small>
-                          Biscoff Box of 4 x {quantities.Biscoff4}
+                          {quantities.Biscoff4 > 0 && `Biscoff Box of 4 x ${quantities.Biscoff4}`}
+                          {(quantities.Biscoff4 > 0 && quantities.Mixed4 > 0) && <br />}
+                          {quantities.Mixed4 > 0 && `Biscoff & Pistacio Mixed x ${quantities.Mixed4}`}
                         </small>
                       </>
                     )}
@@ -841,7 +888,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
             <div className="op-product-title">Dubai Chewy Chocolate Pre-Order</div>
             <div className="op-product-sub">Batch 9</div>
             <div className="op-product-price-list" style={{ color: '#1e3a8a', fontSize: '0.9rem', fontWeight: 900, background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', display: 'inline-block', marginTop: '6px', border: '1px solid #bfdbfe' }}>
-              📍 Meetups only on Ayala Fiesta Market
+              📍 meetups at lasalle gate 6 - 9am-10am, March 31 tuesday
             </div>
             <div className="op-product-price-list" style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 900, background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', display: 'block', marginTop: '6px', border: '1px solid #a7f3d0' }}>
               ₱265 for Box of 3 • ₱350 for Box of 4 • ₱525 for Box of 6
@@ -979,8 +1026,84 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
               </div>
             </div>
 
+            <div className="qty-row-item" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed #e2e8f0' }}>
+              <div className="qty-info">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="qty-label">Biscoff & Pistacio Mixed</span>
+                  <span style={{ fontSize: '0.7rem', background: '#f5d0fe', color: '#701a75', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>NEW</span>
+                </div>
+                <span className="qty-sub">
+                  <span className="qty-price" style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>Box of 4 • ₱342</span>
+                  <br />
+                  <span style={{ color: boxStocks.Mixed4 === 0 ? '#ef4444' : '#10b981', fontWeight: 800, marginLeft: '0px' }}>
+                    {boxLoading ? 'Checking...' : `${boxStocks.Mixed4} left`}
+                  </span>
+                </span>
+              </div>
+              <div className="qty-stepper">
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Mixed4', -1)} style={{ borderColor: '#f5d0fe', color: '#111' }}>−</button>
+                <span className="qty-val">{quantities.Mixed4}</span>
+                <button type="button" className="qty-btn" onClick={() => handleQuantityChange('Mixed4', 1)} style={{ borderColor: '#f5d0fe', color: '#111' }}>+</button>
+              </div>
+            </div>
           </div>
 
+          {/* Step 3: Delivery Method */}
+          <div className="form-section">
+            <div className="form-section-title" id="delivery">
+              <span className="form-step-badge">3</span>
+              Delivery Method:
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <button
+                type="button"
+                className={`place-order-btn pill ${deliveryMode === 'meetup' ? '' : 'btn-secondary'}`}
+                style={{ flex: 1, fontSize: '0.9rem', padding: '10px' }}
+                onClick={() => setDeliveryMode('meetup')}
+              >
+                🤝 Meetup (La Salle)
+              </button>
+              <button
+                type="button"
+                className={`place-order-btn pill ${deliveryMode === 'maxim' ? '' : 'btn-secondary'}`}
+                style={{ flex: 1, fontSize: '0.9rem', padding: '10px' }}
+                onClick={() => setDeliveryMode('maxim')}
+              >
+                🚚 Maxim (Self-Book)
+              </button>
+            </div>
+
+            {deliveryMode === 'meetup' ? (
+              <div style={{ marginTop: '15px', padding: '15px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', fontSize: '0.85rem' }}>
+                <strong style={{ color: '#1e40af', display: 'block', marginBottom: '4px' }}>📍 Pickup Details</strong>
+                <span style={{ color: '#1e3a8a' }}>meetups at lasalle gate 6 - 9am-10am, March 31 tuesday</span>
+              </div>
+            ) : (
+              <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ padding: '15px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', fontSize: '0.85rem' }}>
+                  <strong style={{ color: '#92400e', display: 'block', marginBottom: '8px' }}>⚠️ Maxim Instructions</strong>
+                  <ul style={{ margin: 0, paddingLeft: '18px', color: '#92400e', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <li><strong>Book your own Maxim rider!</strong></li>
+                    <li>Book anytime between <strong>12:00 PM - 3:00 PM</strong> only on <strong>March 31, Tuesday</strong>.</li>
+                    <li>📍 Pickup: <strong>Terra Nova Subdivision Swimming Pool</strong></li>
+                    <li>📞 Number for rider: <strong>(0995) 500 4044</strong></li>
+                  </ul>
+                </div>
+
+                <div style={{ marginTop: '5px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Reference Location Pin:</span>
+                  <img 
+                    src="/assets/maxim-location.jpg" 
+                    alt="Maxim Pickup Pin" 
+                    style={{ width: '100%', borderRadius: '12px', border: '2px solid #e2e8f0' }} 
+                  />
+                  <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '6px', textAlign: 'center' }}>
+                    Pin: Terra Nova Subdivision Swimming Pool
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="form-submit-row" style={{ marginTop: '20px' }}>
             <button
               type="submit"
@@ -1060,6 +1183,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [b4Stock, setB4Stock] = useState<number>(0);
   const [b6Stock, setB6Stock] = useState<number>(0);
   const [biscoff4Stock, setBiscoff4Stock] = useState<number>(0);
+  const [mixed4Stock, setMixed4Stock] = useState<number>(0);
   const [updatingStock, setUpdatingStock] = useState(false);
   const [showToCollect, setShowToCollect] = useState(false);
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
@@ -1097,11 +1221,11 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
 
   // --- CALCULATIONS (Batching & Stats) ---
   const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, s8, s9, recentNotes } = useMemo(() => {
-    const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
-    const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
-    const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
-    const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
-    const cutoff9 = new Date('2026-03-27T12:00:00+08:00').getTime();
+                        const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
+                        const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
+                        const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
+                        const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
+                        const cutoff9 = new Date('2026-03-30T17:00:00+08:00').getTime();
     const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff5);
     const batch5Orders = orders.filter(o => {
       const t = new Date(o.created_at).getTime();
@@ -1122,26 +1246,28 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const batch9Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff9);
 
     const getStats = (list: any[]) => {
-      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
+      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0, mixed4 = 0;
       let rev = 0;
       list.forEach(o => {
         const typeVal = o.quantity_type || '';
-        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
           const b3Match = typeVal.match(/Box3:\s(\d+)/);
           const b4Match = typeVal.match(/Box4:\s(\d+)/);
           const b6Match = typeVal.match(/Box6:\s(\d+)/);
           const b12Match = typeVal.match(/Box12:\s(\d+)/);
           const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+          const mixedMatch = typeVal.match(/Mixed4:\s(\d+)/);
 
           b3 += b3Match ? parseInt(b3Match[1]) : 0;
           b4 += b4Match ? parseInt(b4Match[1]) : 0;
           b6 += b6Match ? parseInt(b6Match[1]) : 0;
           b12 += b12Match ? parseInt(b12Match[1]) : 0;
           biscoff4 += biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
+          mixed4 += mixedMatch ? parseInt(mixedMatch[1]) : 0;
         }
         rev += o.total_price || 0;
       });
-      return { b3, b4, b6, b12, biscoff4, cookies: (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4), revenue: rev, count: list.length };
+      return { b3, b4, b6, b12, biscoff4, mixed4, cookies: (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4) + (mixed4 * 4), revenue: rev, count: list.length };
     };
 
     const s4Comp = getStats(batch4Orders);
@@ -1197,13 +1323,15 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
     const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
     const { data: biscoff4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
+    const { data: mixed4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff and Pistacio Mixed').single();
     if (b3) setB3Stock(b3.stock_count);
     if (b4) setB4Stock(b4.stock_count);
     if (b6) setB6Stock(b6.stock_count);
     if (biscoff4) setBiscoff4Stock(biscoff4.stock_count);
+    if (mixed4) setMixed4Stock(mixed4.stock_count);
   };
 
-  const updateStock = async (boxType: 'Box of 3' | 'Box of 4' | 'Box of 6' | 'Biscoff Box of 4', newStock: number) => {
+  const updateStock = async (boxType: 'Box of 3' | 'Box of 4' | 'Box of 6' | 'Biscoff Box of 4' | 'Biscoff and Pistacio Mixed', newStock: number) => {
     setUpdatingStock(true);
     const { error } = await supabase
       .from('inventory')
@@ -1213,7 +1341,8 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       if (boxType === 'Box of 3') setB3Stock(newStock);
       else if (boxType === 'Box of 4') setB4Stock(newStock);
       else if (boxType === 'Box of 6') setB6Stock(newStock);
-      else setBiscoff4Stock(newStock);
+      else if (boxType === 'Biscoff Box of 4') setBiscoff4Stock(newStock);
+      else setMixed4Stock(newStock);
     }
     setUpdatingStock(false);
   };
@@ -1230,12 +1359,14 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       const b6Match = typeVal.match(/Box6:\s(\d+)/);
       const b12Match = typeVal.match(/Box12:\s(\d+)/);
       const biscoff4Match = typeVal.match(/Biscoff4:\s(\d+)/);
+      const mixed4Match = typeVal.match(/Mixed4:\s(\d+)/);
 
       const b3 = b3Match ? parseInt(b3Match[1]) : 0;
       const b4 = b4Match ? parseInt(b4Match[1]) : 0;
       const b6 = b6Match ? parseInt(b6Match[1]) : 0;
       const b12 = b12Match ? parseInt(b12Match[1]) : 0;
       const biscoff4 = biscoff4Match ? parseInt(biscoff4Match[1]) : 0;
+      const mixed4 = mixed4Match ? parseInt(mixed4Match[1]) : 0;
 
       // Decrement using RPC (negative amount)
       if (b3 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: -b3 });
@@ -1243,6 +1374,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: -b6 });
       if (b12 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 12', p_amount: -b12 });
       if (biscoff4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: -biscoff4 });
+      if (mixed4 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff and Pistacio Mixed', p_amount: -mixed4 });
 
       const { error } = await supabase.from('orders').update({ status: 'Pending' }).eq('id', order.id);
       if (error) throw error;
@@ -1309,18 +1441,21 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       const b6Match = typeVal.match(/Box6:\s(\d+)/);
       const b12Match = typeVal.match(/Box12:\s(\d+)/);
       const biscoff4Match = typeVal.match(/Biscoff4:\s(\d+)/);
+      const mixed4Match = typeVal.match(/Mixed4:\s(\d+)/);
 
       const b3Return = b3Match ? parseInt(b3Match[1]) : 0;
       const b4Return = b4Match ? parseInt(b4Match[1]) : 0;
       const b6Return = b6Match ? parseInt(b6Match[1]) : 0;
       const b12Return = b12Match ? parseInt(b12Match[1]) : 0;
       const biscoff4Return = biscoff4Match ? parseInt(biscoff4Match[1]) : 0;
+      const mixed4Return = mixed4Match ? parseInt(mixed4Match[1]) : 0;
 
       if (b3Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 3', p_amount: b3Return });
       if (b4Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 4', p_amount: b4Return });
       if (b6Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6Return });
       if (b12Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 12', p_amount: b12Return });
       if (biscoff4Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: biscoff4Return });
+      if (mixed4Return > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff and Pistacio Mixed', p_amount: mixed4Return });
 
       // 3. Delete order
       const { error: deleteError, count } = await supabase
@@ -1364,9 +1499,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
           const type = p[0];
           const count = parseInt(p[1]) || 0;
           if (count > 0) {
-            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
+            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type === 'Mixed4' ? 'Biscoff & Pistacio Mixed' : type;
             parts.push(`${count}x ${label}`);
-            const multiplier = type === 'Box3' ? 3 : type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : type === 'Biscoff4' ? 4 : 0;
+            const multiplier = type === 'Box3' ? 3 : type === 'Box4' ? 4 : type === 'Box6' ? 6 : type === 'Box12' ? 12 : (type === 'Biscoff4' || type === 'Mixed4') ? 4 : 0;
             totalPieces += (count * multiplier);
           }
         });
@@ -1639,9 +1774,9 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       items.forEach((item: string) => {
         const parts = item.split(': ');
         const type = parts[0];
-        const count = parseInt(parts[1]);
+            const count = parseInt(parts[1]);
           if (count > 0) {
-            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
+            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type === 'Mixed4' ? 'Biscoff & Pistacio Mixed' : type;
             orderList += `\n• ${label} x ${count}`;
           }
       });
@@ -1684,7 +1819,7 @@ Thank you for supporting Baked By BCD.`;
 
   const handleCopyMaximInfo = (o: any) => {
     // Add City for better geolocation in the Maxim App
-    const fromClean = 'USLS Gate 6 Canteen, Bacolod';
+    const fromClean = 'Terra Nova Subdivision Swimming Pool, Alijis, Bacolod';
     const toClean = (o.maxim_address || '') + ', Bacolod';
 
     const text = `FROM: ${fromClean}\nTO: ${toClean}\nCUSTOMER: ${o.full_name}`;
@@ -1732,7 +1867,8 @@ Thank you for supporting Baked By BCD.`;
       const b6 = editingOrder._box6 ?? 0;
       const b12 = editingOrder._box12 ?? 0;
       const biscoff4 = editingOrder._biscoff4 ?? 0;
-      const quantityType = `Box3: ${b3}, Box4: ${b4}, Box6: ${b6}, Box12: ${b12}, Biscoff4: ${biscoff4}`;
+      const mixed4 = editingOrder._mixed4 ?? 0;
+      const quantityType = `Box3: ${b3}, Box4: ${b4}, Box6: ${b6}, Box12: ${b12}, Biscoff4: ${biscoff4}, Mixed4: ${mixed4}`;
 
       const updates: any = {
         full_name: editingOrder.full_name,
@@ -2092,6 +2228,13 @@ Thank you for supporting Baked By BCD.`;
                         <button onClick={() => updateStock('Biscoff Box of 4', Math.max(0, biscoff4Stock - 1))} disabled={updatingStock} style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>-</button>
                       </div>
                     </div>
+                    <div className="mini-stock-badge" style={{ background: '#f5d0fe', border: '1px solid #f5d0fe' }}>
+                      <span style={{ color: '#701a75' }}>Mixed4:</span> <strong style={{ color: '#701a75' }}>{mixed4Stock}</strong>
+                      <div className="stock-adj">
+                        <button onClick={() => updateStock('Biscoff and Pistacio Mixed', mixed4Stock + 1)} disabled={updatingStock} style={{ background: '#f5d0fe', color: '#701a75', borderColor: '#f5d0fe' }}>+</button>
+                        <button onClick={() => updateStock('Biscoff and Pistacio Mixed', Math.max(0, mixed4Stock - 1))} disabled={updatingStock} style={{ background: '#f5d0fe', color: '#701a75', borderColor: '#f5d0fe' }}>-</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2416,9 +2559,9 @@ Thank you for supporting Baked By BCD.`;
                     <div className="prod-badge-label">BOX OF 12</div>
                     <div className="prod-badge-val">{activeStats.b12}</div>
                   </div>
-                  <div className="prod-badge-item" style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
-                    <div className="prod-badge-label" style={{ color: '#92400e' }}>BISCOFF B4</div>
-                    <div className="prod-badge-val" style={{ color: '#92400e' }}>{activeStats.biscoff4}</div>
+                  <div className="prod-badge-item" style={{ background: '#fff1f2', border: '1px solid #fda4af' }}>
+                    <div className="prod-badge-label" style={{ color: '#be123c' }}>MIXED B4</div>
+                    <div className="prod-badge-val" style={{ color: '#be123c' }}>{activeStats.mixed4}</div>
                   </div>
                 </div>
                 <div style={{ background: '#f5f3ff', padding: '20px', borderRadius: '16px', border: '1px solid #ddd6fe', textAlign: 'center' }}>
@@ -2665,7 +2808,7 @@ Thank you for supporting Baked By BCD.`;
                                             const type = bits[0];
                                             const count = bits[1];
                                             if (count === '0') return null;
-                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
+                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type === 'Mixed4' ? 'Biscoff & Pistacio Mixed' : type;
                                             return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
                                           }) : 'No data'}
                                         </div>
@@ -2738,21 +2881,23 @@ Thank you for supporting Baked By BCD.`;
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               const typeVal = o.quantity_type || '';
-                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0;
-                                              if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0, _mixed4 = 0;
+                                              if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
                                                 const b3Match = typeVal.match(/Box3:\s(\d+)/);
                                                 const b4Match = typeVal.match(/Box4:\s(\d+)/);
                                                 const b6Match = typeVal.match(/Box6:\s(\d+)/);
                                                 const b12Match = typeVal.match(/Box12:\s(\d+)/);
                                                 const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+                                                const mixedMatch = typeVal.match(/Mixed4:\s(\d+)/);
 
                                                 _box3 = b3Match ? parseInt(b3Match[1]) : 0;
                                                 _box4 = b4Match ? parseInt(b4Match[1]) : 0;
                                                 _box6 = b6Match ? parseInt(b6Match[1]) : 0;
                                                 _box12 = b12Match ? parseInt(b12Match[1]) : 0;
                                                 _biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
+                                                _mixed4 = mixedMatch ? parseInt(mixedMatch[1]) : 0;
                                               }
-                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12, _biscoff4 });
+                                              setEditingOrder({ ...o, _box3, _box4, _box6, _box12, _biscoff4, _mixed4 });
                                             }}
                                             className="dc-link"
                                             style={{ background: '#64748b', border: 'none', cursor: 'pointer' }}
@@ -2829,7 +2974,7 @@ Thank you for supporting Baked By BCD.`;
                                             const type = bits[0];
                                             const count = bits[1];
                                             if (count === '0') return null;
-                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type;
+                                            const label = type === 'Box3' ? 'Box of 3' : type === 'Box4' ? 'Box of 4' : type === 'Box6' ? 'Box of 6' : type === 'Box12' ? 'Box of 12' : type === 'Biscoff4' ? 'Biscoff Box of 4' : type === 'Mixed4' ? 'Biscoff & Pistacio Mixed' : type;
                                             return <div key={type} style={{ fontWeight: 700 }}>{count}x {label}</div>;
                                           }) : 'No data'}
                                         </div>
@@ -3090,7 +3235,7 @@ Thank you for supporting Baked By BCD.`;
                   {/* Quantity (Boxes) */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Quantity (Boxes)</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Box of 3</span>
                         <input
@@ -3143,6 +3288,17 @@ Thank you for supporting Baked By BCD.`;
                           min="0"
                           value={editingOrder._biscoff4 ?? 0}
                           onChange={e => setEditingOrder({ ...editingOrder, _biscoff4: parseInt(e.target.value) || 0 })}
+                          style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Mixed4</span>
+                        <input
+                          className="form-input pill"
+                          type="number"
+                          min="0"
+                          value={editingOrder._mixed4 ?? 0}
+                          onChange={e => setEditingOrder({ ...editingOrder, _mixed4: parseInt(e.target.value) || 0 })}
                           style={{ fontSize: '1rem', padding: '8px', textAlign: 'center', fontWeight: 800 }}
                         />
                       </div>
@@ -3275,21 +3431,23 @@ Thank you for supporting Baked By BCD.`;
                   <div className="order-card-details">
                     {(() => {
                       const typeVal = order.quantity_type || '';
-                      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
-                      if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                      let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0, mixed4 = 0;
+                      if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
                         const b3Match = typeVal.match(/Box3:\s(\d+)/);
                         const b4Match = typeVal.match(/Box4:\s(\d+)/);
                         const b6Match = typeVal.match(/Box6:\s(\d+)/);
                         const b12Match = typeVal.match(/Box12:\s(\d+)/);
                         const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+                        const mixedMatch = typeVal.match(/Mixed4:\s(\d+)/);
 
                         b3 = b3Match ? parseInt(b3Match[1]) : 0;
                         b4 = b4Match ? parseInt(b4Match[1]) : 0;
                         b6 = b6Match ? parseInt(b6Match[1]) : 0;
                         b12 = b12Match ? parseInt(b12Match[1]) : 0;
                         biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
+                        mixed4 = mixedMatch ? parseInt(mixedMatch[1]) : 0;
                       }
-                      const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4);
+                      const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4) + (mixed4 * 4);
                       return (
                         <div style={{ fontSize: '0.85rem' }}>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
@@ -3298,6 +3456,7 @@ Thank you for supporting Baked By BCD.`;
                             {b6 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B6 x {b6}</span>}
                             {b12 > 0 && <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>B12 x {b12}</span>}
                             {biscoff4 > 0 && <span style={{ background: '#fffbeb', color: '#92400e', padding: '2px 8px', borderRadius: '6px', fontWeight: 800, border: '1px solid #fde68a' }}>Biscoff4 x {biscoff4}</span>}
+                            {mixed4 > 0 && <span style={{ background: '#fef2f2', color: '#991b1b', padding: '2px 8px', borderRadius: '6px', fontWeight: 800, border: '1px solid #fecaca' }}>Mixed x {mixed4}</span>}
                           </div>
                           <div style={{ color: '#6366f1', fontWeight: 900, fontSize: '0.8rem' }}>↳ {total} cookies total</div>
                         </div>
@@ -3334,21 +3493,23 @@ Thank you for supporting Baked By BCD.`;
                       className="admin-action-mini"
                       onClick={() => {
                         const typeVal = order.quantity_type || '';
-                        let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0;
-                        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                        let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0, _mixed4 = 0;
+                        if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
                            const b3Match = typeVal.match(/Box3:\s(\d+)/);
                            const b4Match = typeVal.match(/Box4:\s(\d+)/);
                            const b6Match = typeVal.match(/Box6:\s(\d+)/);
                            const b12Match = typeVal.match(/Box12:\s(\d+)/);
                            const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+                           const mixedMatch = typeVal.match(/Mixed4:\s(\d+)/);
 
                            _box3 = b3Match ? parseInt(b3Match[1]) : 0;
                            _box4 = b4Match ? parseInt(b4Match[1]) : 0;
                            _box6 = b6Match ? parseInt(b6Match[1]) : 0;
                            _box12 = b12Match ? parseInt(b12Match[1]) : 0;
                            _biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
+                           _mixed4 = mixedMatch ? parseInt(mixedMatch[1]) : 0;
                         }
-                        setEditingOrder({ ...order, _box3, _box4, _box6, _box12, _biscoff4 });
+                        setEditingOrder({ ...order, _box3, _box4, _box6, _box12, _biscoff4, _mixed4 });
                       }}
                     >✏️</button>
                     <button className="admin-action-mini" onClick={() => handleConfirmAndDM(order)}>💬</button>
@@ -3416,21 +3577,23 @@ Thank you for supporting Baked By BCD.`;
                       <td>
                         {(() => {
                           const typeVal = order.quantity_type || '';
-                          let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0;
-                          if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:')) {
+                          let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0, mixed4 = 0;
+                          if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
                             const b3Match = typeVal.match(/Box3:\s(\d+)/);
                             const b4Match = typeVal.match(/Box4:\s(\d+)/);
                             const b6Match = typeVal.match(/Box6:\s(\d+)/);
                             const b12Match = typeVal.match(/Box12:\s(\d+)/);
                             const biscoffMatch = typeVal.match(/Biscoff4:\s(\d+)/);
+                            const mixedMatch = typeVal.match(/Mixed4:\s(\d+)/);
 
                             b3 = b3Match ? parseInt(b3Match[1]) : 0;
                             b4 = b4Match ? parseInt(b4Match[1]) : 0;
                             b6 = b6Match ? parseInt(b6Match[1]) : 0;
                             b12 = b12Match ? parseInt(b12Match[1]) : 0;
                             biscoff4 = biscoffMatch ? parseInt(biscoffMatch[1]) : 0;
+                            mixed4 = mixedMatch ? parseInt(mixedMatch[1]) : 0;
                           }
-                          const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4);
+                          const total = (b3 * 3) + (b4 * 4) + (b6 * 6) + (b12 * 12) + (biscoff4 * 4) + (mixed4 * 4);
                           // Legacy Fallback
                           if (!typeVal.includes('Box') && !typeVal.includes('Biscoff')) {
                             const mult = order.quantity_type === 'box-of-4' ? 4 : (order.quantity_type === 'box-of-6' ? 6 : 12);
@@ -3448,6 +3611,7 @@ Thank you for supporting Baked By BCD.`;
                               {b6 > 0 && <div>Box 6 x {b6}</div>}
                               {b12 > 0 && <div>Box 12 x {b12}</div>}
                               {biscoff4 > 0 && <div style={{ color: '#92400e', fontWeight: 700 }}>Biscoff4 x {biscoff4}</div>}
+                              {mixed4 > 0 && <div style={{ color: '#991b1b', fontWeight: 700 }}>Mixed x {mixed4}</div>}
                               <div style={{ color: '#6366f1', fontWeight: 800 }}>↳ {total} cookies</div>
                             </div>
                           );
@@ -3536,20 +3700,16 @@ Thank you for supporting Baked By BCD.`;
                             className="admin-action-mini"
                             onClick={() => {
                               const typeVal = order.quantity_type || '';
-                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0;
-                              if (typeVal.includes('Box3:')) {
-                                const parts = typeVal.split(', ');
-                                _box3 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                                _box4 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                                _box6 = parseInt(parts[2]?.split(': ')[1]) || 0;
-                                _box12 = parseInt(parts[3]?.split(': ')[1]) || 0;
-                              } else if (typeVal.includes('Box4:')) {
-                                const parts = typeVal.split(', ');
-                                _box4 = parseInt(parts[0]?.split(': ')[1]) || 0;
-                                _box6 = parseInt(parts[1]?.split(': ')[1]) || 0;
-                                _box12 = parseInt(parts[2]?.split(': ')[1]) || 0;
+                              let _box3 = 0, _box4 = 0, _box6 = 0, _box12 = 0, _biscoff4 = 0, _mixed4 = 0;
+                              if (typeVal.includes('Box3:') || typeVal.includes('Biscoff4:') || typeVal.includes('Mixed4:')) {
+                                _box3 = (typeVal.match(/Box3:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box3:\s(\d+)/)![1]) : 0;
+                                _box4 = (typeVal.match(/Box4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box4:\s(\d+)/)![1]) : 0;
+                                _box6 = (typeVal.match(/Box6:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box6:\s(\d+)/)![1]) : 0;
+                                _box12 = (typeVal.match(/Box12:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Box12:\s(\d+)/)![1]) : 0;
+                                _biscoff4 = (typeVal.match(/Biscoff4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Biscoff4:\s(\d+)/)![1]) : 0;
+                                _mixed4 = (typeVal.match(/Mixed4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Mixed4:\s(\d+)/)![1]) : 0;
                               }
-                              setEditingOrder({ ...order, _box3, _box4, _box6, _box12 });
+                              setEditingOrder({ ...order, _box3, _box4, _box6, _box12, _biscoff4, _mixed4 });
                             }}
                             title="Edit"
                           >✏️</button>
@@ -3647,7 +3807,7 @@ function MaintenancePage({ onUnlock, targetDate }: { onUnlock: (pass: string) =>
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Meetups only – Ayala Fiesta Market (12pm-2pm, March 28)</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>meetups at lasalle gate 6 - 9am-10am, March 31 tuesday</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only</span></li>
             <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
           </ul>
@@ -4002,6 +4162,7 @@ export default function App() {
   const [b4Stock, setB4Stock] = useState<number | null>(null);
   const [b6Stock, setB6Stock] = useState<number | null>(null);
   const [biscoffStock, setBiscoffStock] = useState<number | null>(null);
+  const [mixedStock, setMixedStock] = useState<number | null>(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showBrowserGuard, setShowBrowserGuard] = useState(false);
   const [recoveryOrder, setRecoveryOrder] = useState<any>(null);
@@ -4012,10 +4173,12 @@ export default function App() {
       const { data: b4 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 4').single();
       const { data: b6 } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Box of 6').single();
       const { data: biscoff } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff Box of 4').single();
+      const { data: mixed } = await supabase.from('inventory').select('stock_count').eq('item_name', 'Biscoff and Pistacio Mixed').single();
       if (b3) setB3Stock(b3.stock_count);
       if (b4) setB4Stock(b4.stock_count);
       if (b6) setB6Stock(b6.stock_count);
       if (biscoff) setBiscoffStock(biscoff.stock_count);
+      if (mixed) setMixedStock(mixed.stock_count);
 
       // Also Fetch Site Lock Status
       const { data: lock } = await supabase.from('inventory').select('stock_count').eq('item_name', 'SITE_LOCK').single();
@@ -4081,6 +4244,9 @@ export default function App() {
           if (b6 > 0) await supabase.rpc('increment_box_stock', { p_item: 'Box of 6', p_amount: b6 });
           if (biscoff > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff Box of 4', p_amount: biscoff });
           
+          const mixed = (typeVal.match(/Mixed4:\s(\d+)/) || [])[1] ? parseInt(typeVal.match(/Mixed4:\s(\d+)/)![1]) : 0;
+          if (mixed > 0) await supabase.rpc('increment_box_stock', { p_item: 'Biscoff and Pistacio Mixed', p_amount: mixed });
+
           // Update status to Expired
           await supabase.from('orders').update({ status: 'Expired' }).eq('id', hold.id);
         }
@@ -4101,6 +4267,7 @@ export default function App() {
         if (item_name === 'Box of 4') setB4Stock(stock_count);
         if (item_name === 'Box of 6') setB6Stock(stock_count);
         if (item_name === 'Biscoff Box of 4') setBiscoffStock(stock_count);
+        if (item_name === 'Biscoff and Pistacio Mixed') setMixedStock(stock_count);
       })
       .subscribe();
 
@@ -4177,6 +4344,7 @@ export default function App() {
               b4={b4Stock}
               b6={b6Stock}
               biscoff4={biscoffStock}
+              mixed4={mixedStock}
               loading={stockLoading}
               onOrderClick={() => setPage('order')}
               onAdminClick={() => setPage('admin-login')}
