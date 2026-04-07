@@ -6,7 +6,7 @@ import './App.css';
 
 // ─── GLOBAL LOCK CONFIGURATION ───
 const MANUAL_LOCK_DEFAULT = false;
-const FALLBACK_TARGET_DATE = new Date('2026-03-27T20:30:00+08:00');
+const FALLBACK_TARGET_DATE = new Date('2026-04-07T19:30:00+08:00');
 
 type Page = 'home' | 'order' | 'history' | 'admin-login' | 'admin-dashboard';
 
@@ -17,7 +17,7 @@ const FAQS = [
   { q: "When will you be available again?", a: "We post preorder schedules weekly on our page, along with a notice a few days before opening slots. Follow our page to stay updated." },
   { q: "What are your payment methods?", a: "We accept GCash and Bank Transfers. A minimum of 50% nonrefundable downpayment is required to secure your slot and avoid bogus orders." },
   { q: "Where are you located? What is your mode of delivery?", a: "We are located in Bacolod City. Our mode of delivery is 📍 meetups at lasalle gate 6." },
-  { q: "What time are meetup orders?", a: "meetups at lasalle gate 6 - 9am-10am, March 31 tuesday. Please message us regarding the schedule as we are only available at selected times." },
+  { q: "What time are meetup orders?", a: "meetups at lasalle gate 6 - 10am-11:30am, April 8, Wednesday. Please message us regarding the schedule as we are only available at selected times." },
   { q: "Do you accept reservations?", a: "We strictly DO NOT allow RESERVATIONS. To keep things fair for everyone, we only accept orders through our official form on a first come, first served basis." },
   { q: "Do you ship to Manila or outside Bacolod?", a: "We currently cater orders within Bacolod City only." },
   { q: "What is your refund policy for stock issues?", a: "In the rare event that stock runs out during your payment, we will track your GCash info and process a full refund within 24 hours. You will be notified via IG DM." },
@@ -105,7 +105,7 @@ function HomePage({ onOrderClick, onAdminClick, onViewHistory, b3, b4, b6, bisco
 
           <div className="location-note" style={{ fontSize: '0.9rem', lineHeight: '1.6', marginTop: '15px' }}>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📍</span> <strong>meetups at lasalle gate 6</strong></div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>9am-10am, March 31 tuesday</span></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>🕒</span> <span>10am-11:30am, April 8, Wednesday</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📦</span> <span>Limited boxes available</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>📝</span> <span>Orders via website only</span></div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}><span>💳</span> <span>Full payment basis</span></div>
@@ -494,8 +494,8 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
       let screenshotPath = '';
       if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop() || 'jpg';
-        // Prefix with batch9/ for organization
-        const fileName = `batch9/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
+        // Prefix with batch11/ for organization
+        const fileName = `batch11/${fullName.replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(fileName, receiptFile);
@@ -597,7 +597,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                       <>
                         <strong style={{ color: '#92400e' }}>📍 Maxim pickup: Terra Nova Subdivision Swimming Pool</strong><br />
                         <span style={{ fontSize: '0.9rem' }}>📞 Rider Contact: (0995) 500 4044</span><br />
-                        <span style={{ fontSize: '0.9rem' }}>🕒 Time: Book any time 12:00 PM - 3:00 PM (March 31, Tuesday)</span>
+                        <span style={{ fontSize: '0.9rem' }}>🕒 Time: Book any time 12:00 PM - 3:00 PM (April 8, Wednesday) - book your own</span>
                         <div style={{ marginTop: '12px' }}>
                           <img 
                             src="/assets/maxim-location.jpg" 
@@ -607,7 +607,7 @@ function OrderPage({ onBack, recoveryOrder }: { onBack: () => void, recoveryOrde
                         </div>
                       </>
                     ) : (
-                      'meetups at lasalle gate 6 - 9am-10am, March 31 tuesday'
+                      'meetups at lasalle gate 6 - 10am-11:30am, April 8, Wednesday'
                     )}
                   </p>
                 </div>
@@ -1196,7 +1196,7 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   const [showFinanceHistory, setShowFinanceHistory] = useState(false);
   const [showHoldingModal, setShowHoldingModal] = useState(false);
   const [showExpiredModal, setShowExpiredModal] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<number>(9); // Default to current batch
+  const [selectedBatch, setSelectedBatch] = useState<number>(11); // Default to current batch
 
   // Release Schedule State
   const [newTargetDate, setNewTargetDate] = useState(targetDate.toISOString().slice(0, 16));
@@ -1220,12 +1220,14 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
   }, [targetDate]);
 
   // --- CALCULATIONS (Batching & Stats) ---
-  const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, s8, s9, recentNotes } = useMemo(() => {
+  const { activeOrders, holdingOrders, expiredOrders, activeStats, s4, s5, s6, s7, s8, s9, s10, s11, recentNotes } = useMemo(() => {
                         const cutoff5 = new Date('2026-03-12T00:00:00+08:00').getTime();
                         const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
                         const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
                         const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
                         const cutoff9 = new Date('2026-03-30T17:00:00+08:00').getTime();
+                        const cutoff10 = new Date('2026-04-03T17:00:00+08:00').getTime();
+                        const cutoff11 = new Date('2026-04-07T19:30:00+08:00').getTime();
     const batch4Orders = orders.filter(o => new Date(o.created_at).getTime() < cutoff5);
     const batch5Orders = orders.filter(o => {
       const t = new Date(o.created_at).getTime();
@@ -1243,7 +1245,15 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       const t = new Date(o.created_at).getTime();
       return t >= cutoff8 && t < cutoff9;
     });
-    const batch9Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff9);
+    const batch9Orders = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= cutoff9 && t < cutoff10;
+    });
+    const batch10Orders = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= cutoff10 && t < cutoff11;
+    });
+    const batch11Orders = orders.filter(o => new Date(o.created_at).getTime() >= cutoff11);
 
     const getStats = (list: any[]) => {
       let b3 = 0, b4 = 0, b6 = 0, b12 = 0, biscoff4 = 0, mixed4 = 0;
@@ -1276,8 +1286,10 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
     const s7Comp = getStats(batch7Orders);
     const s8Comp = getStats(batch8Orders);
     const s9Comp = getStats(batch9Orders);
+    const s10Comp = getStats(batch10Orders);
+    const s11Comp = getStats(batch11Orders);
 
-    const activeList = selectedBatch === 9 ? batch9Orders : (selectedBatch === 8 ? batch8Orders : (selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders))));
+    const activeList = selectedBatch === 11 ? batch11Orders : (selectedBatch === 10 ? batch10Orders : (selectedBatch === 9 ? batch9Orders : (selectedBatch === 8 ? batch8Orders : (selectedBatch === 7 ? batch7Orders : (selectedBatch === 6 ? batch6Orders : (selectedBatch === 5 ? batch5Orders : batch4Orders))))));
     const stats = getStats(activeList.filter(o => !(o.status === 'Delivered' && o.is_paid)));
     const holding = activeList.filter(o => o.status === 'Holding');
     const expired = activeList.filter(o => o.status === 'Expired');
@@ -1304,6 +1316,8 @@ function AdminDashboard({ onLogout, onBack, isLocked, onToggleLock, targetDate, 
       s7: s7Comp,
       s8: s8Comp,
       s9: s9Comp,
+      s10: s10Comp,
+      s11: s11Comp,
       recentNotes: notes
     };
   }, [orders, selectedBatch]);
@@ -1922,10 +1936,14 @@ Thank you for supporting Baked By BCD.`;
     const cutoff6 = new Date('2026-03-16T00:00:00+08:00').getTime();
     const cutoff7 = new Date('2026-03-19T00:00:00+08:00').getTime();
     const cutoff8 = new Date('2026-03-24T18:00:00+08:00').getTime();
-    const cutoff9 = new Date('2026-03-27T12:00:00+08:00').getTime();
+    const cutoff9 = new Date('2026-03-30T17:00:00+08:00').getTime();
+    const cutoff10 = new Date('2026-04-03T17:00:00+08:00').getTime();
+    const cutoff11 = new Date('2026-04-07T19:30:00+08:00').getTime();
     const orderTime = new Date(o.created_at).getTime();
     let batchNumber = 4;
-    if (orderTime >= cutoff9) batchNumber = 9;
+    if (orderTime >= cutoff11) batchNumber = 11;
+    else if (orderTime >= cutoff10) batchNumber = 10;
+    else if (orderTime >= cutoff9) batchNumber = 9;
     else if (orderTime >= cutoff8) batchNumber = 8;
     else if (orderTime >= cutoff7) batchNumber = 7;
     else if (orderTime >= cutoff6) batchNumber = 6;
@@ -2053,21 +2071,51 @@ Thank you for supporting Baked By BCD.`;
       <div className="admin-content">
         <>
           <div className="admin-stats-row" style={{ marginBottom: '25px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            {/* Batch 11 Card */}
+            <div
+              className={`admin-stat-card clickable ${selectedBatch === 11 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(11)}
+              style={{
+                background: selectedBatch === 11 ? '#eff6ff' : '#fff',
+                border: selectedBatch === 11 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                transform: selectedBatch === 11 ? 'scale(1.02)' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 11)</h3>
+                {selectedBatch === 11 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
+              </div>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s11.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s11.revenue.toLocaleString()} • {s11.count} Orders</p>
+            </div>
+
+            {/* Batch 10 Card */}
+            <div
+              className={`admin-stat-card clickable ${selectedBatch === 10 ? 'active-batch-card' : ''}`}
+              onClick={() => setSelectedBatch(10)}
+              style={{
+                background: selectedBatch === 10 ? '#f0fdf4' : '#fff',
+                border: selectedBatch === 10 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
+                transform: selectedBatch === 10 ? 'scale(1.02)' : 'none'
+              }}
+            >
+              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 10)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s10.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <p className="admin-stat-sub">Revenue: ₱{s10.revenue.toLocaleString()} • {s10.count} Orders</p>
+            </div>
+
             {/* Batch 9 Card */}
             <div
               className={`admin-stat-card clickable ${selectedBatch === 9 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(9)}
               style={{
-                background: selectedBatch === 9 ? '#eff6ff' : '#fff',
-                border: selectedBatch === 9 ? '3px solid #3b82f6' : '1px solid #e2e8f0',
+                background: selectedBatch === 9 ? '#fef3c7' : '#fff',
+                border: selectedBatch === 9 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
                 transform: selectedBatch === 9 ? 'scale(1.02)' : 'none'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#1e40af' }}>🍪 Current (Batch 9)</h3>
-                {selectedBatch === 9 && <span style={{ background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.6rem' }}>ACTIVE VIEW</span>}
-              </div>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#1e40af' }}>{s9.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <h3 style={{ color: '#92400e' }}>📊 Previous (Batch 9)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#92400e' }}>{s9.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s9.revenue.toLocaleString()} • {s9.count} Orders</p>
             </div>
 
@@ -2076,44 +2124,14 @@ Thank you for supporting Baked By BCD.`;
               className={`admin-stat-card clickable ${selectedBatch === 8 ? 'active-batch-card' : ''}`}
               onClick={() => setSelectedBatch(8)}
               style={{
-                background: selectedBatch === 8 ? '#f0fdf4' : '#fff',
+                background: selectedBatch === 8 ? '#f8fafc' : '#fff',
                 border: selectedBatch === 8 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
                 transform: selectedBatch === 8 ? 'scale(1.02)' : 'none'
               }}
             >
-              <h3 style={{ color: '#166534' }}>📊 Previous (Batch 8)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#166534' }}>{s8.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
+              <h3 style={{ color: '#4b5563' }}>📊 Previous (Batch 8)</h3>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#4b5563' }}>{s8.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
               <p className="admin-stat-sub">Revenue: ₱{s8.revenue.toLocaleString()} • {s8.count} Orders</p>
-            </div>
-
-            {/* Batch 7 Card */}
-            <div
-              className={`admin-stat-card clickable ${selectedBatch === 7 ? 'active-batch-card' : ''}`}
-              onClick={() => setSelectedBatch(7)}
-              style={{
-                background: selectedBatch === 7 ? '#fef3c7' : '#fff',
-                border: selectedBatch === 7 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
-                transform: selectedBatch === 7 ? 'scale(1.02)' : 'none'
-              }}
-            >
-              <h3 style={{ color: '#92400e' }}>📊 Previous (Batch 7)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#92400e' }}>{s7.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
-              <p className="admin-stat-sub">Revenue: ₱{s7.revenue.toLocaleString()} • {s7.count} Orders</p>
-            </div>
-
-            {/* Batch 5 Card (Keep for reference) */}
-            <div
-              className={`admin-stat-card clickable ${selectedBatch === 5 ? 'active-batch-card' : ''}`}
-              onClick={() => setSelectedBatch(5)}
-              style={{
-                background: selectedBatch === 5 ? '#f8fafc' : '#fff',
-                border: selectedBatch === 5 ? '1px solid #e2e8f0' : '1px solid #e2e8f0',
-                transform: selectedBatch === 5 ? 'scale(1.02)' : 'none'
-              }}
-            >
-              <h3 style={{ color: '#4b5563' }}>📊 Previous (Batch 5)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#4b5563' }}>{s5.cookies} <small style={{ fontSize: '0.8rem' }}>Cookies</small></div>
-              <p className="admin-stat-sub">Revenue: ₱{s5.revenue.toLocaleString()} • {s5.count} Orders</p>
             </div>
 
             <div
@@ -2125,8 +2143,8 @@ Thank you for supporting Baked By BCD.`;
               }}
             >
               <h3 style={{ color: '#854d0e' }}>🏢 Master List (All)</h3>
-              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies + s7.cookies + s8.cookies)}</div>
-              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count + s7.count + s8.count)}</p>
+              <div className="admin-stat-val" style={{ fontSize: '1.8rem', color: '#854d0e' }}>{(s4.cookies + s5.cookies + s6.cookies + s7.cookies + s8.cookies + s9.cookies + s10.cookies + s11.cookies)}</div>
+              <p className="admin-stat-sub">Total Orders: {(s4.count + s5.count + s6.count + s7.count + s8.count + s9.count + s10.count + s11.count)}</p>
             </div>
           </div>
 
@@ -3830,7 +3848,7 @@ function MaintenancePage({ onUnlock, targetDate }: { onUnlock: (pass: string) =>
           <h3 style={{ color: '#facc15', fontSize: '1.25rem', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 900 }}>📝 Preorder Details</h3>
           <ul style={{ padding: 0, margin: '0 auto', listStyleType: 'none', display: 'inline-block', textAlign: 'left' }}>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Limited boxes available</span></li>
-            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>meetups at lasalle gate 6 - 9am-10am, March 31 tuesday</span></li>
+            <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>meetups at lasalle gate 6 - 10am-11:30am, April 8, Wednesday</span></li>
             <li style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}><span>•</span> <span>Orders via website only</span></li>
             <li style={{ marginBottom: '0px', display: 'flex', gap: '8px' }}><span>•</span> <span>Full payment basis</span></li>
           </ul>
